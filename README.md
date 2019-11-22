@@ -1,2 +1,2 @@
 # JakesFun
- Stuff to have fun with
+ Please enjoy my small projects that mean nothing
