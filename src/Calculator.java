@@ -6,7 +6,7 @@ public class Calculator {
 
     	double num1, num2;
         Scanner scanner = new Scanner(System.in);
-        
+        //Title Screen
         System.out.print("---------------------------------");
         System.out.print("CALCULATOR TI 85");
         System.out.println("---------------------------------");
