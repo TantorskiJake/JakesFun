@@ -11,6 +11,7 @@ public class Calculator {
         System.out.print("CALCULATOR TI 85");
         System.out.println("---------------------------------");
         
+        //Inputs
         System.out.print("Enter First Number:");
         num1 = scanner.nextDouble();
         System.out.print("Enter Second Number:");
@@ -25,27 +26,28 @@ public class Calculator {
 
         switch(operator)
         {
+            //Addition
             case '+':
             	output = num1 + num2;
                 break;
-
+            //Subtraction
             case '-':
             	output = num1 - num2;
                 break;
-
+            //Multiplication
             case '*':
             	output = num1 * num2;
                 break;
-
+            //Division
             case '/':
             	output = num1 / num2;
                 break;
-
+            //Incorrect Input
             default:
                 System.out.printf("You have entered wrong operator");
                 return;
         }
-
+        //Output
         System.out.println(num1+" "+operator+" "+num2+": "+output);
     }
 }
