@@ -20,7 +20,12 @@ function threeInARow(arr){
     }
 }
 
-var evenGood = [1,2,6,4,5,7,9,8,6];
+var evenGood = [1,2,6,4,5,8,9,7,6];
 var oddGood = [1,2,3,4,5,7,9,8,6];
-var noGood = [1,2,3,4,5,6,7,8,9];
-threeInARow(test);
+var both = [2,4,6,7,9,1,8,5,3];
+
+
+//threeInARow(evenGood);
+//threeInARow(oddGood);
+threeInARow(both);
+
