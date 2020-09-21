@@ -1,12 +1,12 @@
-//Jake Tantorski
 import java.util.*;
 
 public class Factorial {
 
   public static void main(String[] args) {
-    int input = 5;
-    int answer = factor(input);
-    System.out.print("The Factorial of " + input + " is: " + answer);
+    Scanner inputUser = new Scanner(System.in);
+    int userInput = inputUser.nextInt();
+    int answer = factor(userInput);
+    System.out.print("The Factorial of " + userInput + " is: " + answer +"\n");
   }
 
   public static int factor(int num){
