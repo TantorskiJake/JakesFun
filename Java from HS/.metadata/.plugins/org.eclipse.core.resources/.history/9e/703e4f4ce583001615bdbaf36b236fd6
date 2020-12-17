@@ -1,0 +1,24 @@
+import java.util.Scanner;
+
+public class price {
+
+	public static void main(String[] args) {
+		
+		Scanner scan = new Scanner(System.in);
+		
+		double price, taxPrice,cash;
+		
+		System.out.print("Enter a price of an item: ");
+		price = scan.nextDouble();
+		
+		taxPrice = price + (price*.0635);
+		System.out.println("Your item is: " + taxPrice);
+		
+		System.out.print("Enter amount of money used: ");
+		cash = scan.nextDouble();
+		
+		System.out.print("Your change is: " + (cash-taxPrice));
+		
+	}
+
+}

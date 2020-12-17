@@ -1,0 +1,52 @@
+
+
+class Craps 
+{
+
+	public static void main(String[] args) 
+	{
+
+		
+		int dice1 = (int)(Math.random()*6 +1);
+		int dice2 = (int)(Math.random()*6 +1);
+		int roll = dice1 + dice2;
+		
+		for(int i = 0; i < 5; i++)
+		{
+			System.out.println ("Roll the dices");
+			System.out.println("You rolled a " + dice1 + " and " + dice2 + " for a total of " + roll);
+			if (roll == 7 || roll == 11)
+			{
+				
+				System.out.print("You win!");
+				 
+				
+			}
+			
+			if (roll == 2 || roll == 3 || roll == 12)
+			{
+				System.out.print("You lose!");
+				 
+				
+				
+				
+				
+			}
+			else if (roll == 4 || roll == 5 || roll == 6 || roll == 8 || roll == 9 || roll == 10)
+		    {
+			     
+				System.out.println ("Roll the dices again");
+				
+				
+				
+				
+			}
+			
+		}
+		
+		
+	}
+
+}
+
+

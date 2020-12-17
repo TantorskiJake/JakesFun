@@ -1,0 +1,19 @@
+import java.util.Scanner;
+
+public class price {
+
+	public static void main(String[] args) {
+		
+		Scanner scan = new Scanner(System.in);
+		
+		double price, taxPrice;
+		
+		System.out.println("Enter a price of an item: ");
+		price = scan.nextDouble();
+		
+		taxPrice = price + (price*.0635);
+		System.out.println("Your item is: " + taxPrice);
+		
+	}
+
+}

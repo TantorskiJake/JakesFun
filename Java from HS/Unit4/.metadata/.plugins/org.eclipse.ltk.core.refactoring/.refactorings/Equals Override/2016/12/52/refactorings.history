@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy element &apos;Player.java&apos; to &apos;Team Project&apos;&#x0D;&#x0A;- Original project: &apos;Equals Override&apos;&#x0D;&#x0A;- Destination element: &apos;Team Project&apos;&#x0D;&#x0A;- Original element: &apos;Player.java&apos;" description="Copy compilation unit" destination="=Team Project" element1="/src&lt;{Player.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyResources" stamp="1482154640042" units="1" version="1.0"/>
+</session>

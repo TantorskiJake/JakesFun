@@ -1,0 +1,65 @@
+
+import java.util.Scanner;
+
+/*     WordChain.java
+ * 
+ * 	   Input a sequence of words, outputs whether a word chain or not
+ */
+
+public class WordChain 
+{
+	public static void main(String args[])
+	{
+		//initializes a boolean variable to default true
+		boolean wordChain = true;
+		
+		//scanner object for sequence of words & String to hold
+		Scanner lineInput = new Scanner(System.in);
+		String stringInput;
+		
+		//gets sequence of words from user separated by a space
+		System.out.println("Enter a sequence of words: ");
+		stringInput = lineInput.nextLine();
+		
+		//scanner object to scan sequence of words
+		Scanner scanString = new Scanner(stringInput);
+		
+		//String variable to store individual words
+		String word1;
+		String word2;
+		
+		//gets next word in sequence
+		word1 = scanString.next();
+		word2 = scanString.next();
+		int count ;
+		count = 0;
+		while(!word1.equals("END") && !word2.equals("END") )
+		{
+			for(int i=0; i<word1.length(); i++)
+			{
+				if(word1.charAt(i) != word2.charAt(i))
+					{
+						count++;
+					}
+			}
+			if(count!=1)
+			{
+				wordChain = false;
+			}
+				
+			word1 = word2;
+			word2 = scanString.next();
+			count = 0;
+		}
+		
+		if(wordChain)
+			System.out.println("Sequence is a word chain");
+		else
+			System.out.println("Sequence is not a word chain");
+				
+		
+		
+	}
+
+}
+
