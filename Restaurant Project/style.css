@@ -1,0 +1,34 @@
+h1{
+  font-style:normal;
+  font: monospace;
+  font-size: 75px;
+  color: black;
+  text-align: center;
+}
+
+body{
+  background-image: url("Images/mainpic.png");
+}
+
+ul{
+  font-size: 30px;
+}
+
+.phonenumber{
+  text-align: center;
+}
+
+/* Sandwich Descprition/Picture */
+.sandwichdescription{
+  font-size: 18px;
+}
+.sandwichpicture{
+  width: 200px;
+  height: 150px;
+}
+footer {
+  text-align: center;
+  padding: 3px;
+  background-color: DarkSalmon;
+  color: white;
+}
