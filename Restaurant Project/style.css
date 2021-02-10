@@ -13,6 +13,17 @@ body{
 ul{
   font-size: 30px;
 }
+.menulink{
+  padding: 3px;
+  font-size: 44px;
+  text-align: center;
+}
+.homelink{
+  padding: 3px;
+  font-size: 44px;
+  text-align: center;
+}
+
 
 .phonenumber{
   text-align: center;
