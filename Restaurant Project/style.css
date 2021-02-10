@@ -5,11 +5,9 @@ h1{
   color: black;
   text-align: center;
 }
-
 body{
   background-image: url("Images/mainpic.png");
 }
-
 ul{
   font-size: 30px;
 }
@@ -23,13 +21,13 @@ ul{
   font-size: 44px;
   text-align: center;
 }
-
-
 .phonenumber{
   text-align: center;
 }
-
-/* Sandwich Descprition/Picture */
+/* Sandwich Name/Descprition/Picture */
+.sandwichname{
+  font-size: 40px;
+}
 .sandwichdescription{
   font-size: 18px;
 }
