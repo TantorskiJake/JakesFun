@@ -1,40 +1,74 @@
-h1{
-  font-style:normal;
+h1 {
+  font-style: normal;
   font: monospace;
-  font-size: 75px;
+  font-size: 50px;
   color: black;
   text-align: center;
 }
-body{
+.est{
+  text-align: center;
+}
+.saying{
+  text-align: center;
+}
+
+body {
   background-image: url("Images/mainpic.png");
 }
-ul{
-  font-size: 30px;
+.shoplogo{
+  position: absolute;
+  top: 75px;
 }
-.menulink{
-  padding: 3px;
-  font-size: 44px;
+.saying{
+  position: absolute;
+  top: 75px;
+  left: 991px;
+}
+.phonenumber {
+  font-size: 40px;
   text-align: center;
 }
-.homelink{
-  padding: 3px;
-  font-size: 44px;
-  text-align: center;
-}
-.phonenumber{
-  text-align: center;
-}
+
 /* Sandwich Name/Descprition/Picture */
-.sandwichname{
+.sandwichname {
   font-size: 40px;
 }
-.sandwichdescription{
+
+.sandwichdescription {
   font-size: 18px;
 }
-.sandwichpicture{
+
+.sandwichpicture {
   width: 200px;
   height: 150px;
 }
+
+.navbar {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+  font-size: 30px;
+}
+
+.navlink {
+  float: left;
+}
+
+.navlink a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* Change the link color to #111 (black) on hover */
+.navlink a:hover {
+  background-color: #111;
+}
+
 footer {
   text-align: center;
   padding: 3px;
