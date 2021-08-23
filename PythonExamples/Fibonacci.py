@@ -1,3 +1,7 @@
+# Jake Tantorski August 22nd, 2021
+
+# Coding the Fibonacci Sequence for any number
+
 def Fibonacci(n):
     if n<0:
         print("Incorrect input")

@@ -1,4 +1,4 @@
-# Jake Tantorski August 22nd, 2021
+# Jake Tantorski August 22nd, 2021 
 
 # Three ways to reverse a list in Python
 
