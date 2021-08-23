@@ -2,9 +2,9 @@
 
 # Three ways to reverse a list in Python
 
-myArray1 = [1, 2, 3]
-myArray2 = [4, 5, 6]
-myArray3 = [7, 8, 9]
+myList1 = [1, 2, 3]
+myList2 = [4, 5, 6]
+myList3 = [7, 8, 9]
 
 
 def Reverse1(lst):
@@ -20,6 +20,6 @@ def Reverse3(lst):
     return [ele for ele in reversed(lst)]
 
 
-print(Reverse1(myArray1))
-print(Reverse2(myArray2))
-print(Reverse3(myArray3))
+print(Reverse1(myList1))
+print(Reverse2(myList2))
+print(Reverse3(myList3))

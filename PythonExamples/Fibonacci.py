@@ -10,7 +10,6 @@ def Fibonacci(n):
     else:
         return Fibonacci(n-1)+Fibonacci(n-2)
 
-# Driver Program
 num = int(input('Enter Fibonacci Index: '))
 output = Fibonacci(num)
 print("Number: "+ str(output))
