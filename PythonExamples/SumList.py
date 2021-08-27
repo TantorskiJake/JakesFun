@@ -18,6 +18,6 @@ total1 = sumOfList(list1, len(list1))
 # Sum Function Way
 total2 = sum(list2)
 
-print("Sum of List: ", total1)
+print("Sum of List: " + str(list1) + " = " + str(total1))
 
-print("Sum of List: ", total2)
+print("Sum of List: " + str(list2) + " = " + str(total2))
