@@ -19,11 +19,11 @@ def milesToKilo():
     print('%0.2f Miles : %0.2f Kilometers' % (miles, kilometers))
 
 
-choice = int(input("1: Kilometers to Miles 2. Miles to Kilometers: "))
+choice = raw_input("1: Kilometers to Miles 2. Miles to Kilometers: ")
 
-if(choice == 1):
+if(choice == '1'):
     kiloToMiles()
-elif(choice == 2):
+elif(choice == '2'):
     milesToKilo()
 else:
     print("Invalid Input!")
