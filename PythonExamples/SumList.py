@@ -1,7 +1,6 @@
 # Jake Tantorski August 26th, 2021
 
 # Coding the Sum of List
-
 list1 = [1, 2, 3, 4, 5]
 list2 = [6, 7, 8, 9]
 
