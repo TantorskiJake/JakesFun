@@ -23,7 +23,6 @@ choice = raw_input("1: Kilometers to Miles 2. Miles to Kilometers: ")
 
 if(choice == '1'):
     kiloToMiles()
-elif(choice == '2'):
     milesToKilo()
 else:
     print("Invalid Input!")
