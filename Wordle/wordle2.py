@@ -4,6 +4,8 @@ with open("WORD.LST", "r") as f:
     words = [word.strip() for word in f.readlines() if len(word.strip()) == 5]
 
 while len(words) > 1:
+    print("0:Black, 1:Yellow, 2:Green ----------- Example: 20110")
+    print("")
     print(f"Try {(guess := random.choice(words))!r}.")
     score = [int(char) for char in input(">>> ") if char in "012"]  # 0 for ABSENT, 1 for PRESENT, and 2 for CORRECT.
     words_ = []
