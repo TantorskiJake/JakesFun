@@ -1,10 +1,13 @@
 import collections, random
 
+#Open Word.LST file and gather all of the 5 letter words into an array called words
 with open("WORD.LST", "r") as f:
     words = [word.strip() for word in f.readlines() if len(word.strip()) == 5]
 
+# As long as there are more than one word in the array keep looking
 while len(words) > 1:
-    print("0:Black, 1:Yellow, 2:Green ----------- Example: 20110")
+    # controls
+    print("0 for ABSENT, 1 for PRESENT, and 2 for CORRECT ----------- Example: 20110")
     print("")
     print(f"Try {(guess := random.choice(words))!r}.")
     score = [int(char) for char in input(">>> ") if char in "012"]  # 0 for ABSENT, 1 for PRESENT, and 2 for CORRECT.
