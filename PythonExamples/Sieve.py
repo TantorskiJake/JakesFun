@@ -18,4 +18,4 @@ def primeLessThan(n: int) -> list[int]:
 
 
 if __name__ == "__main__":
-    println(primeLessThan(586))
+    print(primeLessThan(586))
