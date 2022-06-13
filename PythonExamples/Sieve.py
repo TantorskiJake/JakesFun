@@ -18,4 +18,5 @@ def primeLessThan(n: int) -> list[int]:
 
 
 if __name__ == "__main__":
-    print(primeLessThan(100))
+    print(primeLessThan(586))
+    # boobs
