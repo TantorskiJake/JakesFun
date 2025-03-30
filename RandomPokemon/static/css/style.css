@@ -57,6 +57,32 @@ h1 {
     font-size: 1rem;
 }
 
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #ddd;
+    background-color: #fff;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.label {
+    font-weight: bold;
+    color: #3B4CCA;
+    min-width: 130px;
+}
+
+.value {
+    color: #333;
+    text-align: right;
+}
+
 .info p {
     margin: 10px 0;
 }

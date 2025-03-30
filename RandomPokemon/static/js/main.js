@@ -7,6 +7,11 @@ function closeStatsModal() {
 }
 
 function openSpriteModal() {
+    // Play the Pokémon cry sound when opening the sprite modal
+    var cryAudio = document.getElementById('cryAudio');
+    if (cryAudio) {
+        cryAudio.play();
+    }
     document.getElementById('spriteModal').style.display = "block";
 }
 
@@ -25,3 +30,18 @@ window.onclick = function(event) {
         closeSpriteModal();
     }
 };
+
+// Add favorite functionality
+function addFavorite() {
+    var container = document.getElementById("pokemonContainer");
+    var pokemon = JSON.parse(container.getAttribute("data-pokemon"));
+    var favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+    // Check if this Pokémon is already in favorites by its ID
+    if (!favorites.some(function(p){ return p.id === pokemon.id; })) {
+        favorites.push(pokemon);
+        localStorage.setItem("favorites", JSON.stringify(favorites));
+        alert(pokemon.name + " added to favorites!");
+    } else {
+        alert(pokemon.name + " is already in favorites.");
+    }
+}

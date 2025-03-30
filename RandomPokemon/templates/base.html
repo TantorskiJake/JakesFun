@@ -8,6 +8,9 @@
 <body>
     {% block content %}{% endblock %}
     
+    <!-- Audio element for Pokémon cry (ensure the file exists in static/sounds/cry.mp3) -->
+    <audio id="cryAudio" src="{{ url_for('static', filename='sounds/cry.mp3') }}"></audio>
+    
     <!-- Include the JavaScript file -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

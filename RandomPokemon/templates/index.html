@@ -1,67 +1,109 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1>{{ pokemon.name }}</h1>
-    {% if pokemon.image_url %}
-        <!-- Clicking the image opens the sprite modal -->
-        <img class="pokemon-img" src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" onclick="openSpriteModal()">
-    {% else %}
-        <p>No image available.</p>
-    {% endif %}
-    <div class="info">
-        <p><strong>ID:</strong> {{ pokemon.id }}</p>
-        <p><strong>Height:</strong> {{ pokemon.height }} decimeters</p>
-        <p><strong>Weight:</strong> {{ pokemon.weight }} hectograms</p>
-        <p><strong>Base Experience:</strong> {{ pokemon.base_experience }}</p>
-        <p><strong>Types:</strong>
-            {% for t in pokemon.types %}
-                <span class="type {{ t }}">{{ t|capitalize }}</span>{% if not loop.last %}, {% endif %}
-            {% endfor %}
-        </p>
-        <p><strong>Abilities:</strong> {{ pokemon.abilities | join(', ') }}</p>
-        <!-- Removed Shiny Sprite display from main page -->
-        <p><strong>Moves:</strong> {{ pokemon.moves | join(', ') }}</p>
-        <p><strong>Color:</strong> {{ pokemon.color | capitalize }}</p>
-        <p><strong>Habitat:</strong> {{ pokemon.habitat | capitalize }}</p>
-        <p><strong>Shape:</strong> {{ pokemon.shape | capitalize }}</p>
-        <p><strong>Capture Rate:</strong> {{ pokemon.capture_rate }}</p>
-        <p><strong>Growth Rate:</strong> {{ pokemon.growth_rate | capitalize }}</p>
-        <p><strong>Egg Groups:</strong> {{ pokemon.egg_groups | join(', ') | capitalize }}</p>
-        <p><strong>Description:</strong> {{ pokemon.flavor_text }}</p>
+<div class="container" id="pokemonContainer" data-pokemon='{{ pokemon|tojson }}'>
+  <h1>{{ pokemon.name }}</h1>
+  {% if pokemon.image_url %}
+    <!-- Clicking the image opens the modal to display the shiny sprite -->
+    <img class="pokemon-img" src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" onclick="openSpriteModal()">
+  {% else %}
+    <p>No image available.</p>
+  {% endif %}
+  <div class="info">
+    <div class="info-item">
+      <span class="label">ID:</span>
+      <span class="value">{{ pokemon.id }}</span>
     </div>
-    <div class="button-container">
-        <button class="reload-button" onclick="window.location.reload()">Show Another Pokémon</button>
-        <button class="reload-button" onclick="openStatsModal()">Show Stats</button>
+    <div class="info-item">
+      <span class="label">Height:</span>
+      <span class="value">{{ pokemon.height }} decimeters</span>
     </div>
+    <div class="info-item">
+      <span class="label">Weight:</span>
+      <span class="value">{{ pokemon.weight }} hectograms</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Base Exp:</span>
+      <span class="value">{{ pokemon.base_experience }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Types:</span>
+      <span class="value">
+        {% for t in pokemon.types %}
+          <span class="type {{ t }}">{{ t|capitalize }}</span>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+      </span>
+    </div>
+    <div class="info-item">
+      <span class="label">Abilities:</span>
+      <span class="value">{{ pokemon.abilities | join(', ') }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Moves:</span>
+      <span class="value">{{ pokemon.moves | join(', ') }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Color:</span>
+      <span class="value">{{ pokemon.color | capitalize }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Habitat:</span>
+      <span class="value">{{ pokemon.habitat | capitalize }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Shape:</span>
+      <span class="value">{{ pokemon.shape | capitalize }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Capture Rate:</span>
+      <span class="value">{{ pokemon.capture_rate }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Growth Rate:</span>
+      <span class="value">{{ pokemon.growth_rate | capitalize }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Egg Groups:</span>
+      <span class="value">{{ pokemon.egg_groups | join(', ') | capitalize }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label">Description:</span>
+      <span class="value">{{ pokemon.flavor_text }}</span>
+    </div>
+  </div>
+  <div class="button-container">
+    <button class="reload-button" onclick="window.location.reload()">Show Another Pokémon</button>
+    <button class="reload-button" onclick="openStatsModal()">Show Stats</button>
+    <button class="reload-button" onclick="addFavorite()">Favorite</button>
+  </div>
 </div>
 
 <!-- Modal for stats -->
 <div id="statsModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeStatsModal()">&times;</span>
-        <h2>{{ pokemon.name }} Stats</h2>
-        <div class="stats">
-            {% for stat_name, stat_value in pokemon.stats.items() %}
-            <div class="stat">
-                <h3>{{ stat_name.capitalize() }}</h3>
-                <div class="progress">
-                    <div class="progress-bar" style="width: {{ (stat_value / 255 * 100) | round }}%;">
-                        {{ stat_value }}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+  <div class="modal-content">
+    <span class="close" onclick="closeStatsModal()">&times;</span>
+    <h2>{{ pokemon.name }} Stats</h2>
+    <div class="stats">
+      {% for stat_name, stat_value in pokemon.stats.items() %}
+      <div class="stat">
+        <h3>{{ stat_name.capitalize() }}</h3>
+        <div class="progress">
+          <div class="progress-bar" style="width: {{ (stat_value / 255 * 100) | round }}%;">
+            {{ stat_value }}
+          </div>
         </div>
+      </div>
+      {% endfor %}
     </div>
+  </div>
 </div>
 
 <!-- Modal for shiny sprite -->
 <div id="spriteModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeSpriteModal()">&times;</span>
-        <h2>{{ pokemon.name }} Shiny Sprite</h2>
-        <img class="modal-img" src="{{ pokemon.shiny_image_url }}" alt="{{ pokemon.name }} Shiny Sprite">
-    </div>
+  <div class="modal-content">
+    <span class="close" onclick="closeSpriteModal()">&times;</span>
+    <h2>{{ pokemon.name }} Shiny Sprite</h2>
+    <img class="modal-img" src="{{ pokemon.shiny_image_url }}" alt="{{ pokemon.name }} Shiny Sprite">
+  </div>
 </div>
 {% endblock %}
