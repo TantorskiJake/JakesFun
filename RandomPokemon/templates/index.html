@@ -9,68 +9,71 @@
   {% else %}
     <p>No image available.</p>
   {% endif %}
-  <div class="info">
-    <div class="info-item">
-      <span class="label">ID:</span>
-      <span class="value">{{ pokemon.id }}</span>
+  
+  <!-- New details section in a full-width vertical list -->
+  <div class="details">
+    <div class="detail-row">
+      <span class="detail-label">ID:</span>
+      <span class="detail-value">{{ pokemon.id }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Height:</span>
-      <span class="value">{{ pokemon.height }} decimeters</span>
+    <div class="detail-row">
+      <span class="detail-label">Height:</span>
+      <span class="detail-value">{{ pokemon.height }} decimeters</span>
     </div>
-    <div class="info-item">
-      <span class="label">Weight:</span>
-      <span class="value">{{ pokemon.weight }} hectograms</span>
+    <div class="detail-row">
+      <span class="detail-label">Weight:</span>
+      <span class="detail-value">{{ pokemon.weight }} hectograms</span>
     </div>
-    <div class="info-item">
-      <span class="label">Base Exp:</span>
-      <span class="value">{{ pokemon.base_experience }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Base Exp:</span>
+      <span class="detail-value">{{ pokemon.base_experience }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Types:</span>
-      <span class="value">
+    <div class="detail-row">
+      <span class="detail-label">Types:</span>
+      <span class="detail-value">
         {% for t in pokemon.types %}
           <span class="type {{ t }}">{{ t|capitalize }}</span>{% if not loop.last %}, {% endif %}
         {% endfor %}
       </span>
     </div>
-    <div class="info-item">
-      <span class="label">Abilities:</span>
-      <span class="value">{{ pokemon.abilities | join(', ') }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Abilities:</span>
+      <span class="detail-value">{{ pokemon.abilities | join(', ') }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Moves:</span>
-      <span class="value">{{ pokemon.moves | join(', ') }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Moves:</span>
+      <span class="detail-value">{{ pokemon.moves | join(', ') }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Color:</span>
-      <span class="value">{{ pokemon.color | capitalize }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Color:</span>
+      <span class="detail-value">{{ pokemon.color | capitalize }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Habitat:</span>
-      <span class="value">{{ pokemon.habitat | capitalize }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Habitat:</span>
+      <span class="detail-value">{{ pokemon.habitat | capitalize }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Shape:</span>
-      <span class="value">{{ pokemon.shape | capitalize }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Shape:</span>
+      <span class="detail-value">{{ pokemon.shape | capitalize }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Capture Rate:</span>
-      <span class="value">{{ pokemon.capture_rate }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Capture Rate:</span>
+      <span class="detail-value">{{ pokemon.capture_rate }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Growth Rate:</span>
-      <span class="value">{{ pokemon.growth_rate | capitalize }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Growth Rate:</span>
+      <span class="detail-value">{{ pokemon.growth_rate | capitalize }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Egg Groups:</span>
-      <span class="value">{{ pokemon.egg_groups | join(', ') | capitalize }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Egg Groups:</span>
+      <span class="detail-value">{{ pokemon.egg_groups | join(', ') | capitalize }}</span>
     </div>
-    <div class="info-item">
-      <span class="label">Description:</span>
-      <span class="value">{{ pokemon.flavor_text }}</span>
+    <div class="detail-row">
+      <span class="detail-label">Description:</span>
+      <span class="detail-value">{{ pokemon.flavor_text }}</span>
     </div>
   </div>
+  
   <div class="button-container">
     <button class="reload-button" onclick="window.location.reload()">Show Another Pokémon</button>
     <button class="reload-button" onclick="openStatsModal()">Show Stats</button>
