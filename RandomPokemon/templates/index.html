@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Random Pokémon</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>{{ pokemon.name }}</h1>
+        {% if pokemon.image_url %}
+            <!-- Clicking the image opens the sprite modal -->
+            <img class="pokemon-img" src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" onclick="openSpriteModal()">
+        {% else %}
+            <p>No image available.</p>
+        {% endif %}
+        <div class="info">
+            <p><strong>ID:</strong> {{ pokemon.id }}</p>
+            <p><strong>Height:</strong> {{ pokemon.height }} decimeters</p>
+            <p><strong>Weight:</strong> {{ pokemon.weight }} hectograms</p>
+            <p><strong>Base Experience:</strong> {{ pokemon.base_experience }}</p>
+            <p><strong>Types:</strong>
+                {% for t in pokemon.types %}
+                    <span class="type {{ t }}">{{ t|capitalize }}</span>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            <p><strong>Abilities:</strong> {{ pokemon.abilities | join(', ') }}</p>
+            <!-- Removed Shiny Sprite display from main page -->
+            <p><strong>Moves:</strong> {{ pokemon.moves | join(', ') }}</p>
+            <p><strong>Color:</strong> {{ pokemon.color | capitalize }}</p>
+            <p><strong>Habitat:</strong> {{ pokemon.habitat | capitalize }}</p>
+            <p><strong>Shape:</strong> {{ pokemon.shape | capitalize }}</p>
+            <p><strong>Capture Rate:</strong> {{ pokemon.capture_rate }}</p>
+            <p><strong>Growth Rate:</strong> {{ pokemon.growth_rate | capitalize }}</p>
+            <p><strong>Egg Groups:</strong> {{ pokemon.egg_groups | join(', ') | capitalize }}</p>
+            <p><strong>Description:</strong> {{ pokemon.flavor_text }}</p>
+        </div>
+        <div class="button-container">
+            <button class="reload-button" onclick="window.location.reload()">Show Another Pokémon</button>
+            <button class="reload-button" onclick="openStatsModal()">Show Stats</button>
+        </div>
+    </div>
+    
+    <!-- Modal for stats -->
+    <div id="statsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeStatsModal()">&times;</span>
+            <h2>{{ pokemon.name }} Stats</h2>
+            <div class="stats">
+                {% for stat_name, stat_value in pokemon.stats.items() %}
+                <div class="stat">
+                    <h3>{{ stat_name.capitalize() }}</h3>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: {{ (stat_value / 255 * 100) | round }}%;">
+                            {{ stat_value }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for shiny sprite -->
+    <div id="spriteModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSpriteModal()">&times;</span>
+            <h2>{{ pokemon.name }} Shiny Sprite</h2>
+            <img class="modal-img" src="{{ pokemon.shiny_image_url }}" alt="{{ pokemon.name }} Shiny Sprite">
+        </div>
+    </div>
+    
+    <!-- Modal functionality -->
+    <script>
+        function openStatsModal() {
+            document.getElementById('statsModal').style.display = "block";
+        }
+        function closeStatsModal() {
+            document.getElementById('statsModal').style.display = "none";
+        }
+        function openSpriteModal() {
+            document.getElementById('spriteModal').style.display = "block";
+        }
+        function closeSpriteModal() {
+            document.getElementById('spriteModal').style.display = "none";
+        }
+        // Close modals when clicking outside of them
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('statsModal')) {
+                closeStatsModal();
+            }
+            if (event.target == document.getElementById('spriteModal')) {
+                closeSpriteModal();
+            }
+        }
+    </script>
+</body>
+</html>

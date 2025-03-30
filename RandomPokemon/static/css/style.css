@@ -1,0 +1,240 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@400;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    /* A vibrant, Pokémon-inspired yellow gradient */
+    background: linear-gradient(135deg, #ffde00, #ffeb3b);
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 40px auto;
+    /* Pale yellow background with a blue border for a game menu feel */
+    background-color: #fff7c0;
+    border: 2px solid #3B4CCA;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+    padding: 40px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+h1 {
+    font-family: 'Press Start 2P', cursive;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #3B4CCA;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px #fff;
+}
+
+.pokemon-img {
+    display: block;
+    margin: 0 auto 20px;
+    width: 200px;
+    height: auto;
+    border: 3px solid #3B4CCA;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    cursor: pointer;
+}
+
+.info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    text-align: left;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.info p {
+    margin: 10px 0;
+}
+
+.button-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.reload-button {
+    background-color: #3B4CCA;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 0 5px;
+}
+
+.reload-button:hover {
+    background-color: #2a368a;
+}
+
+/* Type badge styles */
+.type {
+    display: inline-block;
+    padding: 5px 10px;
+    margin: 2px;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: bold;
+    text-transform: capitalize;
+    font-size: 0.9rem;
+    text-shadow: 1px 1px #000;
+}
+
+.type.normal { background-color: #A8A77A; }
+.type.fire { background-color: #EE8130; }
+.type.water { background-color: #6390F0; }
+.type.electric { background-color: #F7D02C; color: #000; }
+.type.grass { background-color: #7AC74C; }
+.type.ice { background-color: #96D9D6; color: #000; }
+.type.fighting { background-color: #C22E28; }
+.type.poison { background-color: #A33EA1; }
+.type.ground { background-color: #E2BF65; color: #000; }
+.type.flying { background-color: #A98FF3; }
+.type.psychic { background-color: #F95587; }
+.type.bug { background-color: #A6B91A; }
+.type.rock { background-color: #B6A136; }
+.type.ghost { background-color: #735797; }
+.type.dragon { background-color: #6F35FC; }
+.type.dark { background-color: #705746; }
+.type.steel { background-color: #B7B7CE; color: #000; }
+.type.fairy { background-color: #D685AD; }
+
+/* Progress bar styles */
+.progress {
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 20px;
+    margin-top: 5px;
+}
+
+.progress-bar {
+    background-color: #3B4CCA;
+    height: 100%;
+    text-align: center;
+    color: #fff;
+    line-height: 20px;
+    transition: width 0.5s ease-in-out;
+}
+
+/* Stats in modal */
+.stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.stat {
+    flex: 1 1 150px;
+    background-color: #fff7c0;
+    border: 2px solid #3B4CCA;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.stat h3 {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    color: #3B4CCA;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.stat p {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: #fff7c0;
+  margin: 10% auto;
+  padding: 20px;
+  border: 2px solid #3B4CCA;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 600px;
+  position: relative;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #3B4CCA;
+}
+
+.modal-img {
+  display: block;
+  margin: 20px auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* New style for shiny image */
+.shiny-img {
+    display: block;
+    margin: 10px auto;
+    width: 100px;
+    height: auto;
+}
+
+@media (max-width: 600px) {
+  .container {
+      padding: 20px;
+      margin: 20px;
+  }
+  h1 {
+      font-size: 2rem;
+  }
+  .stat {
+      flex: 1 1 100%;
+  }
+  .pokemon-img {
+      width: 150px;
+  }
+}
