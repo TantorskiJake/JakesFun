@@ -319,21 +319,27 @@ export class GameEngine {
         }
         
         this.milesTraveled = Math.max(0, baseMiles);
+        console.log(`[TRAVEL] Starting travel: ${this.milesTraveled} miles, wagon condition: ${this.inventory.wagonCondition}`);
+        
         this.locations.advanceLocation(this.milesTraveled);
         
         // Consume food based on rations
         this.consumeFood();
         
-        // Update party stats
+        // Update party stats (this applies wagon wear)
+        console.log(`[TRAVEL] Before updatePartyStats: wagon condition = ${this.inventory.wagonCondition}`);
         this.updatePartyStats();
+        console.log(`[TRAVEL] After updatePartyStats: wagon condition = ${this.inventory.wagonCondition}`);
         
         // Update UI immediately after travel to show progress
         this.ui.displayGameState(this.getGameState());
         
         // Random event (only if we actually traveled)
         if (this.milesTraveled > 0) {
+            console.log(`[TRAVEL] Before event: wagon condition = ${this.inventory.wagonCondition}`);
             const event = this.events.getRandomEvent(this.getGameState());
             if (event) {
+                console.log(`[TRAVEL] Event generated: ${event.type}`);
                 // Show travel scene briefly
                 if (this.ui.travelSceneEl) {
                     this.ui.travelSceneEl.style.display = 'flex';
@@ -341,6 +347,7 @@ export class GameEngine {
                 }
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 await this.handleEvent(event);
+                console.log(`[TRAVEL] After event handling: wagon condition = ${this.inventory.wagonCondition}`);
                 if (this.ui.travelSceneEl) {
                     this.ui.travelSceneEl.style.display = 'none';
                     this.ui.mainContentEl.style.display = 'block';
@@ -352,6 +359,7 @@ export class GameEngine {
         
         // Update disease/injury effects
         this.updateDiseaseInjuryEffects();
+        console.log(`[TRAVEL] End of travel: wagon condition = ${this.inventory.wagonCondition}`);
     }
     
     /**
@@ -427,6 +435,7 @@ export class GameEngine {
         // Wagon wear
         if (this.milesTraveled > 0) {
             const wear = Math.floor(this.milesTraveled / 10);
+            console.log(`[GAME] updatePartyStats: Applying ${wear} points of wagon wear from ${this.milesTraveled} miles traveled`);
             this.inventory.damageWagon(wear);
         }
         
@@ -441,6 +450,9 @@ export class GameEngine {
      * Handle random events
      */
     async handleEvent(event) {
+        console.log(`[EVENT] handleEvent called for type: ${event.type}`);
+        console.log(`[EVENT] Current wagon condition: ${this.inventory.wagonCondition}`);
+        
         // Prepare event with game state for UI
         const eventWithState = {
             ...event,
@@ -450,32 +462,123 @@ export class GameEngine {
         // Use visual event modal - it will return the choice index
         const choiceIndex = await this.ui.displayEvent(eventWithState, this);
         
+        console.log(`[EVENT] User selected choice index: ${choiceIndex}`);
+        
         if (event.choices && event.choices.length > 0 && choiceIndex !== null && choiceIndex !== undefined) {
             const selectedChoice = event.choices[choiceIndex];
+            console.log(`[EVENT] Selected choice text: "${selectedChoice.text}"`);
+            console.log(`[EVENT] Wagon condition before choice: ${this.inventory.wagonCondition}`);
             
             // Check if item is required and available
             if (selectedChoice.requiresItem) {
-                if (!this.checkItemAvailability(selectedChoice.requiresItem, event)) {
+                const hasItem = this.checkItemAvailability(selectedChoice.requiresItem, event);
+                console.log(`[EVENT] Item required: ${selectedChoice.requiresItem}, has item: ${hasItem}`);
+                if (!hasItem) {
                     this.ui.displayMessage('You do not have the required item!');
-                    // Apply default effect
-                    if (event.choices[0]) {
-                        event.choices[0].effect();
+                    // Apply default effect with current inventory
+                    if (event.choices[0] && event.choices[0].effect) {
+                        // Rebind to use current inventory
+                        const currentInventory = this.inventory;
+                        const currentParty = this.party;
+                        const damage = event.conditionLoss || 0;
+                        if (event.type === 'wagon_damage') {
+                            console.log(`[EVENT] No item available, applying default damage: ${damage}`);
+                            currentInventory.damageWagon(damage);
+                        }
                     }
                     return;
                 }
             }
             
             // Execute the selected choice's effect
-            // Update gameState reference to ensure effects use current inventory
+            // CRITICAL: For wagon damage events, use current inventory directly to avoid closure issues
             if (selectedChoice.effect) {
-                // Rebind gameState to current state so effects use live references
-                const currentGameState = this.getGameState();
-                // Update the event's gameState reference for the effect
-                if (event.gameState) {
-                    event.gameState = currentGameState;
+                // For wagon damage events, manually handle to ensure we use current inventory
+                // DO NOT call the original effect() - it uses stale gameState references
+                if (event.type === 'wagon_damage') {
+                    const damage = event.conditionLoss || 0;
+                    const part = event.part || 'general';
+                    const currentInventory = this.inventory;
+                    
+                    console.log(`[WAGON EVENT] ========================================`);
+                    console.log(`[WAGON EVENT] WAGON DAMAGE EVENT HANDLING`);
+                    console.log(`[WAGON EVENT] Before choice: condition = ${currentInventory.wagonCondition}, damage = ${damage}, part = ${part}`);
+                    console.log(`[WAGON EVENT] Selected choice: "${selectedChoice.text}"`);
+                    console.log(`[WAGON EVENT] Choice index: ${choiceIndex}`);
+                    
+                    // Re-execute the choice logic with current inventory
+                    // Match by checking the choice index or text content
+                    const choiceText = selectedChoice.text.toLowerCase();
+                    console.log(`[WAGON EVENT] Choice text (lowercase): "${choiceText}"`);
+                    
+                    if (choiceText.includes('replace')) {
+                        // Replace part option
+                        console.log(`[WAGON EVENT] >>> REPLACE PART OPTION SELECTED`);
+                        console.log(`[WAGON EVENT] Attempting to replace part: ${part}`);
+                        const hasPart = currentInventory.useWagonPart(part);
+                        console.log(`[WAGON EVENT] useWagonPart(${part}) returned: ${hasPart}`);
+                        if (hasPart) {
+                            const before = currentInventory.wagonCondition;
+                            console.log(`[WAGON EVENT] Calling repairWagon(5) from condition ${before}`);
+                            currentInventory.repairWagon(5);
+                            const after = currentInventory.wagonCondition;
+                            console.log(`[WAGON EVENT] Part replacement RESULT: ${before} -> ${after}`);
+                            if (after <= before) {
+                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition went DOWN from ${before} to ${after}`);
+                            }
+                        } else {
+                            console.log(`[WAGON EVENT] Part replacement FAILED - no part available, applying damage`);
+                            currentInventory.damageWagon(damage);
+                        }
+                    } else if (choiceText.includes('tools') || choiceText.includes('repair kit')) {
+                        // Use tools to repair option
+                        console.log(`[WAGON EVENT] >>> USE TOOLS OPTION SELECTED`);
+                        console.log(`[WAGON EVENT] Attempting to use tools to repair`);
+                        const hasTools = currentInventory.useTools(1);
+                        console.log(`[WAGON EVENT] useTools(1) returned: ${hasTools}`);
+                        if (hasTools) {
+                            const before = currentInventory.wagonCondition;
+                            console.log(`[WAGON EVENT] Calling repairWagon(10) from condition ${before}`);
+                            currentInventory.repairWagon(10);
+                            const after = currentInventory.wagonCondition;
+                            console.log(`[WAGON EVENT] Tool repair RESULT: ${before} -> ${after} (expected: ${before + 10})`);
+                            
+                            // Double-check the repair worked
+                            if (after <= before) {
+                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition went DOWN from ${before} to ${after}`);
+                                // Force repair
+                                const forced = Math.min(100, before + 10);
+                                currentInventory.wagonCondition = forced;
+                                console.log(`[WAGON EVENT] FORCED REPAIR: ${forced}`);
+                            }
+                        } else {
+                            console.log(`[WAGON EVENT] Tool repair FAILED - no tools available, applying damage`);
+                            currentInventory.damageWagon(damage);
+                        }
+                    } else {
+                        // Continue with damaged wagon - apply damage
+                        console.log(`[WAGON EVENT] >>> CONTINUE WITH DAMAGE OPTION SELECTED`);
+                        const before = currentInventory.wagonCondition;
+                        currentInventory.damageWagon(damage);
+                        console.log(`[WAGON EVENT] Continue with damage: ${before} -> ${currentInventory.wagonCondition} (subtracted ${damage})`);
+                    }
+                    
+                    console.log(`[WAGON EVENT] Final wagon condition: ${currentInventory.wagonCondition}`);
+                    console.log(`[WAGON EVENT] ========================================`);
+                    // DO NOT call selectedChoice.effect() - we've handled it manually
+                } else {
+                    // For other events, use the original effect
+                    console.log(`[EVENT] Executing original effect for event type: ${event.type}`);
+                    const beforeCondition = this.inventory.wagonCondition;
+                    selectedChoice.effect();
+                    const afterCondition = this.inventory.wagonCondition;
+                    if (beforeCondition !== afterCondition) {
+                        console.log(`[EVENT] Wagon condition changed by effect: ${beforeCondition} -> ${afterCondition}`);
+                    }
                 }
-                selectedChoice.effect();
             }
+            
+            console.log(`[EVENT] Wagon condition after all event handling: ${this.inventory.wagonCondition}`);
         }
     }
     

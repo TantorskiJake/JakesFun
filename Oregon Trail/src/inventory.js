@@ -114,14 +114,18 @@ export class Inventory {
     }
     
     damageWagon(amount) {
+        const before = this.wagonCondition;
         this.wagonCondition = Math.max(0, this.wagonCondition - amount);
+        console.log(`[INVENTORY] damageWagon(${amount}): ${before} -> ${this.wagonCondition} (subtracted ${amount})`);
     }
     
     repairWagon(amount) {
+        const before = this.wagonCondition;
         // Ensure amount is positive
         const repairAmount = Math.abs(amount);
         // Add to condition, cap at 100
         this.wagonCondition = Math.min(100, this.wagonCondition + repairAmount);
+        console.log(`[INVENTORY] repairWagon(${amount}): ${before} -> ${this.wagonCondition} (added ${repairAmount}, capped at 100)`);
     }
     
     addOxen(amount) {
