@@ -53,17 +53,21 @@ export class GameEngine {
         // Setup party
         await this.setupParty();
         
-        // Initial store visit
-        await this.visitStore(true);
-        
-        // Check minimum requirements
-        if (this.inventory.oxen === 0) {
-            this.ui.displayMessage('You must purchase at least one pair of oxen to begin!');
+        // Initial store visit - must purchase oxen
+        while (this.inventory.oxen === 0) {
             await this.visitStore(true);
+            if (this.inventory.oxen === 0) {
+                this.ui.displayMessage('You must purchase at least one pair of oxen to begin your journey!');
+                this.ui.printLine('You cannot start without oxen to pull your wagon.');
+                this.ui.printLine('Press Enter to return to the store...');
+                await this.ui.prompt('');
+            }
         }
         
         if (this.inventory.food < 100) {
             this.ui.displayMessage('Warning: You have very little food. Consider purchasing more.');
+            this.ui.printLine('Press Enter to continue anyway...');
+            await this.ui.prompt('');
         }
     }
     
@@ -85,7 +89,7 @@ export class GameEngine {
         this.ui.printLine('Choose your profession:');
         const professions = ['Farmer', 'Carpenter', 'Banker', 'Doctor', 'Hunter'];
         const profIndex = await this.ui.promptChoice('Select profession:', professions);
-        const profession = professions[profIndex].toLowerCase();
+        const profession = professions[profIndex] ? professions[profIndex].toLowerCase() : 'farmer';
         
         // Leader name
         const leaderName = await this.ui.prompt('Enter your name: ');
@@ -123,15 +127,35 @@ export class GameEngine {
         while (true) {
             this.ui.printLine(`Remaining budget: ${this.store.formatPrice(budget - totalSpent)}`);
             this.ui.printLine();
-            this.ui.printLine('What would you like to purchase? (or "done" to finish)');
-            const item = (await this.ui.prompt('Item: ')).toLowerCase();
             
+            // Special message if they need oxen
+            if (isInitial && this.inventory.oxen === 0) {
+                this.ui.printLine('⚠️  You MUST purchase at least one pair of oxen to begin your journey!');
+                this.ui.printLine();
+            }
+            
+            this.ui.printLine('What would you like to purchase? (or "done" to finish)');
+            this.ui.printLine('Type the item name (e.g., "oxen", "food", "bullets") then press Enter');
+            const answer = await this.ui.prompt('Item: ');
+            const item = answer ? answer.toLowerCase().trim() : '';
+            
+            // Handle "done" - but check if we have minimum requirements for initial store
             if (item === 'done' || item === '') {
+                if (isInitial && this.inventory.oxen === 0) {
+                    this.ui.printLine('');
+                    this.ui.printLine('❌ You must purchase at least one pair of oxen before leaving!');
+                    this.ui.printLine('⚠️  To purchase oxen: Type "oxen" (without quotes), press Enter, then enter how many pairs (e.g., 2)');
+                    this.ui.printLine('');
+                    continue;
+                }
+                // Allow leaving if we have oxen or it's not the initial store
                 break;
             }
             
             if (!this.store.items[item]) {
-                this.ui.printLine('Invalid item. Available items: ' + this.store.getAllItems().join(', '));
+                this.ui.printLine(`❌ Invalid item: "${item}"`);
+                this.ui.printLine('Available items: ' + this.store.getAllItems().join(', '));
+                this.ui.printLine('');
                 continue;
             }
             
@@ -151,7 +175,13 @@ export class GameEngine {
             purchases[item] = (purchases[item] || 0) + quantity;
             totalSpent += cost;
             
-            this.ui.printLine(`Purchased ${quantity} ${this.store.items[item].unit} of ${item} for ${this.store.formatPrice(cost)}`);
+            this.ui.printLine(`✅ Purchased ${quantity} ${this.store.items[item].unit} of ${item} for ${this.store.formatPrice(cost)}`);
+            
+            // Special confirmation for oxen
+            if (item === 'oxen' && isInitial) {
+                this.ui.printLine(`✓ You now have ${this.inventory.oxen} oxen. You can now type "done" to finish shopping.`);
+            }
+            this.ui.printLine('');
         }
         
         this.ui.printLine();
@@ -165,6 +195,13 @@ export class GameEngine {
      */
     async run() {
         await this.initialize();
+        
+        // Final check after initialization - don't start if we don't have oxen
+        if (this.inventory.oxen === 0) {
+            this.ui.displayLoss('You cannot begin your journey without oxen to pull your wagon.');
+            this.ui.close();
+            return;
+        }
         
         while (!this.gameOver && !this.gameWon) {
             // Check win/loss conditions
@@ -687,7 +724,7 @@ export class GameEngine {
         const paces = ['Rest', 'Slow', 'Normal', 'Strenuous', 'Grueling'];
         const currentIndex = ['rest', 'slow', 'normal', 'strenuous', 'grueling'].indexOf(this.pace);
         const choice = await this.ui.promptChoice('Select pace:', paces);
-        this.pace = paces[choice].toLowerCase();
+        this.pace = paces[choice] ? paces[choice].toLowerCase() : 'normal';
         this.ui.displayMessage(`Pace changed to ${this.pace}.`);
     }
     
@@ -697,7 +734,7 @@ export class GameEngine {
     async changeRations() {
         const rations = ['Filling', 'Normal', 'Meager', 'Bare Bones'];
         const choice = await this.ui.promptChoice('Select rations:', rations);
-        const selected = rations[choice].toLowerCase();
+        const selected = rations[choice] ? rations[choice].toLowerCase() : 'normal';
         // Convert to internal format: 'bare bones' -> 'barebones'
         this.rations = selected === 'bare bones' ? 'barebones' : selected;
         this.ui.displayMessage(`Rations changed to ${this.rations}.`);

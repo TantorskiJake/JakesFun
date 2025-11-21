@@ -11,45 +11,56 @@ export class BrowserUI {
         this.submitBtn = document.getElementById('submit-btn');
         this.choiceContainer = document.getElementById('choice-container');
         
-        // Setup event listeners
-        this.submitBtn.addEventListener('click', () => this.handleSubmit());
-        this.textInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.handleSubmit();
-            }
-        });
-        
+        // Don't set up global listeners - they'll be set per-prompt
         // Focus input when shown
-        this.textInput.addEventListener('focus', () => {
-            this.textInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
+        if (this.textInput) {
+            this.textInput.addEventListener('focus', () => {
+                this.textInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        }
     }
     
     async prompt(question) {
         return new Promise((resolve) => {
+            // Clear any existing listeners first
+            const oldSubmit = this.submitBtn.onclick;
+            const oldKeyPress = this.textInput.onkeypress;
+            
             this.showPrompt(question);
             this.showTextInput();
             this.hideChoices();
             
-            const handleSubmit = () => {
+            const handleSubmit = (e) => {
+                e?.preventDefault();
                 const answer = this.textInput.value.trim();
                 this.textInput.value = '';
                 this.hideTextInput();
                 this.hidePrompt();
-                this.submitBtn.removeEventListener('click', handleSubmit);
-                this.textInput.removeEventListener('keypress', handleKeyPress);
+                // Remove listeners
+                this.submitBtn.onclick = null;
+                this.textInput.onkeypress = null;
                 resolve(answer);
             };
             
             const handleKeyPress = (e) => {
                 if (e.key === 'Enter') {
-                    handleSubmit();
+                    e.preventDefault();
+                    handleSubmit(e);
                 }
             };
             
-            this.submitBtn.addEventListener('click', handleSubmit);
-            this.textInput.addEventListener('keypress', handleKeyPress);
-            this.textInput.focus();
+            // Use onclick for more reliable event handling
+            this.submitBtn.onclick = handleSubmit;
+            this.textInput.onkeypress = handleKeyPress;
+            
+            // Focus after a brief delay to ensure element is visible
+            setTimeout(() => {
+                if (this.textInput && this.inputContainer.style.display !== 'none') {
+                    this.textInput.focus();
+                    // Scroll input into view
+                    this.textInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
         });
     }
     
@@ -162,8 +173,11 @@ export class BrowserUI {
         if (this.promptContainer) {
             this.promptContainer.textContent = text;
             this.promptContainer.style.display = 'block';
+            this.promptContainer.style.visibility = 'visible';
             this.promptContainer.style.color = '#ffd700';
             this.promptContainer.style.fontWeight = 'bold';
+            this.promptContainer.style.padding = '10px';
+            this.promptContainer.style.marginBottom = '10px';
         }
     }
     
@@ -177,7 +191,22 @@ export class BrowserUI {
     showTextInput() {
         if (this.inputContainer) {
             this.inputContainer.style.display = 'flex';
-            this.textInput.focus();
+            this.inputContainer.style.visibility = 'visible';
+            this.inputContainer.style.opacity = '1';
+            if (this.textInput) {
+                this.textInput.disabled = false;
+                this.textInput.style.display = 'block';
+                this.textInput.style.visibility = 'visible';
+                this.textInput.style.opacity = '1';
+            }
+            if (this.submitBtn) {
+                this.submitBtn.disabled = false;
+                this.submitBtn.style.display = 'block';
+                this.submitBtn.style.visibility = 'visible';
+                this.submitBtn.style.opacity = '1';
+            }
+            // Force a reflow to ensure visibility
+            this.inputContainer.offsetHeight;
         }
     }
     
@@ -202,7 +231,7 @@ export class BrowserUI {
     }
     
     handleSubmit() {
-        // This is handled in the prompt method
+        // This is handled in the prompt method - no-op
     }
     
     scrollToBottom() {
