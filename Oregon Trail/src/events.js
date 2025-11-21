@@ -300,15 +300,19 @@ export class Events {
                 }},
                 { text: `Replace ${damage.part}`, effect: () => {
                     if (gameState.inventory.useWagonPart(damage.part)) {
-                        gameState.inventory.damageWagon(Math.floor(damage.conditionLoss * 0.3));
+                        // Replacing the broken part prevents damage and slightly improves condition
+                        gameState.inventory.repairWagon(5);
                     } else {
+                        // If part replacement fails, take full damage
                         gameState.inventory.damageWagon(damage.conditionLoss);
                     }
                 }, requiresItem: damage.part},
                 { text: 'Use tools to repair', effect: () => {
                     if (gameState.inventory.useTools(1)) {
-                        gameState.inventory.damageWagon(Math.floor(damage.conditionLoss * 0.5));
+                        // Using tools prevents damage and repairs the wagon
+                        gameState.inventory.repairWagon(10);
                     } else {
+                        // If tools aren't available, take full damage
                         gameState.inventory.damageWagon(damage.conditionLoss);
                     }
                 }, requiresItem: 'tools'}
