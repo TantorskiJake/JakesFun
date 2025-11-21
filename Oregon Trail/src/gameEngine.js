@@ -496,6 +496,10 @@ export class GameEngine {
                 // For wagon damage events, manually handle to ensure we use current inventory
                 // DO NOT call the original effect() - it uses stale gameState references
                 if (event.type === 'wagon_damage') {
+                    // Store the original effect to prevent it from being called
+                    const originalEffect = selectedChoice.effect;
+                    // Remove the effect to prevent accidental execution
+                    selectedChoice.effect = null;
                     const damage = event.conditionLoss || 0;
                     const part = event.part || 'general';
                     const currentInventory = this.inventory;
@@ -565,20 +569,27 @@ export class GameEngine {
                     
                     console.log(`[WAGON EVENT] Final wagon condition: ${currentInventory.wagonCondition}`);
                     console.log(`[WAGON EVENT] ========================================`);
-                    // DO NOT call selectedChoice.effect() - we've handled it manually
+                    // DO NOT call originalEffect() - we've handled it manually
+                    // Effect was already set to null above to prevent execution
                 } else {
                     // For other events, use the original effect
                     console.log(`[EVENT] Executing original effect for event type: ${event.type}`);
                     const beforeCondition = this.inventory.wagonCondition;
-                    selectedChoice.effect();
+                    if (selectedChoice.effect) {
+                        selectedChoice.effect();
+                    }
                     const afterCondition = this.inventory.wagonCondition;
                     if (beforeCondition !== afterCondition) {
                         console.log(`[EVENT] Wagon condition changed by effect: ${beforeCondition} -> ${afterCondition}`);
                     }
                 }
+            } else {
+                console.log(`[EVENT] No effect function on selected choice`);
             }
             
-            console.log(`[EVENT] Wagon condition after all event handling: ${this.inventory.wagonCondition}`);
+            console.log(`[EVENT] Final wagon condition after all event handling: ${this.inventory.wagonCondition}`);
+        } else {
+            console.log(`[EVENT] No choice selected or invalid choice index`);
         }
     }
     
