@@ -259,8 +259,8 @@ export class BrowserUI {
         // Update header
         this.updateHeader(date, locations, weather, season, locations.getTerrain());
         
-        // Update trail progress
-        this.updateTrailProgress(locations);
+        // Update trail progress - pass gameState to get accurate miles
+        this.updateTrailProgress(locations, gameState);
         
         // Update party
         this.updateParty(party);
@@ -327,12 +327,13 @@ export class BrowserUI {
         }
     }
     
-    updateTrailProgress(locations) {
+    updateTrailProgress(locations, gameState = null) {
         if (!this.trailProgressContainerEl) return;
         
+        // Get actual miles traveled from locations
         const currentMiles = locations.getDistanceTraveled();
         const totalMiles = locations.getTotalDistance();
-        const percentage = (currentMiles / totalMiles) * 100;
+        const percentage = totalMiles > 0 ? (currentMiles / totalMiles) * 100 : 0;
         const currentLoc = locations.getLocationName();
         
         this.trailProgressContainerEl.innerHTML = `
@@ -341,12 +342,12 @@ export class BrowserUI {
                 <span class="location-name">📍 ${currentLoc}</span>
             </div>
             <div class="trail-bar-container">
-                <div class="trail-bar-fill" style="width: ${percentage}%"></div>
-                <div class="trail-marker" style="left: ${percentage}%">🚛</div>
+                <div class="trail-bar-fill" style="width: ${Math.max(0, Math.min(100, percentage))}%"></div>
+                <div class="trail-marker" style="left: ${Math.max(0, Math.min(100, percentage))}%">🚛</div>
             </div>
             <div class="trail-stats">
-                <span>${currentMiles} / ${totalMiles} miles</span>
-                <span>${Math.round(100 - percentage)}% remaining</span>
+                <span>${Math.round(currentMiles)} / ${totalMiles} miles</span>
+                <span>${Math.round(Math.max(0, 100 - percentage))}% remaining</span>
             </div>
         `;
     }

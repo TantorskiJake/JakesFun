@@ -20,6 +20,7 @@ export class Locations {
         ];
         
         this.currentLocationIndex = 0;
+        this.totalMilesTraveled = 0; // Track actual miles traveled
     }
     
     getCurrentLocation() {
@@ -45,7 +46,8 @@ export class Locations {
     }
     
     getDistanceTraveled() {
-        return this.getCurrentLocation().miles;
+        // Return the actual total miles traveled, not just the location's miles
+        return this.totalMilesTraveled;
     }
     
     getRemainingDistance() {
@@ -53,13 +55,13 @@ export class Locations {
     }
     
     advanceLocation(milesTraveled) {
-        const currentMiles = this.getCurrentLocation().miles;
-        const newMiles = currentMiles + milesTraveled;
+        // Add to total miles traveled
+        this.totalMilesTraveled += milesTraveled;
         
         // Check if we've reached the next location
         while (this.currentLocationIndex < this.locations.length - 1) {
             const nextLocation = this.locations[this.currentLocationIndex + 1];
-            if (newMiles >= nextLocation.miles) {
+            if (this.totalMilesTraveled >= nextLocation.miles) {
                 this.currentLocationIndex++;
             } else {
                 break;
@@ -94,7 +96,7 @@ export class Locations {
     }
     
     getTerrain() {
-        const miles = this.getDistanceTraveled();
+        const miles = this.totalMilesTraveled;
         
         if (miles < 300) {
             return { type: 'plains', difficulty: 1, description: 'Rolling Plains' };
@@ -122,13 +124,15 @@ export class Locations {
     
     toJSON() {
         return {
-            currentLocationIndex: this.currentLocationIndex
+            currentLocationIndex: this.currentLocationIndex,
+            totalMilesTraveled: this.totalMilesTraveled
         };
     }
     
     static fromJSON(data) {
         const locations = new Locations();
         locations.currentLocationIndex = data.currentLocationIndex || 0;
+        locations.totalMilesTraveled = data.totalMilesTraveled || 0;
         return locations;
     }
 }
