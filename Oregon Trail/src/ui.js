@@ -159,8 +159,10 @@ export class UI {
         
         // Current settings
         this.printLine('=== CURRENT SETTINGS ===');
-        this.printLine(`Pace: ${pace}`);
-        this.printLine(`Rations: ${rations}`);
+        const paceDisplay = pace.charAt(0).toUpperCase() + pace.slice(1);
+        const rationsDisplay = rations === 'barebones' ? 'Bare Bones' : (rations.charAt(0).toUpperCase() + rations.slice(1));
+        this.printLine(`Pace: ${paceDisplay}`);
+        this.printLine(`Rations: ${rationsDisplay}`);
         this.printLine();
         
         this.printLine('═══════════════════════════════════════════════════════════');

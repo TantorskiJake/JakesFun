@@ -22,7 +22,7 @@ export class GameEngine {
         // Game state
         this.date = new Date(1848, 2, 1); // March 1, 1848
         this.pace = 'normal'; // 'rest', 'slow', 'normal', 'strenuous', 'grueling'
-        this.rations = 'normal'; // 'filling', 'normal', 'meager', 'bare bones'
+        this.rations = 'normal'; // 'filling', 'normal', 'meager', 'barebones'
         this.weather = 'clear';
         this.season = 'spring';
         this.milesTraveled = 0;
@@ -32,6 +32,7 @@ export class GameEngine {
         // River crossing state
         this.atRiver = false;
         this.currentRiverEvent = null;
+        this.atFort = false;
     }
     
     /**
@@ -206,23 +207,35 @@ export class GameEngine {
             
             this.ui.displayGameState(this.getGameState());
             
-            // Check if at river
-            if (this.locations.isAtRiver() && !this.atRiver) {
+            // Check if at river (only trigger once per river)
+            const currentLoc = this.locations.getCurrentLocation();
+            if (currentLoc.type === 'river' && !this.atRiver) {
                 this.atRiver = true;
                 await this.handleRiverCrossing();
+                // After crossing, reset flag if we're no longer at the river
+                if (!this.locations.isAtRiver()) {
+                    this.atRiver = false;
+                }
                 return; // Exit to advance day
             }
             
-            // Check if at fort
-            if (this.locations.isAtFort()) {
+            // Check if at fort (only show once per visit)
+            if (this.locations.isAtFort() && !this.atFort) {
+                this.atFort = true;
                 const choice = await this.ui.promptChoice(
                     'You have reached a fort! What would you like to do?',
                     ['Continue traveling', 'Rest for a day', 'Visit store', 'Hunt']
                 );
                 
-                if (choice === 1) {
+                if (choice === 0) {
+                    // Continue traveling - actually travel
+                    await this.travel();
+                    this.atFort = false; // Reset so we can visit again if we come back
+                    return;
+                } else if (choice === 1) {
                     // Rest
                     this.rest();
+                    this.atFort = false;
                     return; // Exit to advance day
                 } else if (choice === 2) {
                     // Store
@@ -233,7 +246,6 @@ export class GameEngine {
                     await this.hunt();
                     continue;
                 }
-                // Continue traveling falls through
             }
             
             // Main menu
@@ -331,10 +343,12 @@ export class GameEngine {
         // Update party stats
         this.updatePartyStats();
         
-        // Random event
-        const event = this.events.getRandomEvent(this.getGameState());
-        if (event) {
-            await this.handleEvent(event);
+        // Random event (only if we actually traveled)
+        if (this.milesTraveled > 0) {
+            const event = this.events.getRandomEvent(this.getGameState());
+            if (event) {
+                await this.handleEvent(event);
+            }
         }
         
         // Update disease/injury effects
@@ -360,7 +374,7 @@ export class GameEngine {
             case 'meager':
                 foodPerPerson = 1.5;
                 break;
-            case 'bare bones':
+            case 'barebones':
                 foodPerPerson = 1;
                 break;
         }
@@ -529,7 +543,7 @@ export class GameEngine {
                 break;
             case 3: // Wait
                 this.rest();
-                this.atRiver = false;
+                // Don't reset atRiver - we're still at the river, will trigger again next day
                 return;
         }
         
@@ -539,11 +553,18 @@ export class GameEngine {
     async fordRiver() {
         const success = Math.random() > 0.3; // 70% success
         
+        // Consume food for river crossing
+        const foodPerPerson = 1;
+        const totalFood = foodPerPerson * this.party.getAliveMembers().length;
+        this.inventory.consumeFood(totalFood);
+        
         if (success) {
             this.ui.displayMessage('You successfully forded the river!');
-            // Advance to next location
-            if (this.locations.currentLocationIndex < this.locations.locations.length - 1) {
-                this.locations.currentLocationIndex++;
+            // Advance to next location by updating miles
+            const nextLoc = this.locations.getNextLocation();
+            if (nextLoc) {
+                const distanceToNext = nextLoc.miles - this.locations.getCurrentLocation().miles;
+                this.locations.advanceLocation(distanceToNext);
             }
         } else {
             this.ui.displayMessage('The crossing was difficult! You lost supplies and took damage.');
@@ -555,8 +576,10 @@ export class GameEngine {
                 }
             });
             // Still advance but with consequences
-            if (this.locations.currentLocationIndex < this.locations.locations.length - 1) {
-                this.locations.currentLocationIndex++;
+            const nextLoc = this.locations.getNextLocation();
+            if (nextLoc) {
+                const distanceToNext = nextLoc.miles - this.locations.getCurrentLocation().miles;
+                this.locations.advanceLocation(distanceToNext);
             }
         }
     }
@@ -571,6 +594,11 @@ export class GameEngine {
         this.inventory.useTools(1);
         const success = Math.random() > 0.15; // 85% success
         
+        // Consume food for river crossing
+        const foodPerPerson = 1;
+        const totalFood = foodPerPerson * this.party.getAliveMembers().length;
+        this.inventory.consumeFood(totalFood);
+        
         if (success) {
             this.ui.displayMessage('You successfully crossed using the caulked wagon!');
         } else {
@@ -579,17 +607,25 @@ export class GameEngine {
             this.inventory.damageWagon(5);
         }
         // Advance to next location
-        if (this.locations.currentLocationIndex < this.locations.locations.length - 1) {
-            this.locations.currentLocationIndex++;
+        const nextLoc = this.locations.getNextLocation();
+        if (nextLoc) {
+            const distanceToNext = nextLoc.miles - this.locations.getCurrentLocation().miles;
+            this.locations.advanceLocation(distanceToNext);
         }
     }
     
     async ferryRiver() {
         // Assume player has money (simplified)
         this.ui.displayMessage('You took the ferry across safely.');
+        // Consume food for river crossing
+        const foodPerPerson = 1;
+        const totalFood = foodPerPerson * this.party.getAliveMembers().length;
+        this.inventory.consumeFood(totalFood);
         // Advance to next location
-        if (this.locations.currentLocationIndex < this.locations.locations.length - 1) {
-            this.locations.currentLocationIndex++;
+        const nextLoc = this.locations.getNextLocation();
+        if (nextLoc) {
+            const distanceToNext = nextLoc.miles - this.locations.getCurrentLocation().miles;
+            this.locations.advanceLocation(distanceToNext);
         }
     }
     
@@ -660,7 +696,9 @@ export class GameEngine {
     async changeRations() {
         const rations = ['Filling', 'Normal', 'Meager', 'Bare Bones'];
         const choice = await this.ui.promptChoice('Select rations:', rations);
-        this.rations = rations[choice].toLowerCase().replace(' ', '');
+        const selected = rations[choice].toLowerCase();
+        // Convert to internal format: 'bare bones' -> 'barebones'
+        this.rations = selected === 'bare bones' ? 'barebones' : selected;
         this.ui.displayMessage(`Rations changed to ${this.rations}.`);
     }
     
@@ -788,6 +826,8 @@ export class GameEngine {
             weather: this.weather,
             season: this.season,
             milesTraveled: this.milesTraveled,
+            atRiver: this.atRiver,
+            atFort: this.atFort,
             party: this.party.toJSON(),
             inventory: this.inventory.toJSON(),
             locations: this.locations.toJSON()
@@ -847,6 +887,8 @@ export class GameEngine {
         this.weather = saveData.weather;
         this.season = saveData.season;
         this.milesTraveled = saveData.milesTraveled;
+        this.atRiver = saveData.atRiver || false;
+        this.atFort = saveData.atFort || false;
         this.party = Party.fromJSON(saveData.party);
         this.inventory = Inventory.fromJSON(saveData.inventory);
         this.locations = Locations.fromJSON(saveData.locations);
