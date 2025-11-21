@@ -2,13 +2,14 @@
  * UI class - handles text display and user input
  * Works in both Node.js (readline) and browser (prompt)
  */
+import readline from 'readline';
+
 export class UI {
     constructor() {
         this.isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
         this.readline = null;
         
         if (this.isNode) {
-            const readline = require('readline');
             this.readline = readline.createInterface({
                 input: process.stdin,
                 output: process.stdout

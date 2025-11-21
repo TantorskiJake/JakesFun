@@ -4,6 +4,8 @@ import { Locations } from './locations.js';
 import { Events } from './events.js';
 import { Store } from './store.js';
 import { UI } from './ui.js';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * GameEngine class - core game loop and logic
@@ -795,8 +797,6 @@ export class GameEngine {
         
         if (this.ui.isNode) {
             // Node.js - save to file
-            const fs = require('fs');
-            const path = require('path');
             const savePath = path.join(process.cwd(), 'savegame.json');
             fs.writeFileSync(savePath, saveString);
             this.ui.displayMessage('Game saved to savegame.json');
@@ -819,8 +819,6 @@ export class GameEngine {
         if (this.ui.isNode) {
             // Node.js - load from file
             try {
-                const fs = require('fs');
-                const path = require('path');
                 const savePath = path.join(process.cwd(), 'savegame.json');
                 const saveString = fs.readFileSync(savePath, 'utf8');
                 saveData = JSON.parse(saveString);
