@@ -2,24 +2,25 @@
  * UI class - handles text display and user input
  * Works in both Node.js (readline) and browser (prompt)
  */
-import readline from 'readline';
-
 export class UI {
     constructor() {
         this.isNode = typeof process !== 'undefined' && process.versions && process.versions.node;
         this.readline = null;
-        
-        if (this.isNode) {
-            this.readline = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
-            });
-        }
+        // readline will be initialized lazily on first use in Node.js
     }
     
     async prompt(question) {
-        return new Promise((resolve) => {
-            if (this.isNode && this.readline) {
+        return new Promise(async (resolve) => {
+            if (this.isNode) {
+                // Ensure readline is initialized
+                if (!this.readline) {
+                    const readlineModule = await import('readline');
+                    const readline = readlineModule.default || readlineModule;
+                    this.readline = readline.createInterface({
+                        input: process.stdin,
+                        output: process.stdout
+                    });
+                }
                 this.readline.question(question, (answer) => {
                     resolve(answer.trim());
                 });
