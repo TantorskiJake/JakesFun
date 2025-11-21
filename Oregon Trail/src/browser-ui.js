@@ -145,15 +145,19 @@ export class BrowserUI {
                 line.className += ' header';
             } else if (text.startsWith('===')) {
                 line.className += ' section';
-            } else if (text.includes('DEAD') || text.includes('died') || text.includes('GAME OVER')) {
+            } else if (text.includes('DEAD') || text.includes('died') || text.includes('GAME OVER') || text.includes('❌')) {
                 line.className += ' warning';
-            } else if (text.includes('successfully') || text.includes('Congratulations')) {
+            } else if (text.includes('successfully') || text.includes('Congratulations') || text.includes('✅') || text.includes('✓')) {
                 line.className += ' success';
-            } else if (text.includes('Location:') || text.includes('Date:')) {
+            } else if (text.includes('Location:') || text.includes('Date:') || text.includes('⚠️')) {
                 line.className += ' info';
             }
             
-            line.textContent = text;
+            // Add emoji support and formatting
+            let formattedText = text;
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            line.innerHTML = formattedText;
             this.outputElement.appendChild(line);
             this.scrollToBottom();
         } else {
