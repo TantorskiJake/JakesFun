@@ -316,13 +316,24 @@ export class GameEngine {
         }
         
         this.milesTraveled = Math.max(0, baseMiles);
+        console.log('Before advanceLocation:', {
+            milesTraveled: this.milesTraveled,
+            totalMilesTraveled: this.locations.totalMilesTraveled
+        });
         this.locations.advanceLocation(this.milesTraveled);
+        console.log('After advanceLocation:', {
+            totalMilesTraveled: this.locations.totalMilesTraveled,
+            getDistanceTraveled: this.locations.getDistanceTraveled()
+        });
         
         // Consume food based on rations
         this.consumeFood();
         
         // Update party stats
         this.updatePartyStats();
+        
+        // Update UI immediately after travel to show progress
+        this.ui.displayGameState(this.getGameState());
         
         // Random event (only if we actually traveled)
         if (this.milesTraveled > 0) {
@@ -339,6 +350,8 @@ export class GameEngine {
                     this.ui.travelSceneEl.style.display = 'none';
                     this.ui.mainContentEl.style.display = 'block';
                 }
+                // Update UI again after event
+                this.ui.displayGameState(this.getGameState());
             }
         }
         

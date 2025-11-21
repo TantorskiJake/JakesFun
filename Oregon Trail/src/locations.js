@@ -132,7 +132,7 @@ export class Locations {
     static fromJSON(data) {
         const locations = new Locations();
         locations.currentLocationIndex = data.currentLocationIndex || 0;
-        locations.totalMilesTraveled = data.totalMilesTraveled || 0;
+        locations.totalMilesTraveled = (data.totalMilesTraveled !== undefined) ? data.totalMilesTraveled : 0;
         return locations;
     }
 }

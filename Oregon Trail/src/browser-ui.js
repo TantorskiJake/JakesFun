@@ -328,13 +328,30 @@ export class BrowserUI {
     }
     
     updateTrailProgress(locations, gameState = null) {
-        if (!this.trailProgressContainerEl) return;
+        if (!this.trailProgressContainerEl) {
+            return;
+        }
         
         // Get actual miles traveled from locations
-        const currentMiles = locations.getDistanceTraveled();
+        // Access totalMilesTraveled directly to ensure we get the current value
+        const currentMiles = locations.totalMilesTraveled !== undefined ? locations.totalMilesTraveled : locations.getDistanceTraveled();
         const totalMiles = locations.getTotalDistance();
         const percentage = totalMiles > 0 ? (currentMiles / totalMiles) * 100 : 0;
         const currentLoc = locations.getLocationName();
+        
+        // Ensure we have valid numbers
+        const displayMiles = isNaN(currentMiles) ? 0 : Math.round(currentMiles);
+        const displayTotal = isNaN(totalMiles) ? 2040 : totalMiles;
+        const displayPercentage = isNaN(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
+        
+        // Debug logging
+        console.log('Trail Progress Update:', {
+            totalMilesTraveled: locations.totalMilesTraveled,
+            getDistanceTraveled: locations.getDistanceTraveled(),
+            currentMiles: displayMiles,
+            totalMiles: displayTotal,
+            percentage: displayPercentage
+        });
         
         this.trailProgressContainerEl.innerHTML = `
             <div class="trail-header">
@@ -342,12 +359,12 @@ export class BrowserUI {
                 <span class="location-name">📍 ${currentLoc}</span>
             </div>
             <div class="trail-bar-container">
-                <div class="trail-bar-fill" style="width: ${Math.max(0, Math.min(100, percentage))}%"></div>
-                <div class="trail-marker" style="left: ${Math.max(0, Math.min(100, percentage))}%">🚛</div>
+                <div class="trail-bar-fill" style="width: ${displayPercentage}%"></div>
+                <div class="trail-marker" style="left: ${displayPercentage}%">🚛</div>
             </div>
             <div class="trail-stats">
-                <span>${Math.round(currentMiles)} / ${totalMiles} miles</span>
-                <span>${Math.round(Math.max(0, 100 - percentage))}% remaining</span>
+                <span>${displayMiles} / ${displayTotal} miles</span>
+                <span>${Math.round(100 - displayPercentage)}% remaining</span>
             </div>
         `;
     }
