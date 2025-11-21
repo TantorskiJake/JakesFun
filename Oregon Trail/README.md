@@ -30,6 +30,30 @@ npm install
 
 ## Running the Game
 
+### Option 1: Browser (Recommended)
+
+Open `index.html` in a modern web browser. You can:
+
+1. **Simple method**: Double-click `index.html` to open it in your default browser
+2. **Local server** (recommended for best experience):
+   ```bash
+   # Using Python 3
+   python3 -m http.server 8000
+   
+   # Using Node.js (if you have http-server installed)
+   npx http-server -p 8000
+   
+   # Then open http://localhost:8000 in your browser
+   ```
+
+The browser version features:
+- Beautiful, styled interface
+- Clickable choice buttons
+- Auto-scrolling output
+- Save/load using browser localStorage
+
+### Option 2: Terminal/Node.js
+
 Start the game with:
 ```bash
 npm start
@@ -100,7 +124,9 @@ Use the "Save game" option from the main menu to save your progress.
 ```
 Oregon Trail/
 ├── src/
-│   ├── index.js          # Main entry point
+│   ├── index.js          # Main entry point (Node.js)
+│   ├── index-browser.js # Main entry point (Browser)
+│   ├── browser-ui.js     # Browser-specific UI
 │   ├── gameEngine.js     # Core game loop and logic
 │   ├── player.js         # Player stats and state
 │   ├── party.js          # Party management
@@ -108,7 +134,10 @@ Oregon Trail/
 │   ├── events.js         # Random events system
 │   ├── locations.js      # Landmarks and terrain
 │   ├── store.js          # Shopping system
-│   └── ui.js             # User interface
+│   └── ui.js             # User interface (Node.js)
+├── index.html            # Browser entry point
+├── styles.css            # Browser styling
+├── server.js             # Simple HTTP server
 ├── package.json
 └── README.md
 ```
