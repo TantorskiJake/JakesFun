@@ -122,7 +122,7 @@ export class GameEngine {
             this.ui.printLine(`Remaining budget: ${this.store.formatPrice(budget - totalSpent)}`);
             this.ui.printLine();
             this.ui.printLine('What would you like to purchase? (or "done" to finish)');
-            const item = await this.ui.prompt('Item: ').toLowerCase();
+            const item = (await this.ui.prompt('Item: ')).toLowerCase();
             
             if (item === 'done' || item === '') {
                 break;
