@@ -7,10 +7,12 @@ A complete, modern implementation of the classic Oregon Trail game built with Ja
 - **Complete Gameplay**: Travel 2,040 miles from Independence, Missouri to Oregon City
 - **Party Management**: Create and manage a party of 1-5 travelers with different professions
 - **Dynamic Events**: Random events including diseases, injuries, wagon damage, weather, and more
-- **Resource Management**: Manage food, ammunition, medicine, wagon parts, and supplies
+- **Resource & Wagon Management**: Track food, ammunition, medicine, wagon parts, oxen, and wagon health
 - **Landmarks**: Visit 13 historical landmarks including forts, rivers, and mountain passes
-- **Save/Load System**: Save your progress and continue later
-- **Modern Code**: Clean, modular architecture with ES6+ JavaScript
+- **Cinematic Browser UI**: Fully visual HUD with stat cards, progress bars, animated travel scenes, and modal-driven events/store interactions
+- **Persistent Action Footer**: Prompts, text input, and clickable choices stay fixed to the bottom of the screen for easy access
+- **Save/Load System**: Save your progress and continue later (Node: `savegame.json`, Browser: `localStorage`)
+- **Modern Codebase**: Clean, modular ES6+ architecture shared between Node and browser builds
 
 ## Requirements
 
@@ -32,27 +34,27 @@ npm install
 
 ### Option 1: Browser (Recommended)
 
-Open `index.html` in a modern web browser. You can:
+Serve the project and open it in a modern browser:
 
-1. **Simple method**: Double-click `index.html` to open it in your default browser
-2. **Local server** (recommended for best experience):
-   ```bash
-   # Using Python 3
-   python3 -m http.server 8000
-   
-   # Using Node.js (if you have http-server installed)
-   npx http-server -p 8000
-   
-   # Then open http://localhost:8000 in your browser
-   ```
+```bash
+# From the project root
+npm run browser
+# or
+node server.js
+```
 
-The browser version features:
-- Beautiful, styled interface
-- Clickable choice buttons
-- Auto-scrolling output
-- Save/load using browser localStorage
+Then open [http://localhost:8000](http://localhost:8000) to play.
 
-### Option 2: Terminal/Node.js
+> Tip: You can still double-click `index.html`, but running the bundled server ensures every asset loads correctly and `localStorage` saving works consistently.
+
+The browser experience includes:
+- Fully visual HUD with stat cards, inventory grids, wagon diagnostics, and animated trail scenes
+- Modal-driven events and shop interactions with click or keyboard navigation
+- Real-time trail progress bar with wagon marker
+- Persistent footer for prompts, inputs, and quick actions
+- Automatic save/load through browser `localStorage`
+
+### Option 2: Terminal / Node.js
 
 Start the game with:
 ```bash
@@ -113,11 +115,12 @@ The trail includes 13 key locations:
 
 ## Save System
 
-The game automatically saves to:
-- **Node.js**: `savegame.json` in the project directory
-- **Browser**: Browser localStorage (if running in browser)
+Use the **Save game** option from the main menu at any time.
 
-Use the "Save game" option from the main menu to save your progress.
+- **Node.js**: Persists to `savegame.json` in the project root
+- **Browser**: Persists to `localStorage` under the `oregonTrailSave` key
+
+Use **Load game** from the main menu to resume in either environment.
 
 ## Project Structure
 
