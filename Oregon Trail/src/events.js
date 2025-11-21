@@ -299,21 +299,32 @@ export class Events {
                     gameState.inventory.damageWagon(damage.conditionLoss);
                 }},
                 { text: `Replace ${damage.part}`, effect: () => {
-                    if (gameState.inventory.useWagonPart(damage.part)) {
+                    // Get current inventory from gameState (it's a live reference)
+                    const inventory = gameState.inventory;
+                    if (inventory.useWagonPart(damage.part)) {
                         // Replacing the broken part prevents damage and slightly improves condition
-                        gameState.inventory.repairWagon(5);
+                        // Repair by 5 points
+                        inventory.repairWagon(5);
                     } else {
                         // If part replacement fails, take full damage
-                        gameState.inventory.damageWagon(damage.conditionLoss);
+                        inventory.damageWagon(damage.conditionLoss);
                     }
                 }, requiresItem: damage.part},
                 { text: 'Use tools to repair', effect: () => {
-                    if (gameState.inventory.useTools(1)) {
+                    // Use the current inventory from gameState (should be a live reference)
+                    const inventory = gameState.inventory;
+                    if (inventory && inventory.useTools(1)) {
                         // Using tools prevents damage and repairs the wagon
-                        gameState.inventory.repairWagon(10);
+                        // Repair by 10 points
+                        const beforeRepair = inventory.wagonCondition;
+                        inventory.repairWagon(10);
+                        // Debug: log the repair
+                        console.log(`Wagon repair: ${beforeRepair} -> ${inventory.wagonCondition} (added 10)`);
                     } else {
                         // If tools aren't available, take full damage
-                        gameState.inventory.damageWagon(damage.conditionLoss);
+                        if (inventory) {
+                            inventory.damageWagon(damage.conditionLoss);
+                        }
                     }
                 }, requiresItem: 'tools'}
             ]

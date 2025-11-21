@@ -344,15 +344,6 @@ export class BrowserUI {
         const displayTotal = isNaN(totalMiles) ? 2040 : totalMiles;
         const displayPercentage = isNaN(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
         
-        // Debug logging
-        console.log('Trail Progress Update:', {
-            totalMilesTraveled: locations.totalMilesTraveled,
-            getDistanceTraveled: locations.getDistanceTraveled(),
-            currentMiles: displayMiles,
-            totalMiles: displayTotal,
-            percentage: displayPercentage
-        });
-        
         this.trailProgressContainerEl.innerHTML = `
             <div class="trail-header">
                 <h3 class="trail-title">🗺️ Trail Progress</h3>

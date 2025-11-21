@@ -118,7 +118,10 @@ export class Inventory {
     }
     
     repairWagon(amount) {
-        this.wagonCondition = Math.min(100, this.wagonCondition + amount);
+        // Ensure amount is positive
+        const repairAmount = Math.abs(amount);
+        // Add to condition, cap at 100
+        this.wagonCondition = Math.min(100, this.wagonCondition + repairAmount);
     }
     
     addOxen(amount) {

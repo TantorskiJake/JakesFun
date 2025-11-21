@@ -268,12 +268,15 @@ export class GameEngine {
      * Travel one day
      */
     async travel() {
+        // If pace is rest, don't travel - use rest() instead
+        if (this.pace === 'rest') {
+            this.ui.displayMessage('You are resting. Use the "Rest" option instead of "Continue on trail".');
+            return;
+        }
+        
         // Calculate miles based on pace, terrain, weather, and party condition
         let baseMiles = 0;
         switch (this.pace) {
-            case 'rest':
-                baseMiles = 0;
-                break;
             case 'slow':
                 baseMiles = 10;
                 break;
@@ -316,15 +319,7 @@ export class GameEngine {
         }
         
         this.milesTraveled = Math.max(0, baseMiles);
-        console.log('Before advanceLocation:', {
-            milesTraveled: this.milesTraveled,
-            totalMilesTraveled: this.locations.totalMilesTraveled
-        });
         this.locations.advanceLocation(this.milesTraveled);
-        console.log('After advanceLocation:', {
-            totalMilesTraveled: this.locations.totalMilesTraveled,
-            getDistanceTraveled: this.locations.getDistanceTraveled()
-        });
         
         // Consume food based on rations
         this.consumeFood();
@@ -471,7 +466,14 @@ export class GameEngine {
             }
             
             // Execute the selected choice's effect
+            // Update gameState reference to ensure effects use current inventory
             if (selectedChoice.effect) {
+                // Rebind gameState to current state so effects use live references
+                const currentGameState = this.getGameState();
+                // Update the event's gameState reference for the effect
+                if (event.gameState) {
+                    event.gameState = currentGameState;
+                }
                 selectedChoice.effect();
             }
         }
@@ -610,12 +612,17 @@ export class GameEngine {
     }
     
     async ferryRiver() {
-        // Assume player has money (simplified)
-        this.ui.displayMessage('You took the ferry across safely.');
+        // Ferry costs $10, but since we don't track money after initial purchase,
+        // we'll just consume some supplies as a cost
+        this.ui.displayMessage('You took the ferry across safely. (Cost: $10 worth of supplies)');
         // Consume food for river crossing
         const foodPerPerson = 1;
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
         this.inventory.consumeFood(totalFood);
+        // Small supply cost for ferry fee
+        if (this.inventory.bullets > 0) {
+            this.inventory.useBullets(Math.min(5, this.inventory.bullets));
+        }
         // Advance to next location
         const nextLoc = this.locations.getNextLocation();
         if (nextLoc) {
@@ -645,15 +652,16 @@ export class GameEngine {
      */
     async hunt() {
         if (this.inventory.bullets < 10) {
-            this.ui.displayMessage('You do not have enough bullets to hunt!');
+            this.ui.displayMessage('You need at least 10 bullets to hunt!');
             return;
         }
         
         this.ui.displayMessage('You go hunting...');
         
         // Hunting success based on bullets, skill, and luck
-        const bulletsUsed = Math.min(20, this.inventory.bullets);
-        this.inventory.useBullets(bulletsUsed);
+        // Use 10-20 bullets (more bullets = better chance, but uses more)
+        const bulletsToUse = Math.min(20, Math.max(10, this.inventory.bullets));
+        this.inventory.useBullets(bulletsToUse);
         
         const hasHunter = this.party.members.some(m => m.profession === 'hunter' && m.alive);
         const skillBonus = hasHunter ? 0.3 : 0;
@@ -760,7 +768,10 @@ export class GameEngine {
      * Check win condition
      */
     checkWinCondition() {
-        return this.locations.isAtEnd() && this.party.hasAliveMembers();
+        // Must be at Oregon City AND have traveled the full distance AND have alive members
+        return this.locations.isAtEnd() && 
+               this.locations.getDistanceTraveled() >= 2040 && 
+               this.party.hasAliveMembers();
     }
     
     /**
