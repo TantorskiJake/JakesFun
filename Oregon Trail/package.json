@@ -1,0 +1,23 @@
+{
+  "name": "oregon-trail",
+  "version": "1.0.0",
+  "description": "A classic Oregon Trail game built with modern JavaScript",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "game",
+    "oregon-trail",
+    "text-based",
+    "adventure"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+
