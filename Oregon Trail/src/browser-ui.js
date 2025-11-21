@@ -37,27 +37,36 @@ export class BrowserUI {
     }
     
     setupEventListeners() {
-        // Modal close buttons
+        // Store pending promises for modals
+        this.pendingEventResolve = null;
+        this.pendingStoreResolve = null;
+        
+        // Modal close buttons - only close, don't resolve (user must make a choice)
         const closeButtons = document.querySelectorAll('.modal-close');
         closeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.closeModals();
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Don't allow closing event modal without making a choice
+                // Store modal can be closed by clicking done button
             });
         });
         
-        // Close modal on background click
-        [this.eventModal, this.storeModal].forEach(modal => {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    this.closeModals();
+        // Close modal on background click - disabled for event modal (must make choice)
+        if (this.storeModal) {
+            this.storeModal.addEventListener('click', (e) => {
+                if (e.target === this.storeModal) {
+                    // Store modal can be closed by clicking done, not background
                 }
             });
-        });
+        }
         
-        // Keyboard navigation
+        // Keyboard navigation - Escape key disabled for event modal (must make choice)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                this.closeModals();
+                // Only allow escape for store modal, not event modal
+                if (this.storeModal && this.storeModal.style.display === 'flex') {
+                    // Store modal should use done button
+                }
             }
         });
         
@@ -130,11 +139,37 @@ export class BrowserUI {
     
     async promptChoice(question, choices) {
         return new Promise((resolve) => {
+            console.log(`[UI] promptChoice called with question: "${question}", choices:`, choices);
+            
+            // Ensure choice container exists
+            if (!this.choiceContainer) {
+                console.error(`[UI] ERROR: choiceContainer is null! Attempting to find it...`);
+                this.choiceContainer = document.getElementById('choice-container');
+                if (!this.choiceContainer) {
+                    console.error(`[UI] FATAL: Cannot find choice-container element!`);
+                    // Fallback: try to create it
+                    const actionBar = document.querySelector('.action-bar');
+                    if (actionBar) {
+                        this.choiceContainer = document.createElement('div');
+                        this.choiceContainer.id = 'choice-container';
+                        this.choiceContainer.className = 'choice-container';
+                        actionBar.appendChild(this.choiceContainer);
+                        console.log(`[UI] Created choice-container element as fallback`);
+                    }
+                }
+            }
+            
             this.showPrompt(question);
             this.hideTextInput();
             this.showChoices(choices);
             
+            // Clear any existing buttons first
+            if (this.choiceContainer) {
+                this.choiceContainer.innerHTML = '';
+            }
+            
             const handleChoice = (index) => {
+                console.log(`[UI] Choice ${index} selected: "${choices[index]}"`);
                 this.hideChoices();
                 this.hidePrompt();
                 choices.forEach((_, i) => {
@@ -146,14 +181,33 @@ export class BrowserUI {
                 resolve(index);
             };
             
+            // Create and append buttons
             choices.forEach((choice, index) => {
                 const btn = document.createElement('button');
                 btn.id = `choice-${index}`;
                 btn.className = 'choice-btn';
                 btn.textContent = `${index + 1}. ${choice}`;
                 btn.onclick = () => handleChoice(index);
-                this.choiceContainer.appendChild(btn);
+                if (this.choiceContainer) {
+                    this.choiceContainer.appendChild(btn);
+                    console.log(`[UI] Created choice button ${index}: "${choice}"`);
+                } else {
+                    console.error(`[UI] ERROR: choiceContainer is still null after fallback!`);
+                }
             });
+            
+            // Verify buttons were created and visible
+            setTimeout(() => {
+                const buttons = this.choiceContainer?.querySelectorAll('.choice-btn');
+                console.log(`[UI] Created ${buttons?.length || 0} choice buttons, expected ${choices.length}`);
+                console.log(`[UI] Choice container display: ${this.choiceContainer?.style.display}, computed: ${window.getComputedStyle(this.choiceContainer || document.body).display}`);
+                if (buttons && buttons.length !== choices.length) {
+                    console.error(`[UI] ERROR: Button count mismatch!`);
+                }
+                if (buttons && buttons.length > 0) {
+                    console.log(`[UI] First button text: "${buttons[0].textContent}"`);
+                }
+            }, 100);
         });
     }
     
@@ -232,8 +286,20 @@ export class BrowserUI {
     
     showChoices(choices) {
         if (this.choiceContainer) {
+            // Force display with !important equivalent by setting inline style
             this.choiceContainer.style.display = 'grid';
+            this.choiceContainer.style.visibility = 'visible';
+            this.choiceContainer.style.opacity = '1';
             this.choiceContainer.innerHTML = '';
+            console.log(`[UI] showChoices called - container display: ${this.choiceContainer.style.display}, visibility: ${this.choiceContainer.style.visibility}`);
+            // Scroll into view to ensure it's visible
+            setTimeout(() => {
+                if (this.choiceContainer) {
+                    this.choiceContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 50);
+        } else {
+            console.error(`[UI] ERROR: choiceContainer is null in showChoices!`);
         }
         if (this.loadingMessage) {
             this.loadingMessage.style.display = 'none';
@@ -255,6 +321,13 @@ export class BrowserUI {
     
     displayGameState(gameState) {
         const { date, locations, party, inventory, milesTraveled, pace, rations, weather, season } = gameState;
+        
+        // Only log if this is a significant update (not just a refresh)
+        const avgHealth = party.getAverageHealth();
+        if (!this._lastDisplayedHealth || Math.abs(avgHealth - this._lastDisplayedHealth) > 1) {
+            console.log(`[UI] displayGameState called - average health: ${avgHealth}%`);
+            this._lastDisplayedHealth = avgHealth;
+        }
         
         // Update header
         this.updateHeader(date, locations, weather, season, locations.getTerrain());
@@ -344,6 +417,13 @@ export class BrowserUI {
         const displayTotal = isNaN(totalMiles) ? 2040 : totalMiles;
         const displayPercentage = isNaN(percentage) ? 0 : Math.max(0, Math.min(100, percentage));
         
+        // Only log if values actually changed (reduce console spam)
+        const lastMiles = this._lastTrailMiles || 0;
+        if (Math.abs(displayMiles - lastMiles) > 0.5) {
+            console.log(`[TRAIL] Progress update: ${displayMiles} / ${displayTotal} miles (${displayPercentage.toFixed(2)}%)`);
+            this._lastTrailMiles = displayMiles;
+        }
+        
         this.trailProgressContainerEl.innerHTML = `
             <div class="trail-header">
                 <h3 class="trail-title">🗺️ Trail Progress</h3>
@@ -363,13 +443,50 @@ export class BrowserUI {
     updateParty(party) {
         if (!this.partyContainerEl) return;
         
+        console.log(`[UI] updateParty called - clearing and rebuilding party display`);
         this.partyContainerEl.innerHTML = '';
-        const status = party.getStatus();
         
-        status.members.forEach(member => {
-            const card = this.visualUI.createPartyMemberCard(member);
+        // Get fresh member data directly from party object, not from getStatus()
+        const aliveMembers = party.getAliveMembers();
+        const allMembers = party.members;
+        
+        console.log(`[UI] updateParty - ${allMembers.length} total members, ${aliveMembers.length} alive`);
+        
+        allMembers.forEach((member, index) => {
+            // Get fresh health values directly from the member object
+            const health = member.health;
+            const stamina = member.stamina;
+            const morale = member.morale;
+            
+            console.log(`[UI] Member ${index} (${member.name}): health = ${health}%, stamina = ${stamina}%, morale = ${morale}%`);
+            
+            // Create a status object with fresh values
+            const memberStatus = {
+                name: member.name,
+                health: health,
+                stamina: stamina,
+                morale: morale,
+                hunger: member.hunger,
+                alive: member.alive,
+                disease: member.disease,
+                injury: member.injury
+            };
+            
+            const card = this.visualUI.createPartyMemberCard(memberStatus);
             this.partyContainerEl.appendChild(card);
+            
+            // Verify the card was created with correct health
+            const healthBar = card.querySelector('.progress-bar-fill');
+            if (healthBar) {
+                const width = healthBar.style.width;
+                console.log(`[UI] Card created for ${member.name} - health bar width: ${width} (should be ${health}%)`);
+            }
         });
+        
+        // Force browser reflow to ensure visual updates
+        void this.partyContainerEl.offsetHeight;
+        
+        console.log(`[UI] updateParty completed`);
     }
     
     updateQuickStats(party) {
@@ -424,29 +541,39 @@ export class BrowserUI {
     updateWagon(inventory) {
         if (!this.wagonContainerEl) return;
         
+        // Get fresh status directly from inventory object
+        const wagonCondition = inventory.wagonCondition;
+        const oxenCondition = inventory.oxenCondition;
         const status = inventory.getStatus();
-        const wagonColor = status.wagonCondition > 75 ? 'var(--success)' : 
-                          status.wagonCondition > 50 ? 'var(--primary-gold)' : 'var(--warning)';
-        const oxenColor = status.oxenCondition > 75 ? 'var(--success)' : 
-                         status.oxenCondition > 50 ? 'var(--primary-gold)' : 'var(--warning)';
+        
+        console.log(`[UI] updateWagon called - wagonCondition: ${wagonCondition}%, status.wagonCondition: ${status.wagonCondition}%`);
+        
+        const wagonColor = wagonCondition > 75 ? 'var(--success)' : 
+                          wagonCondition > 50 ? 'var(--primary-gold)' : 'var(--warning)';
+        const oxenColor = oxenCondition > 75 ? 'var(--success)' : 
+                         oxenCondition > 50 ? 'var(--primary-gold)' : 'var(--warning)';
+        
+        // Use direct values to ensure we get the latest
+        const displayCondition = wagonCondition;
+        const displayOxenCondition = oxenCondition;
         
         this.wagonContainerEl.innerHTML = `
             <div class="wagon-stat">
                 <div class="wagon-label">
                     <span>Condition</span>
-                    <span class="wagon-value">${status.wagonCondition}%</span>
+                    <span class="wagon-value">${displayCondition}%</span>
                 </div>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: ${status.wagonCondition}%; background: ${wagonColor};"></div>
+                    <div class="progress-bar-fill" style="width: ${displayCondition}%; background: ${wagonColor};"></div>
                 </div>
             </div>
             <div class="wagon-stat">
                 <div class="wagon-label">
                     <span>Oxen (${status.oxen})</span>
-                    <span class="wagon-value">${status.oxenCondition}%</span>
+                    <span class="wagon-value">${displayOxenCondition}%</span>
                 </div>
                 <div class="progress-bar-container">
-                    <div class="progress-bar-fill" style="width: ${status.oxenCondition}%; background: ${oxenColor};"></div>
+                    <div class="progress-bar-fill" style="width: ${displayOxenCondition}%; background: ${oxenColor};"></div>
                 </div>
             </div>
             <div style="margin-top: 10px; font-size: 12px; color: var(--text-secondary);">
@@ -455,6 +582,11 @@ export class BrowserUI {
                 <div>🔗 Tongues: ${status.wagonTongues}</div>
             </div>
         `;
+        
+        // Force browser reflow to ensure visual updates
+        void this.wagonContainerEl.offsetHeight;
+        
+        console.log(`[UI] updateWagon completed - displayed condition: ${displayCondition}%`);
     }
     
     updateSettings(pace, rations) {
@@ -499,6 +631,8 @@ export class BrowserUI {
     
     displayEvent(event, gameEngine) {
         return new Promise((resolve) => {
+            // Store resolve function so it can be called when choice is made
+            this.pendingEventResolve = resolve;
             const modal = this.eventModal;
             const title = document.getElementById('event-title');
             const icon = document.getElementById('event-icon');
@@ -549,7 +683,10 @@ export class BrowserUI {
                         btn.onclick = () => {
                             if (!disabled) {
                                 this.closeModals();
-                                resolve(index);
+                                if (this.pendingEventResolve) {
+                                    this.pendingEventResolve(index);
+                                    this.pendingEventResolve = null;
+                                }
                             }
                         };
                         
@@ -569,7 +706,10 @@ export class BrowserUI {
                     btn.textContent = 'Continue';
                     btn.onclick = () => {
                         this.closeModals();
-                        resolve(null);
+                        if (this.pendingEventResolve) {
+                            this.pendingEventResolve(null);
+                            this.pendingEventResolve = null;
+                        }
                     };
                     choices.appendChild(btn);
                 }

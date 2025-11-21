@@ -40,9 +40,16 @@ export class VisualUI {
         const card = document.createElement('div');
         card.className = `party-member-card ${!member.alive ? 'dead' : ''}`;
         
-        const healthColor = member.health > 75 ? '#51cf66' : member.health > 50 ? '#ffd700' : member.health > 25 ? '#ff9800' : '#ff6b6b';
-        const staminaColor = member.stamina > 50 ? '#74c0fc' : '#ff6b6b';
-        const moraleColor = member.morale > 50 ? '#9c27b0' : '#ff6b6b';
+        // Ensure health is a valid number
+        const health = typeof member.health === 'number' ? member.health : 0;
+        const stamina = typeof member.stamina === 'number' ? member.stamina : 0;
+        const morale = typeof member.morale === 'number' ? member.morale : 0;
+        
+        console.log(`[VISUAL-UI] Creating card for ${member.name}: health=${health}, stamina=${stamina}, morale=${morale}`);
+        
+        const healthColor = health > 75 ? '#51cf66' : health > 50 ? '#ffd700' : health > 25 ? '#ff9800' : '#ff6b6b';
+        const staminaColor = stamina > 50 ? '#74c0fc' : '#ff6b6b';
+        const moraleColor = morale > 50 ? '#9c27b0' : '#ff6b6b';
         
         let statusBadges = [];
         if (member.disease) statusBadges.push(`<span class="status-badge">🦠 ${member.disease}</span>`);
@@ -58,15 +65,15 @@ export class VisualUI {
             <div class="member-stats">
                 <div class="stat-row">
                     <span class="progress-label">❤️</span>
-                    ${this.createProgressBar(member.health, 100, healthColor).outerHTML}
+                    ${this.createProgressBar(health, 100, healthColor).outerHTML}
                 </div>
                 <div class="stat-row">
                     <span class="progress-label">⚡</span>
-                    ${this.createProgressBar(member.stamina, 100, staminaColor).outerHTML}
+                    ${this.createProgressBar(stamina, 100, staminaColor).outerHTML}
                 </div>
                 <div class="stat-row">
                     <span class="progress-label">😊</span>
-                    ${this.createProgressBar(member.morale, 100, moraleColor).outerHTML}
+                    ${this.createProgressBar(morale, 100, moraleColor).outerHTML}
                 </div>
             </div>
         `;

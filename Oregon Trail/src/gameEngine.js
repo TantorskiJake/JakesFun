@@ -249,7 +249,10 @@ export class GameEngine {
                     await this.changeRations();
                     break;
                 case 4:
-                    this.rest();
+                    await this.rest();
+                    // Force UI update after rest to ensure health bar updates
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    this.ui.displayGameState(this.getGameState());
                     return; // Exit to advance day
                 case 5:
                     await this.hunt();
@@ -585,6 +588,12 @@ export class GameEngine {
                     
                     console.log(`[WAGON EVENT] Final wagon condition: ${currentInventory.wagonCondition}`);
                     console.log(`[WAGON EVENT] ========================================`);
+                    
+                    // CRITICAL: Force UI update immediately after wagon repair
+                    console.log(`[WAGON EVENT] Forcing UI update with wagon condition: ${this.inventory.wagonCondition}`);
+                    this.ui.displayGameState(this.getGameState());
+                    console.log(`[WAGON EVENT] UI update completed`);
+                    
                     // DO NOT call originalEffect() - we've handled it manually
                     // Effect was already set to null above to prevent execution
                 } else {
@@ -709,6 +718,8 @@ export class GameEngine {
                 this.locations.advanceLocation(distanceToNext);
             }
         }
+        // Update UI after river crossing
+        this.ui.displayGameState(this.getGameState());
     }
     
     async caulkRiver() {
@@ -739,6 +750,8 @@ export class GameEngine {
             const distanceToNext = nextLoc.miles - this.locations.getCurrentLocation().miles;
             this.locations.advanceLocation(distanceToNext);
         }
+        // Update UI after river crossing
+        this.ui.displayGameState(this.getGameState());
     }
     
     async ferryRiver() {
@@ -759,31 +772,98 @@ export class GameEngine {
             const distanceToNext = nextLoc.miles - this.locations.getCurrentLocation().miles;
             this.locations.advanceLocation(distanceToNext);
         }
+        // Update UI after river crossing
+        this.ui.displayGameState(this.getGameState());
     }
     
     /**
      * Rest for a day
      */
-    rest() {
-        console.log(`[REST] Before rest - health: ${this.party.getAverageHealth()}%, stamina: ${this.party.getAverageStamina()}%`);
+    async rest() {
+        console.log(`[REST] ========================================`);
+        console.log(`[REST] REST FUNCTION CALLED`);
         
+        // Log individual member health before
+        const membersBefore = this.party.getAliveMembers().map(m => ({ name: m.name, health: m.health, stamina: m.stamina }));
+        membersBefore.forEach(m => {
+            console.log(`[REST] Before: ${m.name} - health: ${m.health}%, stamina: ${m.stamina}%`);
+        });
+        console.log(`[REST] Average health before: ${this.party.getAverageHealth()}%`);
+        
+        // Update stats
         this.party.updateAllStamina(20);
         this.party.updateAllMorale(5);
         // Resting also recovers health (slowly)
         this.party.updateAllHealth(5);
         this.inventory.healOxen(10);
         
-        console.log(`[REST] After rest - health: ${this.party.getAverageHealth()}%, stamina: ${this.party.getAverageStamina()}%`);
+        // Log individual member health after
+        const membersAfter = this.party.getAliveMembers().map(m => ({ name: m.name, health: m.health, stamina: m.stamina }));
+        membersAfter.forEach(m => {
+            console.log(`[REST] After: ${m.name} - health: ${m.health}%, stamina: ${m.stamina}%`);
+        });
+        console.log(`[REST] Average health after: ${this.party.getAverageHealth()}%`);
         
-        // Small food consumption
+        // Verify health actually increased
+        membersBefore.forEach((before, i) => {
+            const after = membersAfter[i];
+            if (after && after.health !== before.health + 5) {
+                console.error(`[REST] ERROR: ${before.name} health should be ${before.health + 5} but is ${after.health}`);
+            }
+        });
+        
+        // Food consumption during rest (less than travel, but still needed)
         const foodPerPerson = 1;
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
-        this.inventory.consumeFood(totalFood);
+        const consumed = this.inventory.consumeFood(totalFood);
+        
+        // Check if there was enough food
+        if (consumed < totalFood) {
+            // Not enough food - resting without adequate food has consequences
+            const shortage = totalFood - consumed;
+            this.party.updateAllHunger(shortage * 15); // More hunger from resting without food
+            this.party.updateAllMorale(-10); // Lower morale from hunger
+            // Reduce health recovery if no food
+            if (consumed === 0) {
+                // No food at all - actually lose health instead of gaining
+                this.party.updateAllHealth(-5);
+                this.party.updateAllStamina(-5); // Also lose stamina
+                this.ui.displayMessage('⚠️ Your party rested without food. Health and stamina decreased due to hunger.');
+            } else {
+                // Some food but not enough - reduced benefits
+                this.party.updateAllHealth(2); // Less health recovery
+                this.ui.displayMessage('⚠️ Your party rested with insufficient food. Benefits were reduced.');
+            }
+        } else {
+            // Adequate food - normal rest benefits
+            this.ui.displayMessage('Your party has rested. Stamina, morale, and health have improved.');
+        }
+        
+        // Get fresh game state and verify health values
+        const gameState = this.getGameState();
+        console.log(`[REST] GameState party average health: ${gameState.party.getAverageHealth()}%`);
+        gameState.party.getAliveMembers().forEach(m => {
+            console.log(`[REST] GameState member ${m.name} health: ${m.health}%`);
+        });
         
         // Update UI immediately to show health/stamina changes
-        this.ui.displayGameState(this.getGameState());
+        console.log(`[REST] Calling displayGameState...`);
+        this.ui.displayGameState(gameState);
+        console.log(`[REST] displayGameState completed`);
         
-        this.ui.displayMessage('Your party has rested. Stamina, morale, and health have improved.');
+        // Double-check UI has correct values by reading them back
+        if (this.ui.partyContainerEl) {
+            const healthBars = this.ui.partyContainerEl.querySelectorAll('.progress-bar-fill');
+            healthBars.forEach((bar, i) => {
+                const width = bar.style.width;
+                const member = gameState.party.getAliveMembers()[i];
+                if (member) {
+                    console.log(`[REST] UI Health bar ${i} (${member.name}): width=${width}, expected=${member.health}%`);
+                }
+            });
+        }
+        
+        console.log(`[REST] ========================================`);
     }
     
     /**
@@ -817,6 +897,9 @@ export class GameEngine {
             this.party.updateAllStamina(-10);
         }
         
+        // Update UI to show inventory and morale changes
+        this.ui.displayGameState(this.getGameState());
+        
         this.ui.printLine('Press Enter to continue...');
         await this.ui.prompt('');
     }
@@ -830,6 +913,8 @@ export class GameEngine {
         const choice = await this.ui.promptChoice('Select pace:', paces);
         this.pace = paces[choice] ? paces[choice].toLowerCase() : 'normal';
         this.ui.displayMessage(`Pace changed to ${this.pace}.`);
+        // Update UI to show pace change
+        this.ui.displayGameState(this.getGameState());
     }
     
     /**
@@ -842,6 +927,8 @@ export class GameEngine {
         // Convert to internal format: 'bare bones' -> 'barebones'
         this.rations = selected === 'bare bones' ? 'barebones' : selected;
         this.ui.displayMessage(`Rations changed to ${this.rations}.`);
+        // Update UI to show rations change
+        this.ui.displayGameState(this.getGameState());
     }
     
     /**
