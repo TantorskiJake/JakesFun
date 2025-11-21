@@ -80,8 +80,12 @@ export class Party {
     }
     
     updateAllHealth(amount) {
+        console.log(`[PARTY] updateAllHealth(${amount}) called for ${this.getAliveMembers().length} members`);
         this.getAliveMembers().forEach(member => {
+            const before = member.health;
             member.updateHealth(amount);
+            const after = member.health;
+            console.log(`[PARTY] ${member.name}: health ${before} -> ${after} (${amount > 0 ? '+' : ''}${amount})`);
         });
     }
     

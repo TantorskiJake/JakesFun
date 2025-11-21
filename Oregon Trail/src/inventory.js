@@ -123,9 +123,17 @@ export class Inventory {
         const before = this.wagonCondition;
         // Ensure amount is positive
         const repairAmount = Math.abs(amount);
+        // Calculate expected value
+        const expected = Math.min(100, before + repairAmount);
         // Add to condition, cap at 100
-        this.wagonCondition = Math.min(100, this.wagonCondition + repairAmount);
-        console.log(`[INVENTORY] repairWagon(${amount}): ${before} -> ${this.wagonCondition} (added ${repairAmount}, capped at 100)`);
+        this.wagonCondition = expected;
+        console.log(`[INVENTORY] repairWagon(${amount}): ${before} -> ${this.wagonCondition} (added ${repairAmount}, expected ${expected})`);
+        
+        // Safety check - if condition didn't increase, force it
+        if (this.wagonCondition <= before) {
+            console.error(`[INVENTORY] ERROR: repairWagon failed! Forcing repair from ${before} to ${expected}`);
+            this.wagonCondition = expected;
+        }
     }
     
     addOxen(amount) {

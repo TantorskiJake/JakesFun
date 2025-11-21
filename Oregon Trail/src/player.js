@@ -33,7 +33,9 @@ export class Player {
     }
     
     updateHealth(amount) {
+        const before = this.health;
         this.health = Math.max(0, Math.min(100, this.health + amount));
+        console.log(`[PLAYER] ${this.name}.updateHealth(${amount}): ${before} -> ${this.health}`);
         if (this.health <= 0) {
             this.alive = false;
         }

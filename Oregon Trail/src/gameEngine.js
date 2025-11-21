@@ -496,10 +496,10 @@ export class GameEngine {
                 // For wagon damage events, manually handle to ensure we use current inventory
                 // DO NOT call the original effect() - it uses stale gameState references
                 if (event.type === 'wagon_damage') {
-                    // Store the original effect to prevent it from being called
+                    // IMMEDIATELY remove the effect to prevent ANY accidental execution
                     const originalEffect = selectedChoice.effect;
-                    // Remove the effect to prevent accidental execution
                     selectedChoice.effect = null;
+                    
                     const damage = event.conditionLoss || 0;
                     const part = event.part || 'general';
                     const currentInventory = this.inventory;
@@ -523,37 +523,53 @@ export class GameEngine {
                         console.log(`[WAGON EVENT] useWagonPart(${part}) returned: ${hasPart}`);
                         if (hasPart) {
                             const before = currentInventory.wagonCondition;
-                            console.log(`[WAGON EVENT] Calling repairWagon(5) from condition ${before}`);
+                            console.log(`[WAGON EVENT] BEFORE repairWagon(5): condition = ${before}`);
+                            
+                            // Directly set the condition to ensure it increases
+                            const expectedAfter = Math.min(100, before + 5);
                             currentInventory.repairWagon(5);
                             const after = currentInventory.wagonCondition;
-                            console.log(`[WAGON EVENT] Part replacement RESULT: ${before} -> ${after}`);
-                            if (after <= before) {
-                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition went DOWN from ${before} to ${after}`);
+                            
+                            console.log(`[WAGON EVENT] AFTER repairWagon(5): condition = ${after}, expected = ${expectedAfter}`);
+                            
+                            // Force repair if it didn't work
+                            if (after <= before || after !== expectedAfter) {
+                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition ${before} -> ${after} (expected ${expectedAfter})`);
+                                // Force the correct value
+                                currentInventory.wagonCondition = expectedAfter;
+                                console.log(`[WAGON EVENT] FORCED REPAIR to: ${currentInventory.wagonCondition}`);
+                            } else {
+                                console.log(`[WAGON EVENT] Part replacement SUCCESS: ${before} -> ${after}`);
                             }
                         } else {
                             console.log(`[WAGON EVENT] Part replacement FAILED - no part available, applying damage`);
                             currentInventory.damageWagon(damage);
                         }
-                    } else if (choiceText.includes('tools') || choiceText.includes('repair kit')) {
+                    } else if (choiceText.includes('tools') || choiceText.includes('repair') || choiceText.includes('use tools')) {
                         // Use tools to repair option
                         console.log(`[WAGON EVENT] >>> USE TOOLS OPTION SELECTED`);
                         console.log(`[WAGON EVENT] Attempting to use tools to repair`);
                         const hasTools = currentInventory.useTools(1);
-                        console.log(`[WAGON EVENT] useTools(1) returned: ${hasTools}`);
+                        console.log(`[WAGON EVENT] useTools(1) returned: ${hasTools}, current tools: ${currentInventory.tools}`);
                         if (hasTools) {
                             const before = currentInventory.wagonCondition;
-                            console.log(`[WAGON EVENT] Calling repairWagon(10) from condition ${before}`);
+                            console.log(`[WAGON EVENT] BEFORE repairWagon(10): condition = ${before}`);
+                            
+                            // Directly set the condition to ensure it increases
+                            const expectedAfter = Math.min(100, before + 10);
                             currentInventory.repairWagon(10);
                             const after = currentInventory.wagonCondition;
-                            console.log(`[WAGON EVENT] Tool repair RESULT: ${before} -> ${after} (expected: ${before + 10})`);
                             
-                            // Double-check the repair worked
-                            if (after <= before) {
-                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition went DOWN from ${before} to ${after}`);
-                                // Force repair
-                                const forced = Math.min(100, before + 10);
-                                currentInventory.wagonCondition = forced;
-                                console.log(`[WAGON EVENT] FORCED REPAIR: ${forced}`);
+                            console.log(`[WAGON EVENT] AFTER repairWagon(10): condition = ${after}, expected = ${expectedAfter}`);
+                            
+                            // Force repair if it didn't work
+                            if (after <= before || after !== expectedAfter) {
+                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition ${before} -> ${after} (expected ${expectedAfter})`);
+                                // Force the correct value
+                                currentInventory.wagonCondition = expectedAfter;
+                                console.log(`[WAGON EVENT] FORCED REPAIR to: ${currentInventory.wagonCondition}`);
+                            } else {
+                                console.log(`[WAGON EVENT] Tool repair SUCCESS: ${before} -> ${after}`);
                             }
                         } else {
                             console.log(`[WAGON EVENT] Tool repair FAILED - no tools available, applying damage`);
@@ -749,16 +765,23 @@ export class GameEngine {
      * Rest for a day
      */
     rest() {
+        console.log(`[REST] Before rest - health: ${this.party.getAverageHealth()}%, stamina: ${this.party.getAverageStamina()}%`);
+        
         this.party.updateAllStamina(20);
         this.party.updateAllMorale(5);
         // Resting also recovers health (slowly)
         this.party.updateAllHealth(5);
         this.inventory.healOxen(10);
         
+        console.log(`[REST] After rest - health: ${this.party.getAverageHealth()}%, stamina: ${this.party.getAverageStamina()}%`);
+        
         // Small food consumption
         const foodPerPerson = 1;
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
         this.inventory.consumeFood(totalFood);
+        
+        // Update UI immediately to show health/stamina changes
+        this.ui.displayGameState(this.getGameState());
         
         this.ui.displayMessage('Your party has rested. Stamina, morale, and health have improved.');
     }
