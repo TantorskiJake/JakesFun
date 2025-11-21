@@ -751,6 +751,8 @@ export class GameEngine {
     rest() {
         this.party.updateAllStamina(20);
         this.party.updateAllMorale(5);
+        // Resting also recovers health (slowly)
+        this.party.updateAllHealth(5);
         this.inventory.healOxen(10);
         
         // Small food consumption
@@ -758,7 +760,7 @@ export class GameEngine {
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
         this.inventory.consumeFood(totalFood);
         
-        this.ui.displayMessage('Your party has rested. Stamina and morale have improved.');
+        this.ui.displayMessage('Your party has rested. Stamina, morale, and health have improved.');
     }
     
     /**

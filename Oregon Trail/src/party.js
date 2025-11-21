@@ -79,6 +79,12 @@ export class Party {
         });
     }
     
+    updateAllHealth(amount) {
+        this.getAliveMembers().forEach(member => {
+            member.updateHealth(amount);
+        });
+    }
+    
     getStatus() {
         return {
             total: this.members.length,

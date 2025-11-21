@@ -219,6 +219,8 @@ export class Events {
                         victim.setDisease(disease.name);
                         victim.updateHealth(-Math.floor(disease.healthLoss * 0.3));
                         victim.cureDisease();
+                        // Medicine also provides some healing
+                        victim.updateHealth(5);
                     } else {
                         victim.setDisease(disease.name);
                         victim.updateHealth(-disease.healthLoss);
@@ -268,6 +270,8 @@ export class Events {
                         victim.updateHealth(-Math.floor(injury.healthLoss * 0.4));
                         victim.updateStamina(-Math.floor(injury.staminaLoss * 0.3));
                         victim.healInjury();
+                        // Medicine also provides some healing
+                        victim.updateHealth(5);
                     } else {
                         victim.setInjury(injury.name);
                         victim.updateHealth(-injury.healthLoss);
@@ -422,6 +426,32 @@ export class Events {
                 effect: () => {
                     gameState.inventory.repairWagon(Math.floor(Math.random() * 20) + 10);
                     gameState.inventory.addTools(1);
+                }
+            },
+            {
+                name: 'Natural Spring',
+                description: 'You found a natural spring with clean, fresh water.',
+                effect: () => {
+                    gameState.party.updateAllHealth(10);
+                    gameState.party.updateAllStamina(10);
+                }
+            },
+            {
+                name: 'Herbal Remedy',
+                description: 'You found medicinal herbs that help heal your party.',
+                effect: () => {
+                    gameState.party.updateAllHealth(15);
+                    // Heal diseases and injuries for one random member
+                    const alive = gameState.party.getAliveMembers();
+                    if (alive.length > 0) {
+                        const member = alive[Math.floor(Math.random() * alive.length)];
+                        if (member.disease) {
+                            member.cureDisease();
+                        }
+                        if (member.injury) {
+                            member.healInjury();
+                        }
+                    }
                 }
             }
         ];
