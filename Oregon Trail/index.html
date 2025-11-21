@@ -10,30 +10,137 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-    <div class="game-container">
-        <header>
-            <h1>THE OREGON TRAIL</h1>
+    <div class="game-wrapper">
+        <!-- Header Bar -->
+        <header class="game-header">
+            <div class="header-left">
+                <div class="date-display">
+                    <span class="icon">📅</span>
+                    <span id="current-date">March 1, 1848</span>
+                </div>
+                <div class="location-display">
+                    <span class="icon">📍</span>
+                    <span id="current-location">Independence, Missouri</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <h1 class="game-title">THE OREGON TRAIL</h1>
+            </div>
+            <div class="header-right">
+                <div class="weather-display" id="weather-display">
+                    <span class="weather-icon">☀️</span>
+                    <span class="weather-text">Clear</span>
+                </div>
+                <div class="terrain-display" id="terrain-display">
+                    <span class="terrain-icon">🌾</span>
+                    <span class="terrain-text">Plains</span>
+                </div>
+            </div>
         </header>
-        
-        <div class="game-content">
-            <div id="game-output" class="game-output"></div>
-            
-            <div class="input-section">
-                <div id="prompt-container" style="display: none;"></div>
-                <div id="input-container" style="display: none;">
-                    <input type="text" id="text-input" placeholder="Enter your choice...">
-                    <button id="submit-btn">Submit</button>
+
+        <!-- Main Game Area -->
+        <div class="game-main">
+            <!-- Left Sidebar - Party & Stats -->
+            <aside class="sidebar-left">
+                <div class="sidebar-section">
+                    <h3 class="section-title">👥 Party</h3>
+                    <div id="party-container" class="party-container"></div>
                 </div>
-                <div id="choice-container" style="display: none;"></div>
-                <div id="loading-message" style="color: #ffd700; text-align: center; padding: 20px;">
-                    Loading game...
+                <div class="sidebar-section">
+                    <h3 class="section-title">📊 Quick Stats</h3>
+                    <div id="quick-stats" class="quick-stats"></div>
                 </div>
+            </aside>
+
+            <!-- Center Panel - Main Content -->
+            <main class="main-panel">
+                <!-- Trail Progress -->
+                <div class="trail-section">
+                    <div id="trail-progress-container" class="trail-progress-container"></div>
+                </div>
+
+                <!-- Main Content Area -->
+                <div id="main-content" class="main-content">
+                    <div id="game-output" class="game-output"></div>
+                </div>
+
+                <!-- Travel Scene (when traveling) -->
+                <div id="travel-scene" class="travel-scene" style="display: none;">
+                    <div class="wagon-animation">
+                        <div class="wagon-icon">🚛</div>
+                        <div class="trail-dust"></div>
+                    </div>
+                    <div class="travel-info">
+                        <div class="miles-today">Traveling...</div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Sidebar - Inventory & Wagon -->
+            <aside class="sidebar-right">
+                <div class="sidebar-section">
+                    <h3 class="section-title">📦 Inventory</h3>
+                    <div id="inventory-container" class="inventory-container"></div>
+                </div>
+                <div class="sidebar-section">
+                    <h3 class="section-title">🚛 Wagon</h3>
+                    <div id="wagon-container" class="wagon-container"></div>
+                </div>
+                <div class="sidebar-section">
+                    <h3 class="section-title">⚙️ Settings</h3>
+                    <div id="settings-container" class="settings-container"></div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div class="action-bar">
+            <div id="prompt-container" class="prompt-container" style="display: none;"></div>
+            <div id="input-container" class="input-container" style="display: none;">
+                <input type="text" id="text-input" placeholder="Enter your choice..." autocomplete="off">
+                <button id="submit-btn" class="btn-primary">Submit</button>
+            </div>
+            <div id="choice-container" class="choice-container" style="display: none;"></div>
+            <div id="loading-message" class="loading-message">
+                Loading game...
             </div>
         </div>
     </div>
-    
+
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="event-title" class="event-title"></h2>
+                <button class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div id="event-icon" class="event-icon"></div>
+            <div id="event-description" class="event-description"></div>
+            <div id="event-choices" class="event-choices"></div>
+        </div>
+    </div>
+
+    <!-- Store Modal -->
+    <div id="store-modal" class="modal store-modal" style="display: none;">
+        <div class="modal-content store-content">
+            <div class="modal-header">
+                <h2 class="store-title">🏪 General Store</h2>
+                <button class="modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="store-info">
+                <div class="budget-display">
+                    <span>Budget: </span>
+                    <span id="store-budget" class="budget-amount">$800.00</span>
+                </div>
+            </div>
+            <div id="store-items" class="store-items"></div>
+            <div class="store-actions">
+                <button id="store-done" class="btn-primary">Done Shopping</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="src/browser-ui.js"></script>
     <script type="module" src="src/index-browser.js"></script>
 </body>
 </html>
-

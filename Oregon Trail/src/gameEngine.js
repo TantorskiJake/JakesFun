@@ -118,76 +118,19 @@ export class GameEngine {
             budget = 50; // Small amount for emergency purchases
         }
         
-        this.ui.clear();
-        this.ui.printLine(this.store.getStoreDisplay(budget));
-        
-        const purchases = {};
-        let totalSpent = 0;
-        
+        // Use visual store modal - loop until oxen purchased if initial
         while (true) {
-            this.ui.printLine(`Remaining budget: ${this.store.formatPrice(budget - totalSpent)}`);
-            this.ui.printLine();
+            await this.ui.visitStore(this.store, budget, this.inventory, isInitial);
             
-            // Special message if they need oxen
+            // Check minimum requirements after store visit
             if (isInitial && this.inventory.oxen === 0) {
-                this.ui.printLine('⚠️  You MUST purchase at least one pair of oxen to begin your journey!');
-                this.ui.printLine();
-            }
-            
-            this.ui.printLine('What would you like to purchase? (or "done" to finish)');
-            this.ui.printLine('Type the item name (e.g., "oxen", "food", "bullets") then press Enter');
-            const answer = await this.ui.prompt('Item: ');
-            const item = answer ? answer.toLowerCase().trim() : '';
-            
-            // Handle "done" - but check if we have minimum requirements for initial store
-            if (item === 'done' || item === '') {
-                if (isInitial && this.inventory.oxen === 0) {
-                    this.ui.printLine('');
-                    this.ui.printLine('❌ You must purchase at least one pair of oxen before leaving!');
-                    this.ui.printLine('⚠️  To purchase oxen: Type "oxen" (without quotes), press Enter, then enter how many pairs (e.g., 2)');
-                    this.ui.printLine('');
-                    continue;
-                }
-                // Allow leaving if we have oxen or it's not the initial store
+                this.ui.displayMessage('⚠️  You MUST purchase at least one pair of oxen to begin your journey!');
+                this.ui.printLine('Please return to the store and purchase oxen.');
+                await this.ui.prompt('Press Enter to return to store...');
+            } else {
                 break;
             }
-            
-            if (!this.store.items[item]) {
-                this.ui.printLine(`❌ Invalid item: "${item}"`);
-                this.ui.printLine('Available items: ' + this.store.getAllItems().join(', '));
-                this.ui.printLine('');
-                continue;
-            }
-            
-            const quantity = await this.ui.promptNumber(
-                `How many ${this.store.items[item].unit}? `,
-                1
-            );
-            
-            const cost = this.store.getItemPrice(item, quantity);
-            
-            if (totalSpent + cost > budget) {
-                this.ui.printLine('You cannot afford that!');
-                continue;
-            }
-            
-            this.store.purchase(item, quantity, this.inventory);
-            purchases[item] = (purchases[item] || 0) + quantity;
-            totalSpent += cost;
-            
-            this.ui.printLine(`✅ Purchased ${quantity} ${this.store.items[item].unit} of ${item} for ${this.store.formatPrice(cost)}`);
-            
-            // Special confirmation for oxen
-            if (item === 'oxen' && isInitial) {
-                this.ui.printLine(`✓ You now have ${this.inventory.oxen} oxen. You can now type "done" to finish shopping.`);
-            }
-            this.ui.printLine('');
         }
-        
-        this.ui.printLine();
-        this.ui.printLine(`Total spent: ${this.store.formatPrice(totalSpent)}`);
-        this.ui.printLine('Press Enter to continue...');
-        await this.ui.prompt('');
     }
     
     /**
@@ -385,7 +328,17 @@ export class GameEngine {
         if (this.milesTraveled > 0) {
             const event = this.events.getRandomEvent(this.getGameState());
             if (event) {
+                // Show travel scene briefly
+                if (this.ui.travelSceneEl) {
+                    this.ui.travelSceneEl.style.display = 'flex';
+                    this.ui.mainContentEl.style.display = 'none';
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 await this.handleEvent(event);
+                if (this.ui.travelSceneEl) {
+                    this.ui.travelSceneEl.style.display = 'none';
+                    this.ui.mainContentEl.style.display = 'block';
+                }
             }
         }
         
@@ -480,23 +433,16 @@ export class GameEngine {
      * Handle random events
      */
     async handleEvent(event) {
-        this.ui.displayEvent(event);
+        // Prepare event with game state for UI
+        const eventWithState = {
+            ...event,
+            gameState: this.getGameState()
+        };
         
-        if (event.choices && event.choices.length > 0) {
-            const choiceTexts = event.choices.map(c => {
-                let text = c.text;
-                if (c.requiresItem) {
-                    const hasItem = this.checkItemAvailability(c.requiresItem, event);
-                    text += hasItem ? '' : ' (NOT AVAILABLE)';
-                }
-                return text;
-            });
-            
-            const choiceIndex = await this.ui.promptChoice(
-                'What would you like to do?',
-                choiceTexts
-            );
-            
+        // Use visual event modal - it will return the choice index
+        const choiceIndex = await this.ui.displayEvent(eventWithState, this);
+        
+        if (event.choices && event.choices.length > 0 && choiceIndex !== null && choiceIndex !== undefined) {
             const selectedChoice = event.choices[choiceIndex];
             
             // Check if item is required and available
@@ -511,13 +457,11 @@ export class GameEngine {
                 }
             }
             
+            // Execute the selected choice's effect
             if (selectedChoice.effect) {
                 selectedChoice.effect();
             }
         }
-        
-        this.ui.printLine('Press Enter to continue...');
-        await this.ui.prompt('');
     }
     
     checkItemAvailability(item, event) {

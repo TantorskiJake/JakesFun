@@ -1,17 +1,66 @@
 /**
- * BrowserUI class - handles text display and user input in browser
+ * Enhanced Browser UI - Modern, visual interface for Oregon Trail
  */
+import { VisualUI } from './visual-ui.js';
+
 export class BrowserUI {
     constructor() {
-        this.isNode = false; // Always false for browser
+        this.isNode = false;
         this.outputElement = document.getElementById('game-output');
         this.promptContainer = document.getElementById('prompt-container');
         this.inputContainer = document.getElementById('input-container');
         this.textInput = document.getElementById('text-input');
         this.submitBtn = document.getElementById('submit-btn');
         this.choiceContainer = document.getElementById('choice-container');
+        this.loadingMessage = document.getElementById('loading-message');
+        this.visualUI = new VisualUI();
         
-        // Don't set up global listeners - they'll be set per-prompt
+        // New layout elements
+        this.currentDateEl = document.getElementById('current-date');
+        this.currentLocationEl = document.getElementById('current-location');
+        this.weatherDisplayEl = document.getElementById('weather-display');
+        this.terrainDisplayEl = document.getElementById('terrain-display');
+        this.partyContainerEl = document.getElementById('party-container');
+        this.quickStatsEl = document.getElementById('quick-stats');
+        this.inventoryContainerEl = document.getElementById('inventory-container');
+        this.wagonContainerEl = document.getElementById('wagon-container');
+        this.settingsContainerEl = document.getElementById('settings-container');
+        this.trailProgressContainerEl = document.getElementById('trail-progress-container');
+        this.travelSceneEl = document.getElementById('travel-scene');
+        this.mainContentEl = document.getElementById('main-content');
+        
+        // Modals
+        this.eventModal = document.getElementById('event-modal');
+        this.storeModal = document.getElementById('store-modal');
+        
+        this.setupEventListeners();
+    }
+    
+    setupEventListeners() {
+        // Modal close buttons
+        const closeButtons = document.querySelectorAll('.modal-close');
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.closeModals();
+            });
+        });
+        
+        // Close modal on background click
+        [this.eventModal, this.storeModal].forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.closeModals();
+                }
+            });
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeModals();
+            }
+        });
+        
         // Focus input when shown
         if (this.textInput) {
             this.textInput.addEventListener('focus', () => {
@@ -22,10 +71,6 @@ export class BrowserUI {
     
     async prompt(question) {
         return new Promise((resolve) => {
-            // Clear any existing listeners first
-            const oldSubmit = this.submitBtn.onclick;
-            const oldKeyPress = this.textInput.onkeypress;
-            
             this.showPrompt(question);
             this.showTextInput();
             this.hideChoices();
@@ -36,7 +81,6 @@ export class BrowserUI {
                 this.textInput.value = '';
                 this.hideTextInput();
                 this.hidePrompt();
-                // Remove listeners
                 this.submitBtn.onclick = null;
                 this.textInput.onkeypress = null;
                 resolve(answer);
@@ -49,16 +93,12 @@ export class BrowserUI {
                 }
             };
             
-            // Use onclick for more reliable event handling
             this.submitBtn.onclick = handleSubmit;
             this.textInput.onkeypress = handleKeyPress;
             
-            // Focus after a brief delay to ensure element is visible
             setTimeout(() => {
-                if (this.textInput && this.inputContainer.style.display !== 'none') {
+                if (this.textInput) {
                     this.textInput.focus();
-                    // Scroll input into view
-                    this.textInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             }, 100);
         });
@@ -100,7 +140,7 @@ export class BrowserUI {
                 choices.forEach((_, i) => {
                     const btn = document.getElementById(`choice-${i}`);
                     if (btn) {
-                        btn.removeEventListener('click', () => handleChoice(i));
+                        btn.onclick = null;
                     }
                 });
                 resolve(index);
@@ -111,7 +151,7 @@ export class BrowserUI {
                 btn.id = `choice-${index}`;
                 btn.className = 'choice-btn';
                 btn.textContent = `${index + 1}. ${choice}`;
-                btn.addEventListener('click', () => handleChoice(index));
+                btn.onclick = () => handleChoice(index);
                 this.choiceContainer.appendChild(btn);
             });
         });
@@ -119,7 +159,6 @@ export class BrowserUI {
     
     print(text) {
         if (this.outputElement) {
-            // Handle newlines in text
             const lines = text.split('\n');
             lines.forEach((lineText, index) => {
                 if (lineText || index < lines.length - 1) {
@@ -130,8 +169,6 @@ export class BrowserUI {
                 }
             });
             this.scrollToBottom();
-        } else {
-            console.log(text);
         }
     }
     
@@ -140,7 +177,6 @@ export class BrowserUI {
             const line = document.createElement('div');
             line.className = `line ${className}`;
             
-            // Check for special formatting
             if (text.includes('═══')) {
                 line.className += ' header';
             } else if (text.startsWith('===')) {
@@ -153,23 +189,15 @@ export class BrowserUI {
                 line.className += ' info';
             }
             
-            // Add emoji support and formatting
-            let formattedText = text;
-            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            
-            line.innerHTML = formattedText;
+            line.innerHTML = text;
             this.outputElement.appendChild(line);
             this.scrollToBottom();
-        } else {
-            console.log(text);
         }
     }
     
     clear() {
         if (this.outputElement) {
             this.outputElement.innerHTML = '';
-        } else {
-            console.clear();
         }
     }
     
@@ -177,11 +205,6 @@ export class BrowserUI {
         if (this.promptContainer) {
             this.promptContainer.textContent = text;
             this.promptContainer.style.display = 'block';
-            this.promptContainer.style.visibility = 'visible';
-            this.promptContainer.style.color = '#ffd700';
-            this.promptContainer.style.fontWeight = 'bold';
-            this.promptContainer.style.padding = '10px';
-            this.promptContainer.style.marginBottom = '10px';
         }
     }
     
@@ -195,22 +218,9 @@ export class BrowserUI {
     showTextInput() {
         if (this.inputContainer) {
             this.inputContainer.style.display = 'flex';
-            this.inputContainer.style.visibility = 'visible';
-            this.inputContainer.style.opacity = '1';
-            if (this.textInput) {
-                this.textInput.disabled = false;
-                this.textInput.style.display = 'block';
-                this.textInput.style.visibility = 'visible';
-                this.textInput.style.opacity = '1';
-            }
-            if (this.submitBtn) {
-                this.submitBtn.disabled = false;
-                this.submitBtn.style.display = 'block';
-                this.submitBtn.style.visibility = 'visible';
-                this.submitBtn.style.opacity = '1';
-            }
-            // Force a reflow to ensure visibility
-            this.inputContainer.offsetHeight;
+        }
+        if (this.loadingMessage) {
+            this.loadingMessage.style.display = 'none';
         }
     }
     
@@ -222,8 +232,11 @@ export class BrowserUI {
     
     showChoices(choices) {
         if (this.choiceContainer) {
-            this.choiceContainer.style.display = 'flex';
-            this.choiceContainer.innerHTML = ''; // Clear previous choices
+            this.choiceContainer.style.display = 'grid';
+            this.choiceContainer.innerHTML = '';
+        }
+        if (this.loadingMessage) {
+            this.loadingMessage.style.display = 'none';
         }
     }
     
@@ -234,10 +247,6 @@ export class BrowserUI {
         }
     }
     
-    handleSubmit() {
-        // This is handled in the prompt method - no-op
-    }
-    
     scrollToBottom() {
         if (this.outputElement) {
             this.outputElement.scrollTop = this.outputElement.scrollHeight;
@@ -245,133 +254,468 @@ export class BrowserUI {
     }
     
     displayGameState(gameState) {
+        const { date, locations, party, inventory, milesTraveled, pace, rations, weather, season } = gameState;
+        
+        // Update header
+        this.updateHeader(date, locations, weather, season, locations.getTerrain());
+        
+        // Update trail progress
+        this.updateTrailProgress(locations);
+        
+        // Update party
+        this.updateParty(party);
+        
+        // Update quick stats
+        this.updateQuickStats(party);
+        
+        // Update inventory
+        this.updateInventory(inventory);
+        
+        // Update wagon
+        this.updateWagon(inventory);
+        
+        // Update settings
+        this.updateSettings(pace, rations);
+        
+        // Clear main content for new messages
         this.clear();
-        const { date, locations, party, inventory, milesTraveled, pace, rations } = gameState;
-        
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine('                    THE OREGON TRAIL');
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine();
-        
-        // Date and location
+    }
+    
+    updateHeader(date, locations, weather, season, terrain) {
         const dateStr = date.toLocaleDateString('en-US', { 
             month: 'long', 
             day: 'numeric', 
             year: 'numeric' 
         });
-        this.printLine(`Date: ${dateStr}`);
-        this.printLine(`Location: ${locations.getLocationName()}`);
-        this.printLine(`Miles Traveled: ${locations.getDistanceTraveled()}`);
-        this.printLine(`Miles Remaining: ${locations.getRemainingDistance()}`);
-        this.printLine();
         
-        // Weather and terrain
-        const terrain = locations.getTerrain();
-        this.printLine(`Weather: ${gameState.weather}`);
-        this.printLine(`Terrain: ${terrain.description}`);
-        this.printLine(`Season: ${gameState.season}`);
-        this.printLine();
+        if (this.currentDateEl) {
+            this.currentDateEl.textContent = dateStr;
+        }
         
-        // Party status
-        this.printLine('=== PARTY STATUS ===');
-        const partyStatus = party.getStatus();
-        this.printLine(`Members: ${partyStatus.alive} alive, ${partyStatus.dead} dead`);
-        this.printLine(`Average Health: ${partyStatus.averageHealth}%`);
-        this.printLine(`Average Stamina: ${partyStatus.averageStamina}%`);
-        this.printLine(`Average Morale: ${partyStatus.averageMorale}%`);
-        this.printLine();
+        if (this.currentLocationEl) {
+            this.currentLocationEl.textContent = locations.getLocationName();
+        }
         
-        // Individual members
-        partyStatus.members.forEach(member => {
-            if (member.alive) {
-                let status = `${member.name}: Health ${member.health}%, Stamina ${member.stamina}%, Morale ${member.morale}%`;
-                if (member.hunger > 60) {
-                    status += ` (HUNGRY: ${member.hunger}%)`;
-                }
-                if (member.disease) {
-                    status += ` [DISEASED: ${member.disease}]`;
-                }
-                if (member.injury) {
-                    status += ` [INJURED: ${member.injury}]`;
-                }
-                this.printLine(status);
-            } else {
-                this.printLine(`${member.name}: DEAD`, 'warning');
-            }
-        });
-        this.printLine();
+        const weatherIcons = {
+            'clear': '☀️',
+            'rain': '🌧️',
+            'storm': '⛈️',
+            'snow': '❄️'
+        };
         
-        // Inventory
-        this.printLine('=== SUPPLIES ===');
-        const invStatus = inventory.getStatus();
-        this.printLine(`Food: ${invStatus.food} lbs`);
-        this.printLine(`Bullets: ${invStatus.bullets}`);
-        this.printLine(`Clothing: ${invStatus.clothing} sets`);
-        this.printLine(`Medicine: ${invStatus.medicine} doses`);
-        this.printLine();
-        this.printLine(`Wagon Condition: ${invStatus.wagonCondition}%`);
-        this.printLine(`Oxen: ${invStatus.oxen} (Condition: ${invStatus.oxenCondition}%)`);
-        this.printLine(`Spare Parts: ${invStatus.wagonAxles} axles, ${invStatus.wagonWheels} wheels, ${invStatus.wagonTongues} tongues`);
-        this.printLine(`Tools: ${invStatus.tools}`);
-        this.printLine();
+        const terrainIcons = {
+            'plains': '🌾',
+            'prairie': '🌾',
+            'foothills': '⛰️',
+            'mountains': '🏔️',
+            'desert': '🏜️',
+            'forest': '🌲'
+        };
         
-        // Current settings
-        this.printLine('=== CURRENT SETTINGS ===');
-        const paceDisplay = pace.charAt(0).toUpperCase() + pace.slice(1);
-        const rationsDisplay = rations === 'barebones' ? 'Bare Bones' : (rations.charAt(0).toUpperCase() + rations.slice(1));
-        this.printLine(`Pace: ${paceDisplay}`);
-        this.printLine(`Rations: ${rationsDisplay}`);
-        this.printLine();
+        if (this.weatherDisplayEl) {
+            const icon = this.weatherDisplayEl.querySelector('.weather-icon');
+            const text = this.weatherDisplayEl.querySelector('.weather-text');
+            if (icon) icon.textContent = weatherIcons[weather] || '🌤️';
+            if (text) text.textContent = weather.charAt(0).toUpperCase() + weather.slice(1);
+        }
         
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine();
+        if (this.terrainDisplayEl) {
+            const icon = this.terrainDisplayEl.querySelector('.terrain-icon');
+            const text = this.terrainDisplayEl.querySelector('.terrain-text');
+            if (icon) icon.textContent = terrainIcons[terrain.type] || '🗺️';
+            if (text) text.textContent = terrain.description;
+        }
     }
     
-    displayEvent(event) {
-        this.printLine();
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine(`                    ${event.name.toUpperCase()}`);
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine();
-        this.printLine(event.description);
-        this.printLine();
+    updateTrailProgress(locations) {
+        if (!this.trailProgressContainerEl) return;
+        
+        const currentMiles = locations.getDistanceTraveled();
+        const totalMiles = locations.getTotalDistance();
+        const percentage = (currentMiles / totalMiles) * 100;
+        const currentLoc = locations.getLocationName();
+        
+        this.trailProgressContainerEl.innerHTML = `
+            <div class="trail-header">
+                <h3 class="trail-title">🗺️ Trail Progress</h3>
+                <span class="location-name">📍 ${currentLoc}</span>
+            </div>
+            <div class="trail-bar-container">
+                <div class="trail-bar-fill" style="width: ${percentage}%"></div>
+                <div class="trail-marker" style="left: ${percentage}%">🚛</div>
+            </div>
+            <div class="trail-stats">
+                <span>${currentMiles} / ${totalMiles} miles</span>
+                <span>${Math.round(100 - percentage)}% remaining</span>
+            </div>
+        `;
+    }
+    
+    updateParty(party) {
+        if (!this.partyContainerEl) return;
+        
+        this.partyContainerEl.innerHTML = '';
+        const status = party.getStatus();
+        
+        status.members.forEach(member => {
+            const card = this.visualUI.createPartyMemberCard(member);
+            this.partyContainerEl.appendChild(card);
+        });
+    }
+    
+    updateQuickStats(party) {
+        if (!this.quickStatsEl) return;
+        
+        const status = party.getStatus();
+        this.quickStatsEl.innerHTML = `
+            <div class="stat-item">
+                <span class="stat-label">👥 Alive</span>
+                <span class="stat-value">${status.alive}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">💀 Dead</span>
+                <span class="stat-value">${status.dead}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">❤️ Avg Health</span>
+                <span class="stat-value">${status.averageHealth}%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">⚡ Avg Stamina</span>
+                <span class="stat-value">${status.averageStamina}%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">😊 Avg Morale</span>
+                <span class="stat-value">${status.averageMorale}%</span>
+            </div>
+        `;
+    }
+    
+    updateInventory(inventory) {
+        if (!this.inventoryContainerEl) return;
+        
+        const status = inventory.getStatus();
+        const items = [
+            { icon: '🌾', name: 'Food', value: `${status.food} lbs` },
+            { icon: '🔫', name: 'Bullets', value: status.bullets },
+            { icon: '👕', name: 'Clothing', value: `${status.clothing} sets` },
+            { icon: '💊', name: 'Medicine', value: `${status.medicine} doses` },
+            { icon: '🔧', name: 'Tools', value: status.tools }
+        ];
+        
+        this.inventoryContainerEl.innerHTML = items.map(item => `
+            <div class="inventory-item">
+                <div class="item-icon">${item.icon}</div>
+                <div class="item-name">${item.name}</div>
+                <div class="item-value">${item.value}</div>
+            </div>
+        `).join('');
+    }
+    
+    updateWagon(inventory) {
+        if (!this.wagonContainerEl) return;
+        
+        const status = inventory.getStatus();
+        const wagonColor = status.wagonCondition > 75 ? 'var(--success)' : 
+                          status.wagonCondition > 50 ? 'var(--primary-gold)' : 'var(--warning)';
+        const oxenColor = status.oxenCondition > 75 ? 'var(--success)' : 
+                         status.oxenCondition > 50 ? 'var(--primary-gold)' : 'var(--warning)';
+        
+        this.wagonContainerEl.innerHTML = `
+            <div class="wagon-stat">
+                <div class="wagon-label">
+                    <span>Condition</span>
+                    <span class="wagon-value">${status.wagonCondition}%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: ${status.wagonCondition}%; background: ${wagonColor};"></div>
+                </div>
+            </div>
+            <div class="wagon-stat">
+                <div class="wagon-label">
+                    <span>Oxen (${status.oxen})</span>
+                    <span class="wagon-value">${status.oxenCondition}%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: ${status.oxenCondition}%; background: ${oxenColor};"></div>
+                </div>
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: var(--text-secondary);">
+                <div>🔩 Axles: ${status.wagonAxles}</div>
+                <div>⚙️ Wheels: ${status.wagonWheels}</div>
+                <div>🔗 Tongues: ${status.wagonTongues}</div>
+            </div>
+        `;
+    }
+    
+    updateSettings(pace, rations) {
+        if (!this.settingsContainerEl) return;
+        
+        const paceIcons = {
+            'rest': '😴',
+            'slow': '🚶',
+            'normal': '🚶‍♂️',
+            'strenuous': '🏃',
+            'grueling': '🏃‍♂️'
+        };
+        
+        const rationIcons = {
+            'filling': '🍖',
+            'normal': '🍗',
+            'meager': '🥩',
+            'barebones': '🦴'
+        };
+        
+        const paceDisplay = pace.charAt(0).toUpperCase() + pace.slice(1);
+        const rationsDisplay = rations === 'barebones' ? 'Bare Bones' : 
+                              rations.charAt(0).toUpperCase() + rations.slice(1);
+        
+        this.settingsContainerEl.innerHTML = `
+            <div class="setting-item">
+                <span class="setting-icon">${paceIcons[pace] || '🚶'}</span>
+                <div class="setting-info">
+                    <div class="setting-label">Pace</div>
+                    <div class="setting-value">${paceDisplay}</div>
+                </div>
+            </div>
+            <div class="setting-item">
+                <span class="setting-icon">${rationIcons[rations] || '🍗'}</span>
+                <div class="setting-info">
+                    <div class="setting-label">Rations</div>
+                    <div class="setting-value">${rationsDisplay}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    displayEvent(event, gameEngine) {
+        return new Promise((resolve) => {
+            const modal = this.eventModal;
+            const title = document.getElementById('event-title');
+            const icon = document.getElementById('event-icon');
+            const description = document.getElementById('event-description');
+            const choices = document.getElementById('event-choices');
+            
+            // Event icons with colors
+            const eventIcons = {
+                'disease': { icon: '🦠', color: 'var(--warning)' },
+                'injury': { icon: '🩹', color: 'var(--warning)' },
+                'wagon_damage': { icon: '🔧', color: 'var(--info)' },
+                'environmental': { icon: '🌪️', color: 'var(--info)' },
+                'positive': { icon: '✨', color: 'var(--success)' },
+                'bandit': { icon: '🔫', color: 'var(--warning)' }
+            };
+            
+            const eventData = eventIcons[event.type] || { icon: '⚠️', color: 'var(--warning)' };
+            
+            if (title) title.textContent = event.name;
+            if (icon) {
+                icon.textContent = eventData.icon;
+                icon.style.color = eventData.color;
+            }
+            if (description) description.textContent = event.description;
+            
+            if (choices) {
+                choices.innerHTML = '';
+                if (event.choices && event.choices.length > 0) {
+                    event.choices.forEach((choice, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'choice-btn';
+                        let text = choice.text;
+                        let disabled = false;
+                        
+                        if (choice.requiresItem && gameEngine) {
+                            const hasItem = gameEngine.checkItemAvailability(choice.requiresItem, event);
+                            if (!hasItem) {
+                                text += ' (NOT AVAILABLE)';
+                                disabled = true;
+                            }
+                        }
+                        
+                        btn.textContent = `${index + 1}. ${text}`;
+                        if (disabled) {
+                            btn.classList.add('disabled');
+                        }
+                        
+                        btn.onclick = () => {
+                            if (!disabled) {
+                                this.closeModals();
+                                resolve(index);
+                            }
+                        };
+                        
+                        // Keyboard navigation
+                        btn.onkeydown = (e) => {
+                            if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+                                e.preventDefault();
+                                btn.click();
+                            }
+                        };
+                        
+                        choices.appendChild(btn);
+                    });
+                } else {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    btn.textContent = 'Continue';
+                    btn.onclick = () => {
+                        this.closeModals();
+                        resolve(null);
+                    };
+                    choices.appendChild(btn);
+                }
+            }
+            
+            modal.style.display = 'flex';
+            // Focus first button for keyboard navigation
+            setTimeout(() => {
+                const firstBtn = choices?.querySelector('.choice-btn:not(.disabled)');
+                if (firstBtn) firstBtn.focus();
+            }, 100);
+        });
+    }
+    
+    async visitStore(store, budget, inventory, isInitial = false) {
+        return new Promise((resolve) => {
+            const modal = this.storeModal;
+            const budgetEl = document.getElementById('store-budget');
+            const itemsEl = document.getElementById('store-items');
+            const doneBtn = document.getElementById('store-done');
+            
+            let totalSpent = 0;
+            const purchases = {};
+            const quantityInputs = {};
+            
+            const updateBudget = () => {
+                if (budgetEl) {
+                    const remaining = budget - totalSpent;
+                    budgetEl.textContent = `$${remaining.toFixed(2)}`;
+                    budgetEl.style.color = remaining < 10 ? 'var(--warning)' : 'var(--primary-gold)';
+                }
+            };
+            
+            const updateStore = () => {
+                if (itemsEl) {
+                    itemsEl.innerHTML = '';
+                    Object.keys(store.items).forEach(itemKey => {
+                        const item = store.items[itemKey];
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'store-item';
+                        
+                        const itemIcons = {
+                            'food': '🌾',
+                            'bullets': '🔫',
+                            'clothing': '👕',
+                            'oxen': '🐂',
+                            'wagonAxles': '🔩',
+                            'wagonWheels': '⚙️',
+                            'wagonTongues': '🔗',
+                            'tools': '🔧',
+                            'medicine': '💊'
+                        };
+                        
+                        const qty = purchases[itemKey] || 0;
+                        const inputId = `qty-${itemKey}`;
+                        
+                        itemDiv.innerHTML = `
+                            <div class="store-item-icon">${itemIcons[itemKey] || '📦'}</div>
+                            <div class="store-item-name">${item.name}</div>
+                            <div class="store-item-price">$${item.price.toFixed(2)}</div>
+                            ${qty > 0 ? `<div style="font-size: 12px; color: var(--success); margin: 5px 0;">Purchased: ${qty}</div>` : ''}
+                            <div class="store-item-input">
+                                <input type="number" id="${inputId}" min="0" value="0" style="width: 70px; padding: 6px; background: rgba(0,0,0,0.5); border: 1px solid var(--card-border); border-radius: 6px; color: var(--text-primary); text-align: center;">
+                                <button class="btn-primary" style="padding: 6px 12px; font-size: 12px;">Add</button>
+                            </div>
+                        `;
+                        
+                        const addBtn = itemDiv.querySelector('.btn-primary');
+                        const qtyInput = itemDiv.querySelector(`#${inputId}`);
+                        quantityInputs[itemKey] = qtyInput;
+                        
+                        addBtn.onclick = () => {
+                            const qty = parseInt(qtyInput.value) || 0;
+                            if (qty > 0) {
+                                const cost = item.price * qty;
+                                if (totalSpent + cost <= budget) {
+                                    totalSpent += cost;
+                                    purchases[itemKey] = (purchases[itemKey] || 0) + qty;
+                                    store.purchase(itemKey, qty, inventory);
+                                    qtyInput.value = 0;
+                                    updateBudget();
+                                    updateStore();
+                                } else {
+                                    alert(`Cannot afford that! You only have $${(budget - totalSpent).toFixed(2)} remaining.`);
+                                }
+                            }
+                        };
+                        
+                        itemsEl.appendChild(itemDiv);
+                    });
+                }
+                updateBudget();
+            };
+            
+            updateStore();
+            
+            doneBtn.onclick = () => {
+                // Check if oxen required for initial store
+                if (isInitial && inventory.oxen === 0) {
+                    alert('You must purchase at least one pair of oxen before leaving!');
+                    return;
+                }
+                this.closeModals();
+                resolve();
+            };
+            
+            modal.style.display = 'flex';
+            // Focus first input
+            setTimeout(() => {
+                const firstInput = itemsEl?.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        });
+    }
+    
+    closeModals() {
+        if (this.eventModal) this.eventModal.style.display = 'none';
+        if (this.storeModal) this.storeModal.style.display = 'none';
     }
     
     displayMessage(message) {
-        this.printLine();
+        this.printLine('');
         this.printLine(message);
-        this.printLine();
+        this.printLine('');
     }
     
     displayWin() {
         this.clear();
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine('                    CONGRATULATIONS!');
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine();
-        this.printLine('You have successfully reached Oregon City!');
-        this.printLine('Your journey across the Oregon Trail is complete.');
-        this.printLine();
-        this.printLine('The surviving members of your party can now start');
-        this.printLine('their new life in the Oregon Territory.');
-        this.printLine();
+        const winContent = document.createElement('div');
+        winContent.style.cssText = 'text-align: center; padding: 40px;';
+        winContent.innerHTML = `
+            <div style="font-size: 64px; margin-bottom: 20px;">🎉</div>
+            <h2 style="font-family: Playfair Display, serif; font-size: 36px; color: var(--primary-gold); margin-bottom: 20px;">CONGRATULATIONS!</h2>
+            <p style="font-size: 18px; line-height: 1.8; margin-bottom: 10px;">You have successfully reached Oregon City!</p>
+            <p style="font-size: 16px; line-height: 1.8; color: var(--text-secondary);">Your journey across the Oregon Trail is complete.</p>
+            <p style="font-size: 16px; line-height: 1.8; color: var(--text-secondary); margin-top: 20px;">The surviving members of your party can now start their new life in the Oregon Territory.</p>
+        `;
+        this.outputElement.appendChild(winContent);
     }
     
     displayLoss(reason) {
         this.clear();
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine('                    GAME OVER');
-        this.printLine('═══════════════════════════════════════════════════════════');
-        this.printLine();
-        this.printLine(`Your journey has ended: ${reason}`);
-        this.printLine();
-        this.printLine('The Oregon Trail has claimed another group of travelers.');
-        this.printLine('Better luck next time!');
-        this.printLine();
+        const lossContent = document.createElement('div');
+        lossContent.style.cssText = 'text-align: center; padding: 40px;';
+        lossContent.innerHTML = `
+            <div style="font-size: 64px; margin-bottom: 20px;">💀</div>
+            <h2 style="font-family: Playfair Display, serif; font-size: 36px; color: var(--warning); margin-bottom: 20px;">GAME OVER</h2>
+            <p style="font-size: 18px; line-height: 1.8; margin-bottom: 10px; color: var(--warning);">Your journey has ended: ${reason}</p>
+            <p style="font-size: 16px; line-height: 1.8; color: var(--text-secondary); margin-top: 20px;">The Oregon Trail has claimed another group of travelers.</p>
+            <p style="font-size: 16px; line-height: 1.8; color: var(--text-secondary);">Better luck next time!</p>
+        `;
+        this.outputElement.appendChild(lossContent);
     }
     
     close() {
         // Browser doesn't need to close anything
     }
 }
-

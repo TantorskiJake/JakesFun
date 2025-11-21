@@ -17,9 +17,8 @@ async function main() {
     game.ui = new BrowserUI();
     
     // Hide loading message
-    const loadingMsg = document.getElementById('loading-message');
-    if (loadingMsg) {
-        loadingMsg.style.display = 'none';
+    if (game.ui.loadingMessage) {
+        game.ui.loadingMessage.style.display = 'none';
     }
     
     try {
