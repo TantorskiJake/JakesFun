@@ -19,7 +19,7 @@ export class GameEngine {
         this.events = new Events();
         this.store = new Store();
         this.ui = new UI();
-        
+
         // Game state
         this.date = new Date(1848, 2, 1); // March 1, 1848
         this.pace = 'normal'; // 'rest', 'slow', 'normal', 'strenuous', 'grueling'
@@ -29,13 +29,13 @@ export class GameEngine {
         this.milesTraveled = 0;
         this.gameOver = false;
         this.gameWon = false;
-        
+
         // River crossing state
         this.atRiver = false;
         this.currentRiverEvent = null;
         this.atFort = false;
     }
-    
+
     /**
      * Initialize the game - setup party and initial purchases
      */
@@ -49,10 +49,10 @@ export class GameEngine {
         this.ui.printLine('You will begin in Independence, Missouri, and travel');
         this.ui.printLine('2,040 miles to Oregon City.');
         this.ui.printLine();
-        
+
         // Setup party
         await this.setupParty();
-        
+
         // Initial store visit - must purchase oxen
         while (this.inventory.oxen === 0) {
             await this.visitStore(true);
@@ -63,65 +63,65 @@ export class GameEngine {
                 await this.ui.prompt('');
             }
         }
-        
+
         if (this.inventory.food < 100) {
             this.ui.displayMessage('Warning: You have very little food. Consider purchasing more.');
             this.ui.printLine('Press Enter to continue anyway...');
             await this.ui.prompt('');
         }
     }
-    
+
     /**
      * Setup party members
      */
     async setupParty() {
         this.ui.printLine('=== PARTY SETUP ===');
         this.ui.printLine();
-        
+
         // Party size
         const partySize = await this.ui.promptNumber(
             'How many people are in your party? (1-5): ',
             1, 5
         );
-        
+
         // Leader profession
         this.ui.printLine();
         this.ui.printLine('Choose your profession:');
         const professions = ['Farmer', 'Carpenter', 'Banker', 'Doctor', 'Hunter'];
         const profIndex = await this.ui.promptChoice('Select profession:', professions);
         const profession = professions[profIndex] ? professions[profIndex].toLowerCase() : 'farmer';
-        
+
         // Leader name
         const leaderName = await this.ui.prompt('Enter your name: ');
         this.party.addMember(leaderName || 'You', profession);
-        
+
         // Additional members
         for (let i = 1; i < partySize; i++) {
             const name = await this.ui.prompt(`Enter name for party member ${i + 1}: `);
             this.party.addMember(name || `Traveler ${i}`, 'farmer');
         }
-        
+
         this.ui.printLine();
         this.ui.printLine(`Your party consists of ${this.party.members.length} members.`);
         this.ui.printLine('Press Enter to continue...');
         await this.ui.prompt('');
     }
-    
+
     /**
      * Visit the store
      */
     async visitStore(isInitial = false) {
         let budget = isInitial ? this.store.getStartingBudget() : 0;
-        
+
         if (!isInitial) {
             // At a fort, player can sell items or has limited money
             budget = 50; // Small amount for emergency purchases
         }
-        
+
         // Use visual store modal - loop until oxen purchased if initial
         while (true) {
             await this.ui.visitStore(this.store, budget, this.inventory, isInitial);
-            
+
             // Check minimum requirements after store visit
             if (isInitial && this.inventory.oxen === 0) {
                 this.ui.displayMessage('⚠️  You MUST purchase at least one pair of oxen to begin your journey!');
@@ -132,39 +132,39 @@ export class GameEngine {
             }
         }
     }
-    
+
     /**
      * Main game loop
      */
     async run() {
         await this.initialize();
-        
+
         // Final check after initialization - don't start if we don't have oxen
         if (this.inventory.oxen === 0) {
             this.ui.displayLoss('You cannot begin your journey without oxen to pull your wagon.');
             this.ui.close();
             return;
         }
-        
+
         while (!this.gameOver && !this.gameWon) {
             // Check win/loss conditions
             if (this.checkWinCondition()) {
                 this.gameWon = true;
                 break;
             }
-            
+
             if (this.checkLossCondition()) {
                 this.gameOver = true;
                 break;
             }
-            
+
             // Daily actions
             await this.dailyActions();
-            
+
             // Advance day
             this.advanceDay();
         }
-        
+
         // End game
         if (this.gameWon) {
             this.ui.displayWin();
@@ -172,12 +172,12 @@ export class GameEngine {
             const reason = this.getLossReason();
             this.ui.displayLoss(reason);
         }
-        
+
         this.ui.printLine('Press Enter to exit...');
         await this.ui.prompt('');
         this.ui.close();
     }
-    
+
     /**
      * Daily actions menu
      */
@@ -185,9 +185,9 @@ export class GameEngine {
         while (true) {
             this.updateWeather();
             this.season = this.locations.getSeason(this.date);
-            
+
             this.ui.displayGameState(this.getGameState());
-            
+
             // Check if at river (only trigger once per river)
             const currentLoc = this.locations.getCurrentLocation();
             if (currentLoc.type === 'river' && !this.atRiver) {
@@ -199,7 +199,7 @@ export class GameEngine {
                 }
                 return; // Exit to advance day
             }
-            
+
             // Check if at fort (only show once per visit)
             if (this.locations.isAtFort() && !this.atFort) {
                 this.atFort = true;
@@ -207,7 +207,7 @@ export class GameEngine {
                     'You have reached a fort! What would you like to do?',
                     ['Continue traveling', 'Rest for a day', 'Visit store', 'Hunt']
                 );
-                
+
                 if (choice === 0) {
                     // Continue traveling - actually travel
                     await this.travel();
@@ -228,13 +228,13 @@ export class GameEngine {
                     continue;
                 }
             }
-            
+
             // Main menu
             const choice = await this.ui.promptChoice(
                 'What would you like to do?',
                 ['Continue on trail', 'Check supplies', 'Change pace', 'Change rations', 'Rest', 'Hunt', 'Save game', 'Load game']
             );
-            
+
             switch (choice) {
                 case 0:
                     await this.travel();
@@ -266,7 +266,7 @@ export class GameEngine {
             }
         }
     }
-    
+
     /**
      * Travel one day
      */
@@ -276,7 +276,7 @@ export class GameEngine {
             this.ui.displayMessage('You are resting. Use the "Rest" option instead of "Continue on trail".');
             return;
         }
-        
+
         // Calculate miles based on pace, terrain, weather, and party condition
         let baseMiles = 0;
         switch (this.pace) {
@@ -293,50 +293,50 @@ export class GameEngine {
                 baseMiles = 40;
                 break;
         }
-        
+
         // Terrain modifier
         const terrain = this.locations.getTerrain();
         baseMiles = Math.floor(baseMiles / terrain.difficulty);
-        
+
         // Weather modifier
         if (this.weather === 'storm' || this.weather === 'snow') {
             baseMiles = Math.floor(baseMiles * 0.5);
         } else if (this.weather === 'rain') {
             baseMiles = Math.floor(baseMiles * 0.7);
         }
-        
+
         // Party condition modifier
         const avgStamina = this.party.getAverageStamina();
         const avgHealth = this.party.getAverageHealth();
         const conditionModifier = (avgStamina + avgHealth) / 200;
         baseMiles = Math.floor(baseMiles * conditionModifier);
-        
+
         // Wagon condition modifier
         if (this.inventory.wagonCondition < 50) {
             baseMiles = Math.floor(baseMiles * 0.7);
         }
-        
+
         // Oxen condition modifier
         if (this.inventory.oxenCondition < 50) {
             baseMiles = Math.floor(baseMiles * 0.8);
         }
-        
+
         this.milesTraveled = Math.max(0, baseMiles);
         console.log(`[TRAVEL] Starting travel: ${this.milesTraveled} miles, wagon condition: ${this.inventory.wagonCondition}`);
-        
+
         this.locations.advanceLocation(this.milesTraveled);
-        
+
         // Consume food based on rations
         this.consumeFood();
-        
+
         // Update party stats (this applies wagon wear)
         console.log(`[TRAVEL] Before updatePartyStats: wagon condition = ${this.inventory.wagonCondition}`);
         this.updatePartyStats();
         console.log(`[TRAVEL] After updatePartyStats: wagon condition = ${this.inventory.wagonCondition}`);
-        
+
         // Update UI immediately after travel to show progress
         this.ui.displayGameState(this.getGameState());
-        
+
         // Random event (only if we actually traveled)
         if (this.milesTraveled > 0) {
             console.log(`[TRAVEL] Before event: wagon condition = ${this.inventory.wagonCondition}`);
@@ -359,12 +359,12 @@ export class GameEngine {
                 this.ui.displayGameState(this.getGameState());
             }
         }
-        
+
         // Update disease/injury effects
         this.updateDiseaseInjuryEffects();
         console.log(`[TRAVEL] End of travel: wagon condition = ${this.inventory.wagonCondition}`);
     }
-    
+
     /**
      * Consume food based on rations
      */
@@ -372,7 +372,7 @@ export class GameEngine {
         if (this.pace === 'rest') {
             return; // No travel, minimal food consumption
         }
-        
+
         let foodPerPerson = 0;
         switch (this.rations) {
             case 'filling':
@@ -388,10 +388,10 @@ export class GameEngine {
                 foodPerPerson = 1;
                 break;
         }
-        
+
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
         const consumed = this.inventory.consumeFood(totalFood);
-        
+
         if (consumed < totalFood) {
             // Not enough food
             const shortage = totalFood - consumed;
@@ -411,7 +411,7 @@ export class GameEngine {
             }
         }
     }
-    
+
     /**
      * Update party stats based on travel
      */
@@ -432,46 +432,46 @@ export class GameEngine {
                 staminaLoss = 30;
                 break;
         }
-        
+
         this.party.updateAllStamina(-staminaLoss);
-        
+
         // Wagon wear
         if (this.milesTraveled > 0) {
             const wear = Math.floor(this.milesTraveled / 10);
             console.log(`[GAME] updatePartyStats: Applying ${wear} points of wagon wear from ${this.milesTraveled} miles traveled`);
             this.inventory.damageWagon(wear);
         }
-        
+
         // Oxen wear
         if (this.milesTraveled > 0) {
             const oxenWear = Math.floor(this.milesTraveled / 20);
             this.inventory.damageOxen(oxenWear);
         }
     }
-    
+
     /**
      * Handle random events
      */
     async handleEvent(event) {
         console.log(`[EVENT] handleEvent called for type: ${event.type}`);
         console.log(`[EVENT] Current wagon condition: ${this.inventory.wagonCondition}`);
-        
+
         // Prepare event with game state for UI
         const eventWithState = {
             ...event,
             gameState: this.getGameState()
         };
-        
+
         // Use visual event modal - it will return the choice index
         const choiceIndex = await this.ui.displayEvent(eventWithState, this);
-        
+
         console.log(`[EVENT] User selected choice index: ${choiceIndex}`);
-        
+
         if (event.choices && event.choices.length > 0 && choiceIndex !== null && choiceIndex !== undefined) {
             const selectedChoice = event.choices[choiceIndex];
             console.log(`[EVENT] Selected choice text: "${selectedChoice.text}"`);
             console.log(`[EVENT] Wagon condition before choice: ${this.inventory.wagonCondition}`);
-            
+
             // Check if item is required and available
             if (selectedChoice.requiresItem) {
                 const hasItem = this.checkItemAvailability(selectedChoice.requiresItem, event);
@@ -492,132 +492,33 @@ export class GameEngine {
                     return;
                 }
             }
-            
+
             // Execute the selected choice's effect
             // CRITICAL: For wagon damage events, use current inventory directly to avoid closure issues
+            // Execute the selected choice's effect
             if (selectedChoice.effect) {
-                // For wagon damage events, manually handle to ensure we use current inventory
-                // DO NOT call the original effect() - it uses stale gameState references
-                if (event.type === 'wagon_damage') {
-                    // IMMEDIATELY remove the effect to prevent ANY accidental execution
-                    const originalEffect = selectedChoice.effect;
-                    selectedChoice.effect = null;
-                    
-                    const damage = event.conditionLoss || 0;
-                    const part = event.part || 'general';
-                    const currentInventory = this.inventory;
-                    
-                    console.log(`[WAGON EVENT] ========================================`);
-                    console.log(`[WAGON EVENT] WAGON DAMAGE EVENT HANDLING`);
-                    console.log(`[WAGON EVENT] Before choice: condition = ${currentInventory.wagonCondition}, damage = ${damage}, part = ${part}`);
-                    console.log(`[WAGON EVENT] Selected choice: "${selectedChoice.text}"`);
-                    console.log(`[WAGON EVENT] Choice index: ${choiceIndex}`);
-                    
-                    // Re-execute the choice logic with current inventory
-                    // Match by checking the choice index or text content
-                    const choiceText = selectedChoice.text.toLowerCase();
-                    console.log(`[WAGON EVENT] Choice text (lowercase): "${choiceText}"`);
-                    
-                    if (choiceText.includes('replace')) {
-                        // Replace part option
-                        console.log(`[WAGON EVENT] >>> REPLACE PART OPTION SELECTED`);
-                        console.log(`[WAGON EVENT] Attempting to replace part: ${part}`);
-                        const hasPart = currentInventory.useWagonPart(part);
-                        console.log(`[WAGON EVENT] useWagonPart(${part}) returned: ${hasPart}`);
-                        if (hasPart) {
-                            const before = currentInventory.wagonCondition;
-                            console.log(`[WAGON EVENT] BEFORE repairWagon(5): condition = ${before}`);
-                            
-                            // Directly set the condition to ensure it increases
-                            const expectedAfter = Math.min(100, before + 5);
-                            currentInventory.repairWagon(5);
-                            const after = currentInventory.wagonCondition;
-                            
-                            console.log(`[WAGON EVENT] AFTER repairWagon(5): condition = ${after}, expected = ${expectedAfter}`);
-                            
-                            // Force repair if it didn't work
-                            if (after <= before || after !== expectedAfter) {
-                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition ${before} -> ${after} (expected ${expectedAfter})`);
-                                // Force the correct value
-                                currentInventory.wagonCondition = expectedAfter;
-                                console.log(`[WAGON EVENT] FORCED REPAIR to: ${currentInventory.wagonCondition}`);
-                            } else {
-                                console.log(`[WAGON EVENT] Part replacement SUCCESS: ${before} -> ${after}`);
-                            }
-                        } else {
-                            console.log(`[WAGON EVENT] Part replacement FAILED - no part available, applying damage`);
-                            currentInventory.damageWagon(damage);
-                        }
-                    } else if (choiceText.includes('tools') || choiceText.includes('repair') || choiceText.includes('use tools')) {
-                        // Use tools to repair option
-                        console.log(`[WAGON EVENT] >>> USE TOOLS OPTION SELECTED`);
-                        console.log(`[WAGON EVENT] Attempting to use tools to repair`);
-                        const hasTools = currentInventory.useTools(1);
-                        console.log(`[WAGON EVENT] useTools(1) returned: ${hasTools}, current tools: ${currentInventory.tools}`);
-                        if (hasTools) {
-                            const before = currentInventory.wagonCondition;
-                            console.log(`[WAGON EVENT] BEFORE repairWagon(10): condition = ${before}`);
-                            
-                            // Directly set the condition to ensure it increases
-                            const expectedAfter = Math.min(100, before + 10);
-                            currentInventory.repairWagon(10);
-                            const after = currentInventory.wagonCondition;
-                            
-                            console.log(`[WAGON EVENT] AFTER repairWagon(10): condition = ${after}, expected = ${expectedAfter}`);
-                            
-                            // Force repair if it didn't work
-                            if (after <= before || after !== expectedAfter) {
-                                console.error(`[WAGON EVENT] ERROR: Repair failed! Condition ${before} -> ${after} (expected ${expectedAfter})`);
-                                // Force the correct value
-                                currentInventory.wagonCondition = expectedAfter;
-                                console.log(`[WAGON EVENT] FORCED REPAIR to: ${currentInventory.wagonCondition}`);
-                            } else {
-                                console.log(`[WAGON EVENT] Tool repair SUCCESS: ${before} -> ${after}`);
-                            }
-                        } else {
-                            console.log(`[WAGON EVENT] Tool repair FAILED - no tools available, applying damage`);
-                            currentInventory.damageWagon(damage);
-                        }
-                    } else {
-                        // Continue with damaged wagon - apply damage
-                        console.log(`[WAGON EVENT] >>> CONTINUE WITH DAMAGE OPTION SELECTED`);
-                        const before = currentInventory.wagonCondition;
-                        currentInventory.damageWagon(damage);
-                        console.log(`[WAGON EVENT] Continue with damage: ${before} -> ${currentInventory.wagonCondition} (subtracted ${damage})`);
-                    }
-                    
-                    console.log(`[WAGON EVENT] Final wagon condition: ${currentInventory.wagonCondition}`);
-                    console.log(`[WAGON EVENT] ========================================`);
-                    
-                    // CRITICAL: Force UI update immediately after wagon repair
-                    console.log(`[WAGON EVENT] Forcing UI update with wagon condition: ${this.inventory.wagonCondition}`);
-                    this.ui.displayGameState(this.getGameState());
-                    console.log(`[WAGON EVENT] UI update completed`);
-                    
-                    // DO NOT call originalEffect() - we've handled it manually
-                    // Effect was already set to null above to prevent execution
-                } else {
-                    // For other events, use the original effect
-                    console.log(`[EVENT] Executing original effect for event type: ${event.type}`);
-                    const beforeCondition = this.inventory.wagonCondition;
-                    if (selectedChoice.effect) {
-                        selectedChoice.effect();
-                    }
-                    const afterCondition = this.inventory.wagonCondition;
-                    if (beforeCondition !== afterCondition) {
-                        console.log(`[EVENT] Wagon condition changed by effect: ${beforeCondition} -> ${afterCondition}`);
-                    }
+                console.log(`[EVENT] Executing effect for choice: "${selectedChoice.text}"`);
+                const beforeCondition = this.inventory.wagonCondition;
+
+                selectedChoice.effect();
+
+                const afterCondition = this.inventory.wagonCondition;
+                if (beforeCondition !== afterCondition) {
+                    console.log(`[EVENT] Wagon condition changed by effect: ${beforeCondition} -> ${afterCondition}`);
                 }
+
+                // Force UI update after event effect
+                this.ui.displayGameState(this.getGameState());
             } else {
                 console.log(`[EVENT] No effect function on selected choice`);
             }
-            
+
             console.log(`[EVENT] Final wagon condition after all event handling: ${this.inventory.wagonCondition}`);
         } else {
             console.log(`[EVENT] No choice selected or invalid choice index`);
         }
     }
-    
+
     checkItemAvailability(item, event) {
         switch (item) {
             case 'medicine':
@@ -634,7 +535,7 @@ export class GameEngine {
                 return true;
         }
     }
-    
+
     /**
      * Update disease and injury effects daily
      */
@@ -650,23 +551,23 @@ export class GameEngine {
             }
         });
     }
-    
+
     /**
      * Handle river crossing
      */
     async handleRiverCrossing() {
         const location = this.locations.getCurrentLocation();
         this.ui.displayMessage(`You have reached ${location.name}. You must cross the river.`);
-        
+
         const choices = [
             'Ford the river (free, but risky)',
             'Caulk the wagon and float across (requires tools)',
             'Take a ferry (costs $10, safest)',
             'Wait for better conditions (lose a day)'
         ];
-        
+
         const choice = await this.ui.promptChoice('How would you like to cross?', choices);
-        
+
         switch (choice) {
             case 0: // Ford
                 await this.fordRiver();
@@ -682,18 +583,18 @@ export class GameEngine {
                 // Don't reset atRiver - we're still at the river, will trigger again next day
                 return;
         }
-        
+
         this.atRiver = false;
     }
-    
+
     async fordRiver() {
         const success = Math.random() > 0.3; // 70% success
-        
+
         // Consume food for river crossing
         const foodPerPerson = 1;
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
         this.inventory.consumeFood(totalFood);
-        
+
         if (success) {
             this.ui.displayMessage('You successfully forded the river!');
             // Advance to next location by updating miles
@@ -721,22 +622,22 @@ export class GameEngine {
         // Update UI after river crossing
         this.ui.displayGameState(this.getGameState());
     }
-    
+
     async caulkRiver() {
         if (this.inventory.tools === 0) {
             this.ui.displayMessage('You do not have tools to caulk the wagon! Attempting to ford instead...');
             await this.fordRiver();
             return;
         }
-        
+
         this.inventory.useTools(1);
         const success = Math.random() > 0.15; // 85% success
-        
+
         // Consume food for river crossing
         const foodPerPerson = 1;
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
         this.inventory.consumeFood(totalFood);
-        
+
         if (success) {
             this.ui.displayMessage('You successfully crossed using the caulked wagon!');
         } else {
@@ -753,7 +654,7 @@ export class GameEngine {
         // Update UI after river crossing
         this.ui.displayGameState(this.getGameState());
     }
-    
+
     async ferryRiver() {
         // Ferry costs $10, but since we don't track money after initial purchase,
         // we'll just consume some supplies as a cost
@@ -775,35 +676,23 @@ export class GameEngine {
         // Update UI after river crossing
         this.ui.displayGameState(this.getGameState());
     }
-    
+
     /**
      * Rest for a day
      */
     async rest() {
-        console.log(`[REST] ========================================`);
-        console.log(`[REST] REST FUNCTION CALLED`);
-        
-        // Log individual member health before
-        const membersBefore = this.party.getAliveMembers().map(m => ({ name: m.name, health: m.health, stamina: m.stamina }));
-        membersBefore.forEach(m => {
-            console.log(`[REST] Before: ${m.name} - health: ${m.health}%, stamina: ${m.stamina}%`);
-        });
-        console.log(`[REST] Average health before: ${this.party.getAverageHealth()}%`);
-        
         // Update stats
         this.party.updateAllStamina(20);
         this.party.updateAllMorale(5);
         // Resting also recovers health (slowly)
         this.party.updateAllHealth(5);
         this.inventory.healOxen(10);
-        
-        // Log individual member health after
         const membersAfter = this.party.getAliveMembers().map(m => ({ name: m.name, health: m.health, stamina: m.stamina }));
         membersAfter.forEach(m => {
             console.log(`[REST] After: ${m.name} - health: ${m.health}%, stamina: ${m.stamina}%`);
         });
         console.log(`[REST] Average health after: ${this.party.getAverageHealth()}%`);
-        
+
         // Verify health actually increased
         membersBefore.forEach((before, i) => {
             const after = membersAfter[i];
@@ -811,12 +700,12 @@ export class GameEngine {
                 console.error(`[REST] ERROR: ${before.name} health should be ${before.health + 5} but is ${after.health}`);
             }
         });
-        
+
         // Food consumption during rest (less than travel, but still needed)
         const foodPerPerson = 1;
         const totalFood = foodPerPerson * this.party.getAliveMembers().length;
         const consumed = this.inventory.consumeFood(totalFood);
-        
+
         // Check if there was enough food
         if (consumed < totalFood) {
             // Not enough food - resting without adequate food has consequences
@@ -838,19 +727,19 @@ export class GameEngine {
             // Adequate food - normal rest benefits
             this.ui.displayMessage('Your party has rested. Stamina, morale, and health have improved.');
         }
-        
+
         // Get fresh game state and verify health values
         const gameState = this.getGameState();
         console.log(`[REST] GameState party average health: ${gameState.party.getAverageHealth()}%`);
         gameState.party.getAliveMembers().forEach(m => {
             console.log(`[REST] GameState member ${m.name} health: ${m.health}%`);
         });
-        
+
         // Update UI immediately to show health/stamina changes
         console.log(`[REST] Calling displayGameState...`);
         this.ui.displayGameState(gameState);
         console.log(`[REST] displayGameState completed`);
-        
+
         // Double-check UI has correct values by reading them back
         if (this.ui.partyContainerEl) {
             const healthBars = this.ui.partyContainerEl.querySelectorAll('.progress-bar-fill');
@@ -862,10 +751,10 @@ export class GameEngine {
                 }
             });
         }
-        
+
         console.log(`[REST] ========================================`);
     }
-    
+
     /**
      * Hunt for food
      */
@@ -874,19 +763,19 @@ export class GameEngine {
             this.ui.displayMessage('You need at least 10 bullets to hunt!');
             return;
         }
-        
+
         this.ui.displayMessage('You go hunting...');
-        
+
         // Hunting success based on bullets, skill, and luck
         // Use 10-20 bullets (more bullets = better chance, but uses more)
         const bulletsToUse = Math.min(20, Math.max(10, this.inventory.bullets));
         this.inventory.useBullets(bulletsToUse);
-        
+
         const hasHunter = this.party.members.some(m => m.profession === 'hunter' && m.alive);
         const skillBonus = hasHunter ? 0.3 : 0;
         const luck = Math.random();
         const success = luck + skillBonus > 0.4;
-        
+
         if (success) {
             const foodGained = Math.floor(Math.random() * 100) + 50;
             this.inventory.addFood(foodGained);
@@ -896,14 +785,14 @@ export class GameEngine {
             this.ui.displayMessage('Hunting unsuccessful. No food gained.');
             this.party.updateAllStamina(-10);
         }
-        
+
         // Update UI to show inventory and morale changes
         this.ui.displayGameState(this.getGameState());
-        
+
         this.ui.printLine('Press Enter to continue...');
         await this.ui.prompt('');
     }
-    
+
     /**
      * Change pace
      */
@@ -916,7 +805,7 @@ export class GameEngine {
         // Update UI to show pace change
         this.ui.displayGameState(this.getGameState());
     }
-    
+
     /**
      * Change rations
      */
@@ -930,7 +819,7 @@ export class GameEngine {
         // Update UI to show rations change
         this.ui.displayGameState(this.getGameState());
     }
-    
+
     /**
      * Display supplies
      */
@@ -948,14 +837,14 @@ export class GameEngine {
         this.ui.printLine('\nPress Enter to continue...');
         await this.ui.prompt('');
     }
-    
+
     /**
      * Update weather
      */
     updateWeather() {
         const rand = Math.random();
         const season = this.locations.getSeason(this.date);
-        
+
         if (season === 'winter') {
             if (rand < 0.3) {
                 this.weather = 'snow';
@@ -982,24 +871,24 @@ export class GameEngine {
             }
         }
     }
-    
+
     /**
      * Advance day
      */
     advanceDay() {
         this.date.setDate(this.date.getDate() + 1);
     }
-    
+
     /**
      * Check win condition
      */
     checkWinCondition() {
         // Must be at Oregon City AND have traveled the full distance AND have alive members
-        return this.locations.isAtEnd() && 
-               this.locations.getDistanceTraveled() >= 2040 && 
-               this.party.hasAliveMembers();
+        return this.locations.isAtEnd() &&
+            this.locations.getDistanceTraveled() >= 2040 &&
+            this.party.hasAliveMembers();
     }
-    
+
     /**
      * Check loss condition
      */
@@ -1012,7 +901,7 @@ export class GameEngine {
         }
         return false;
     }
-    
+
     /**
      * Get loss reason
      */
@@ -1028,7 +917,7 @@ export class GameEngine {
         }
         return 'Unknown reason.';
     }
-    
+
     /**
      * Get current game state
      */
@@ -1046,7 +935,7 @@ export class GameEngine {
             milesTraveled: this.milesTraveled
         };
     }
-    
+
     /**
      * Save game
      */
@@ -1064,9 +953,9 @@ export class GameEngine {
             inventory: this.inventory.toJSON(),
             locations: this.locations.toJSON()
         };
-        
+
         const saveString = JSON.stringify(saveData, null, 2);
-        
+
         if (this.ui.isNode) {
             // Node.js - save to file
             try {
@@ -1085,17 +974,17 @@ export class GameEngine {
             localStorage.setItem('oregonTrailSave', saveString);
             this.ui.displayMessage('Game saved to browser storage');
         }
-        
+
         this.ui.printLine('Press Enter to continue...');
         await this.ui.prompt('');
     }
-    
+
     /**
      * Load game
      */
     async loadGame() {
         let saveData = null;
-        
+
         if (this.ui.isNode) {
             // Node.js - load from file
             try {
@@ -1123,7 +1012,7 @@ export class GameEngine {
             }
             saveData = JSON.parse(saveString);
         }
-        
+
         // Restore game state
         this.date = new Date(saveData.date);
         this.pace = saveData.pace;
@@ -1136,7 +1025,7 @@ export class GameEngine {
         this.party = Party.fromJSON(saveData.party);
         this.inventory = Inventory.fromJSON(saveData.inventory);
         this.locations = Locations.fromJSON(saveData.locations);
-        
+
         this.ui.displayMessage('Game loaded successfully!');
         this.ui.printLine('Press Enter to continue...');
         await this.ui.prompt('');
