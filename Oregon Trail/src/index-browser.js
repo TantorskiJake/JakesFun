@@ -10,23 +10,24 @@ import { BrowserUI } from './browser-ui.js';
 async function main() {
     // Wait a moment for DOM to be fully ready
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     const game = new GameEngine();
-    
+
     // Replace UI with browser UI
     game.ui = new BrowserUI();
-    
+
     // Hide loading message
     if (game.ui.loadingMessage) {
         game.ui.loadingMessage.style.display = 'none';
     }
-    
+
     try {
         await game.run();
     } catch (error) {
         console.error('An error occurred:', error);
         game.ui.printLine(`An error occurred: ${error.message}`, 'warning');
         game.ui.printLine('Please check the browser console (F12) for more details.', 'warning');
+        const loadingMsg = document.getElementById('loading');
         if (loadingMsg) {
             loadingMsg.style.display = 'block';
             loadingMsg.textContent = 'Error loading game. Check console (F12) for details.';

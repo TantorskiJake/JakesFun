@@ -663,19 +663,7 @@ export class GameEngine {
         // Resting also recovers health (slowly)
         this.party.updateAllHealth(5);
         this.inventory.healOxen(10);
-        const membersAfter = this.party.getAliveMembers().map(m => ({ name: m.name, health: m.health, stamina: m.stamina }));
-        membersAfter.forEach(m => {
-            console.log(`[REST] After: ${m.name} - health: ${m.health}%, stamina: ${m.stamina}%`);
-        });
-        console.log(`[REST] Average health after: ${this.party.getAverageHealth()}%`);
 
-        // Verify health actually increased
-        membersBefore.forEach((before, i) => {
-            const after = membersAfter[i];
-            if (after && after.health !== before.health + 5) {
-                console.error(`[REST] ERROR: ${before.name} health should be ${before.health + 5} but is ${after.health}`);
-            }
-        });
 
         // Food consumption during rest (less than travel, but still needed)
         const foodPerPerson = 1;
