@@ -241,9 +241,13 @@ export class BrowserUI {
                 line.className += ' header';
             } else if (text.startsWith('===')) {
                 line.className += ' section';
-            } else if (text.includes('DEAD') || text.includes('died') || text.includes('GAME OVER') || text.includes('❌')) {
+            } else if (text.includes('GAME OVER')) {
+                line.className += ' game-over';
+            } else if (text.includes('Congratulations') || text.includes('You have reached Oregon')) {
+                line.className += ' victory';
+            } else if (text.includes('DEAD') || text.includes('died') || text.includes('❌')) {
                 line.className += ' warning';
-            } else if (text.includes('successfully') || text.includes('Congratulations') || text.includes('✅') || text.includes('✓')) {
+            } else if (text.includes('successfully') || text.includes('✅') || text.includes('✓')) {
                 line.className += ' success';
             } else if (text.includes('Location:') || text.includes('Date:') || text.includes('⚠️')) {
                 line.className += ' info';

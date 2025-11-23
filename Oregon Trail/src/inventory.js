@@ -8,37 +8,37 @@ export class Inventory {
         this.bullets = 0;
         this.clothing = 0; // sets
         this.medicine = 0; // doses
-        
+
         // Wagon parts
         this.wagonAxles = 1; // spare axles
         this.wagonWheels = 1; // spare wheels
         this.wagonTongues = 1; // spare tongues
-        
+
         // Tools
         this.tools = 0; // repair kits
-        
+
         // Wagon condition (0-100)
         this.wagonCondition = 100;
-        
+
         // Oxen
         this.oxen = 0; // number of oxen
         this.oxenCondition = 100; // 0-100
     }
-    
+
     addFood(amount) {
         this.food += amount;
     }
-    
+
     consumeFood(amount) {
         const consumed = Math.min(amount, this.food);
         this.food -= consumed;
         return consumed;
     }
-    
+
     addBullets(amount) {
         this.bullets += amount;
     }
-    
+
     useBullets(amount) {
         if (this.bullets >= amount) {
             this.bullets -= amount;
@@ -46,11 +46,11 @@ export class Inventory {
         }
         return false;
     }
-    
+
     addClothing(amount) {
         this.clothing += amount;
     }
-    
+
     useClothing(amount) {
         if (this.clothing >= amount) {
             this.clothing -= amount;
@@ -58,11 +58,11 @@ export class Inventory {
         }
         return false;
     }
-    
+
     addMedicine(amount) {
         this.medicine += amount;
     }
-    
+
     useMedicine(amount = 1) {
         if (this.medicine >= amount) {
             this.medicine -= amount;
@@ -70,7 +70,7 @@ export class Inventory {
         }
         return false;
     }
-    
+
     addWagonPart(part, amount = 1) {
         if (part === 'axle') {
             this.wagonAxles += amount;
@@ -80,7 +80,7 @@ export class Inventory {
             this.wagonTongues += amount;
         }
     }
-    
+
     useWagonPart(part) {
         if (part === 'axle') {
             if (this.wagonAxles > 0) {
@@ -100,11 +100,11 @@ export class Inventory {
         }
         return false;
     }
-    
+
     addTools(amount) {
         this.tools += amount;
     }
-    
+
     useTools(amount = 1) {
         if (this.tools >= amount) {
             this.tools -= amount;
@@ -112,13 +112,11 @@ export class Inventory {
         }
         return false;
     }
-    
+
     damageWagon(amount) {
-        const before = this.wagonCondition;
         this.wagonCondition = Math.max(0, this.wagonCondition - amount);
-        console.log(`[INVENTORY] damageWagon(${amount}): ${before} -> ${this.wagonCondition} (subtracted ${amount})`);
     }
-    
+
     repairWagon(amount) {
         const before = this.wagonCondition;
         // Ensure amount is positive
@@ -127,19 +125,17 @@ export class Inventory {
         const expected = Math.min(100, before + repairAmount);
         // Add to condition, cap at 100
         this.wagonCondition = expected;
-        console.log(`[INVENTORY] repairWagon(${amount}): ${before} -> ${this.wagonCondition} (added ${repairAmount}, expected ${expected})`);
-        
+
         // Safety check - if condition didn't increase, force it
         if (this.wagonCondition <= before) {
-            console.error(`[INVENTORY] ERROR: repairWagon failed! Forcing repair from ${before} to ${expected}`);
             this.wagonCondition = expected;
         }
     }
-    
+
     addOxen(amount) {
         this.oxen += amount;
     }
-    
+
     damageOxen(amount) {
         this.oxenCondition = Math.max(0, this.oxenCondition - amount);
         if (this.oxenCondition <= 0 && this.oxen > 0) {
@@ -147,15 +143,15 @@ export class Inventory {
             this.oxenCondition = 100; // Reset condition for remaining oxen
         }
     }
-    
+
     healOxen(amount) {
         this.oxenCondition = Math.min(100, this.oxenCondition + amount);
     }
-    
+
     hasWorkingWagon() {
         return this.wagonCondition > 0 && this.oxen > 0;
     }
-    
+
     getStatus() {
         return {
             food: this.food,
@@ -171,7 +167,7 @@ export class Inventory {
             oxenCondition: this.oxenCondition
         };
     }
-    
+
     toJSON() {
         return {
             food: this.food,
@@ -187,7 +183,7 @@ export class Inventory {
             oxenCondition: this.oxenCondition
         };
     }
-    
+
     static fromJSON(data) {
         const inventory = new Inventory();
         inventory.food = data.food || 0;

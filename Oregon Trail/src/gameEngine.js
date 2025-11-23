@@ -453,9 +453,6 @@ export class GameEngine {
      * Handle random events
      */
     async handleEvent(event) {
-        console.log(`[EVENT] handleEvent called for type: ${event.type}`);
-        console.log(`[EVENT] Current wagon condition: ${this.inventory.wagonCondition}`);
-
         // Prepare event with game state for UI
         const eventWithState = {
             ...event,
@@ -465,27 +462,20 @@ export class GameEngine {
         // Use visual event modal - it will return the choice index
         const choiceIndex = await this.ui.displayEvent(eventWithState, this);
 
-        console.log(`[EVENT] User selected choice index: ${choiceIndex}`);
-
         if (event.choices && event.choices.length > 0 && choiceIndex !== null && choiceIndex !== undefined) {
             const selectedChoice = event.choices[choiceIndex];
-            console.log(`[EVENT] Selected choice text: "${selectedChoice.text}"`);
-            console.log(`[EVENT] Wagon condition before choice: ${this.inventory.wagonCondition}`);
 
             // Check if item is required and available
             if (selectedChoice.requiresItem) {
                 const hasItem = this.checkItemAvailability(selectedChoice.requiresItem, event);
-                console.log(`[EVENT] Item required: ${selectedChoice.requiresItem}, has item: ${hasItem}`);
                 if (!hasItem) {
                     this.ui.displayMessage('You do not have the required item!');
                     // Apply default effect with current inventory
                     if (event.choices[0] && event.choices[0].effect) {
                         // Rebind to use current inventory
                         const currentInventory = this.inventory;
-                        const currentParty = this.party;
                         const damage = event.conditionLoss || 0;
                         if (event.type === 'wagon_damage') {
-                            console.log(`[EVENT] No item available, applying default damage: ${damage}`);
                             currentInventory.damageWagon(damage);
                         }
                     }
@@ -497,25 +487,11 @@ export class GameEngine {
             // CRITICAL: For wagon damage events, use current inventory directly to avoid closure issues
             // Execute the selected choice's effect
             if (selectedChoice.effect) {
-                console.log(`[EVENT] Executing effect for choice: "${selectedChoice.text}"`);
-                const beforeCondition = this.inventory.wagonCondition;
-
                 selectedChoice.effect();
-
-                const afterCondition = this.inventory.wagonCondition;
-                if (beforeCondition !== afterCondition) {
-                    console.log(`[EVENT] Wagon condition changed by effect: ${beforeCondition} -> ${afterCondition}`);
-                }
 
                 // Force UI update after event effect
                 this.ui.displayGameState(this.getGameState());
-            } else {
-                console.log(`[EVENT] No effect function on selected choice`);
             }
-
-            console.log(`[EVENT] Final wagon condition after all event handling: ${this.inventory.wagonCondition}`);
-        } else {
-            console.log(`[EVENT] No choice selected or invalid choice index`);
         }
     }
 
