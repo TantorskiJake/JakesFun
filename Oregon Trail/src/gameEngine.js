@@ -188,16 +188,16 @@ export class GameEngine {
 
             this.ui.displayGameState(this.getGameState());
 
-            // Check if at river (only trigger once per river)
+            // Check if at river (always trigger if at river)
             const currentLoc = this.locations.getCurrentLocation();
-            if (currentLoc.type === 'river' && !this.atRiver) {
-                this.atRiver = true;
+            if (currentLoc.type === 'river') {
                 await this.handleRiverCrossing();
-                // After crossing, reset flag if we're no longer at the river
-                if (!this.locations.isAtRiver()) {
-                    this.atRiver = false;
+                // If we're still at the river (e.g. waited), return to advance day
+                // If we crossed, we're no longer at the river location index, so loop continues
+                if (this.locations.isAtRiver()) {
+                    return; // Exit to advance day (waited)
                 }
-                return; // Exit to advance day
+                // If we crossed, we continue to main menu or next location check
             }
 
             // Check if at fort (only show once per visit)
@@ -560,7 +560,7 @@ export class GameEngine {
                 return;
         }
 
-        this.atRiver = false;
+
     }
 
     async fordRiver() {
