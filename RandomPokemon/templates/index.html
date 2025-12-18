@@ -1,49 +1,104 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Search Bar -->
+<div class="search-container">
+  <form class="search-form" action="/search" method="get" onsubmit="return handleSearch(event)">
+    <input type="text" name="q" id="searchInput" class="search-input" placeholder="Search by name or ID (e.g., Pikachu or 25)" autocomplete="off">
+    <button type="submit" class="search-button">Search</button>
+  </form>
+</div>
+
+<!-- Navigation -->
+<nav class="main-nav">
+  <a href="/random" class="nav-link">Random Pokémon</a>
+  <a href="/favorites" class="nav-link">Favorites</a>
+  <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+</nav>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="loading-spinner" style="display: none;">
+  <div class="spinner"></div>
+  <p>Loading Pokémon...</p>
+</div>
+
+<!-- Error Message -->
+{% if error %}
+<div class="error-message">
+  <p>{{ error }}</p>
+  <button class="reload-button" onclick="window.location.href='/random'">Get Random Pokémon</button>
+</div>
+{% endif %}
+
+<!-- Pokémon Container -->
+{% if pokemon %}
 <div class="container" id="pokemonContainer" data-pokemon='{{ pokemon|tojson }}'>
-  <h1>{{ pokemon.name }}</h1>
-  {% if pokemon.image_url %}
-    <!-- Clicking the image opens the modal to display the shiny sprite -->
-    <img class="pokemon-img" src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" onclick="openSpriteModal()">
-  {% else %}
-    <p>No image available.</p>
-  {% endif %}
+  <h1 class="pokemon-name">{{ pokemon.name }} <span class="pokemon-id">#{{ pokemon.id }}</span></h1>
   
-  <!-- New details section in a full-width vertical list -->
+  <div class="pokemon-image-container">
+    {% if pokemon.image_url %}
+      <div class="sprite-toggle">
+        <button class="sprite-btn active" onclick="switchSprite('front')">Front</button>
+        <button class="sprite-btn" onclick="switchSprite('back')">Back</button>
+        <button class="sprite-btn" onclick="switchSprite('shiny')">Shiny</button>
+      </div>
+      <img class="pokemon-img" id="pokemonSprite" src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" onclick="openSpriteModal()">
+    {% else %}
+      <p>No image available.</p>
+    {% endif %}
+  </div>
+  
+  <!-- Types -->
+  <div class="types-container">
+    {% for t in pokemon.types %}
+      <span class="type {{ t }}">{{ t|capitalize }}</span>
+    {% endfor %}
+  </div>
+  
+  <!-- Quick Stats Summary -->
+  <div class="quick-stats">
+    <div class="quick-stat-item">
+      <span class="quick-stat-label">HP</span>
+      <span class="quick-stat-value">{{ pokemon.stats.hp if pokemon.stats.hp else 'N/A' }}</span>
+    </div>
+    <div class="quick-stat-item">
+      <span class="quick-stat-label">Attack</span>
+      <span class="quick-stat-value">{{ pokemon.stats.attack if pokemon.stats.attack else 'N/A' }}</span>
+    </div>
+    <div class="quick-stat-item">
+      <span class="quick-stat-label">Defense</span>
+      <span class="quick-stat-value">{{ pokemon.stats.defense if pokemon.stats.defense else 'N/A' }}</span>
+    </div>
+    <div class="quick-stat-item">
+      <span class="quick-stat-label">Speed</span>
+      <span class="quick-stat-value">{{ pokemon.stats.speed if pokemon.stats.speed else 'N/A' }}</span>
+    </div>
+  </div>
+  
+  <!-- Details Section -->
   <div class="details">
     <div class="detail-row">
-      <span class="detail-label">ID:</span>
-      <span class="detail-value">{{ pokemon.id }}</span>
-    </div>
-    <div class="detail-row">
       <span class="detail-label">Height:</span>
-      <span class="detail-value">{{ pokemon.height }} decimeters</span>
+      <span class="detail-value">{{ "%.1f"|format(pokemon.height / 10) }} m</span>
     </div>
     <div class="detail-row">
       <span class="detail-label">Weight:</span>
-      <span class="detail-value">{{ pokemon.weight }} hectograms</span>
+      <span class="detail-value">{{ "%.1f"|format(pokemon.weight / 10) }} kg</span>
     </div>
     <div class="detail-row">
-      <span class="detail-label">Base Exp:</span>
+      <span class="detail-label">Base Experience:</span>
       <span class="detail-value">{{ pokemon.base_experience }}</span>
     </div>
     <div class="detail-row">
-      <span class="detail-label">Types:</span>
-      <span class="detail-value">
-        {% for t in pokemon.types %}
-          <span class="type {{ t }}">{{ t|capitalize }}</span>{% if not loop.last %}, {% endif %}
-        {% endfor %}
-      </span>
-    </div>
-    <div class="detail-row">
       <span class="detail-label">Abilities:</span>
-      <span class="detail-value">{{ pokemon.abilities | join(', ') }}</span>
+      <span class="detail-value">{{ pokemon.abilities | join(', ') | capitalize }}</span>
     </div>
+    {% if pokemon.generation %}
     <div class="detail-row">
-      <span class="detail-label">Moves:</span>
-      <span class="detail-value">{{ pokemon.moves | join(', ') }}</span>
+      <span class="detail-label">Generation:</span>
+      <span class="detail-value">{{ pokemon.generation | capitalize }}</span>
     </div>
+    {% endif %}
     <div class="detail-row">
       <span class="detail-label">Color:</span>
       <span class="detail-value">{{ pokemon.color | capitalize }}</span>
@@ -53,20 +108,8 @@
       <span class="detail-value">{{ pokemon.habitat | capitalize }}</span>
     </div>
     <div class="detail-row">
-      <span class="detail-label">Shape:</span>
-      <span class="detail-value">{{ pokemon.shape | capitalize }}</span>
-    </div>
-    <div class="detail-row">
       <span class="detail-label">Capture Rate:</span>
       <span class="detail-value">{{ pokemon.capture_rate }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Growth Rate:</span>
-      <span class="detail-value">{{ pokemon.growth_rate | capitalize }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Egg Groups:</span>
-      <span class="detail-value">{{ pokemon.egg_groups | join(', ') | capitalize }}</span>
     </div>
     <div class="detail-row">
       <span class="detail-label">Description:</span>
@@ -74,39 +117,99 @@
     </div>
   </div>
   
+  <!-- Type Effectiveness -->
+  {% if pokemon.type_effectiveness %}
+  <div class="type-effectiveness">
+    <h3>Type Effectiveness</h3>
+    {% if pokemon.type_effectiveness.weak_to %}
+    <div class="effectiveness-section">
+      <h4 class="weakness-label">Weak To (2x):</h4>
+      <div class="type-list">
+        {% for type_name in pokemon.type_effectiveness.weak_to %}
+          <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if pokemon.type_effectiveness.resistant_to %}
+    <div class="effectiveness-section">
+      <h4 class="resistance-label">Resistant To (0.5x):</h4>
+      <div class="type-list">
+        {% for type_name in pokemon.type_effectiveness.resistant_to %}
+          <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if pokemon.type_effectiveness.immune_to %}
+    <div class="effectiveness-section">
+      <h4 class="immune-label">Immune To (0x):</h4>
+      <div class="type-list">
+        {% for type_name in pokemon.type_effectiveness.immune_to %}
+          <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+  
+  <!-- Evolution Chain -->
+  {% if pokemon.evolution_chain and pokemon.evolution_chain|length > 1 %}
+  <div class="evolution-chain">
+    <h3>Evolution Chain</h3>
+    <div class="evolution-list">
+      {% for evo in pokemon.evolution_chain %}
+        <span class="evolution-item" onclick="searchPokemon('{{ evo }}')">{{ evo|capitalize }}</span>
+        {% if not loop.last %}
+          <span class="evolution-arrow">→</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <!-- Action Buttons -->
   <div class="button-container">
-    <button class="reload-button" onclick="window.location.reload()">Show Another Pokémon</button>
-    <button class="reload-button" onclick="openStatsModal()">Show Stats</button>
-    <button class="reload-button" onclick="addFavorite()">Favorite</button>
+    <button class="reload-button" onclick="getRandomPokemon()">Random Pokémon</button>
+    <button class="reload-button" onclick="openStatsModal()">View Stats</button>
+    <button class="reload-button" onclick="openTypeEffectivenessModal()">Type Chart</button>
+    <button class="reload-button" id="favoriteBtn" onclick="toggleFavorite()">
+      <span id="favoriteText">Add to Favorites</span>
+    </button>
+    <button class="reload-button" onclick="sharePokemon()">Share</button>
   </div>
 </div>
+{% endif %}
 
 <!-- Modal for stats -->
 <div id="statsModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeStatsModal()">&times;</span>
-    <h2>{{ pokemon.name }} Stats</h2>
-    <div class="stats">
-      {% for stat_name, stat_value in pokemon.stats.items() %}
-      <div class="stat">
-        <h3>{{ stat_name.capitalize() }}</h3>
-        <div class="progress">
-          <div class="progress-bar" style="width: {{ (stat_value / 255 * 100) | round }}%;">
-            {{ stat_value }}
-          </div>
-        </div>
-      </div>
-      {% endfor %}
+    <h2 id="statsModalTitle">Stats</h2>
+    <div class="stats" id="statsContainer">
+      <!-- Stats will be populated by JavaScript -->
     </div>
   </div>
 </div>
 
-<!-- Modal for shiny sprite -->
+<!-- Modal for sprite viewer -->
 <div id="spriteModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeSpriteModal()">&times;</span>
-    <h2>{{ pokemon.name }} Shiny Sprite</h2>
-    <img class="modal-img" src="{{ pokemon.shiny_image_url }}" alt="{{ pokemon.name }} Shiny Sprite">
+    <h2 id="spriteModalTitle">Sprite</h2>
+    <img class="modal-img" id="spriteModalImg" src="" alt="Pokémon Sprite">
+  </div>
+</div>
+
+<!-- Modal for type effectiveness -->
+<div id="typeEffectivenessModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeTypeEffectivenessModal()">&times;</span>
+    <h2 id="typeEffectivenessTitle">Type Effectiveness</h2>
+    <div id="typeEffectivenessContainer">
+      <!-- Content will be populated by JavaScript -->
+    </div>
   </div>
 </div>
 {% endblock %}

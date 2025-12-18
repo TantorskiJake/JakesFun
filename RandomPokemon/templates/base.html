@@ -10,8 +10,10 @@
 <body>
     {% block content %}{% endblock %}
     
-    <!-- Audio element for Pokémon cry (ensure the file exists in static/sounds/cry.mp3) -->
-    <audio id="cryAudio" src="{{ url_for('static', filename='sounds/cry.mp3') }}"></audio>
+    <!-- Audio element for Pokémon cry (optional - will fail gracefully if file doesn't exist) -->
+    <audio id="cryAudio" preload="auto" style="display: none;">
+        <!-- Audio will be loaded dynamically if available -->
+    </audio>
     
     <!-- Include the JavaScript file -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

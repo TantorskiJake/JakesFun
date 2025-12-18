@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <h1>My Favorite Pokémon</h1>
+  
+  <nav class="main-nav">
+    <a href="/random" class="nav-link">Random Pokémon</a>
+    <a href="/" class="nav-link">Home</a>
+  </nav>
+  
+  <div id="favoritesContainer" class="favorites-grid">
+    <!-- Favorites will be loaded by JavaScript -->
+  </div>
+  
+  <div id="emptyFavorites" class="empty-state" style="display: none;">
+    <p>No favorites yet! Start adding Pokémon to your favorites.</p>
+    <a href="/random" class="reload-button">Get Random Pokémon</a>
+  </div>
+</div>
+{% endblock %}
+
+
