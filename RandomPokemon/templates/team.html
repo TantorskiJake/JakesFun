@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <h1>Random Pokémon Team</h1>
+  
+  <nav class="main-nav">
+    <a href="/random" class="nav-link">Random Pokémon</a>
+    <a href="/team" class="nav-link">Random Team</a>
+    <a href="/favorites" class="nav-link">Favorites</a>
+    <a href="/history" class="nav-link">History</a>
+    <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+  </nav>
+  
+  <div class="button-container" style="margin-bottom: 20px;">
+    <button class="reload-button" onclick="window.location.reload()">Generate New Team</button>
+  </div>
+  
+  <div class="team-grid">
+    {% for pokemon in team %}
+    <div class="team-card" onclick="window.location.href='/pokemon/{{ pokemon.id }}'">
+      <img src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" class="team-img">
+      <h3>{{ pokemon.name }} #{{ pokemon.id }}</h3>
+      <div class="team-types">
+        {% for t in pokemon.types %}
+          <span class="type {{ t }}">{{ t|capitalize }}</span>
+        {% endfor %}
+      </div>
+      <div class="team-stats-summary">
+        <span>HP: {{ pokemon.stats.hp if pokemon.stats.hp else 'N/A' }}</span>
+        <span>ATK: {{ pokemon.stats.attack if pokemon.stats.attack else 'N/A' }}</span>
+        <span>DEF: {{ pokemon.stats.defense if pokemon.stats.defense else 'N/A' }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+

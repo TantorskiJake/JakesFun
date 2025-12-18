@@ -2,24 +2,23 @@
 
 {% block content %}
 <div class="container">
-  <h1>My Favorite Pokémon</h1>
+  <h1>Recently Viewed Pokémon</h1>
   
   <nav class="main-nav">
     <a href="/random" class="nav-link">Random Pokémon</a>
+    <a href="/favorites" class="nav-link">Favorites</a>
     <a href="/team" class="nav-link">Random Team</a>
-    <a href="/history" class="nav-link">History</a>
     <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
   </nav>
   
-  <div id="favoritesContainer" class="favorites-grid">
-    <!-- Favorites will be loaded by JavaScript -->
+  <div id="historyContainer" class="favorites-grid">
+    <!-- History will be loaded by JavaScript -->
   </div>
   
-  <div id="emptyFavorites" class="empty-state" style="display: none;">
-    <p>No favorites yet! Start adding Pokémon to your favorites.</p>
+  <div id="emptyHistory" class="empty-state" style="display: none;">
+    <p>No history yet! Start viewing Pokémon to build your history.</p>
     <a href="/random" class="reload-button">Get Random Pokémon</a>
   </div>
 </div>
 {% endblock %}
-
 

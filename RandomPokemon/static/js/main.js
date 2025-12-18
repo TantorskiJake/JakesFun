@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // Check if we're on the history page
+    if (document.getElementById('historyContainer')) {
+        loadHistory();
+        return;
+    }
+    
     const container = document.getElementById('pokemonContainer');
     if (container) {
         const pokemonData = container.getAttribute('data-pokemon');
@@ -33,6 +39,19 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('searchInput')?.focus();
         }
     });
+    
+    // Setup search autocomplete
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearchInput);
+        searchInput.addEventListener('blur', function() {
+            // Delay hiding suggestions to allow clicks
+            setTimeout(() => {
+                const suggestions = document.getElementById('searchSuggestions');
+                if (suggestions) suggestions.style.display = 'none';
+            }, 200);
+        });
+    }
 });
 
 // Handle keyboard shortcuts
@@ -494,11 +513,347 @@ function fallbackCopyToClipboard(text) {
     document.body.removeChild(textArea);
 }
 
+// Load history page
+function loadHistory() {
+    const container = document.getElementById('historyContainer');
+    const emptyState = document.getElementById('emptyHistory');
+    
+    if (!container) return;
+    
+    const history = JSON.parse(localStorage.getItem('pokemonHistory') || '[]');
+    
+    if (history.length === 0) {
+        container.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+    }
+    
+    if (emptyState) emptyState.style.display = 'none';
+    container.innerHTML = '';
+    
+    history.forEach(pokemon => {
+        const card = document.createElement('div');
+        card.className = 'favorite-card';
+        
+        card.innerHTML = `
+            <img src="${pokemon.image_url || ''}" alt="${pokemon.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3C/svg%3E'">
+            <h3>${pokemon.name} #${pokemon.id}</h3>
+            <div class="favorite-card-actions">
+                <button class="reload-button" onclick="viewPokemon(${pokemon.id})">View</button>
+            </div>
+        `;
+        
+        card.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'BUTTON') {
+                viewPokemon(pokemon.id);
+            }
+        });
+        
+        container.appendChild(card);
+    });
+}
+
+// Open moves modal
+function openMovesModal() {
+    if (!currentPokemon || !currentPokemon.moves) return;
+    
+    const modal = document.getElementById('movesModal');
+    const title = document.getElementById('movesModalTitle');
+    const container = document.getElementById('movesContainer');
+    
+    if (title) title.textContent = `${currentPokemon.name} Moves`;
+    
+    if (container) {
+        container.innerHTML = '<p>Loading move details...</p>';
+        
+        // Fetch move details for each move
+        const movePromises = currentPokemon.moves.slice(0, 10).map(move => {
+            return fetch(move.url)
+                .then(res => res.json())
+                .then(data => {
+                    const moveType = data.type ? data.type.name : 'unknown';
+                    const power = data.power || 'N/A';
+                    const accuracy = data.accuracy || 'N/A';
+                    const pp = data.pp || 'N/A';
+                    const damageClass = data.damage_class ? data.damage_class.name : 'unknown';
+                    const description = data.flavor_text_entries?.find(e => e.language.name === 'en')?.flavor_text || 'No description available.';
+                    
+                    return {
+                        name: move.name,
+                        type: moveType,
+                        power: power,
+                        accuracy: accuracy,
+                        pp: pp,
+                        damageClass: damageClass,
+                        description: description
+                    };
+                })
+                .catch(() => ({
+                    name: move.name,
+                    type: 'unknown',
+                    power: 'N/A',
+                    accuracy: 'N/A',
+                    pp: 'N/A',
+                    damageClass: 'unknown',
+                    description: 'Unable to load move details.'
+                }));
+        });
+        
+        Promise.all(movePromises).then(moves => {
+            container.innerHTML = '';
+            moves.forEach(move => {
+                const moveDiv = document.createElement('div');
+                moveDiv.className = 'move-item';
+                moveDiv.innerHTML = `
+                    <div class="move-header">
+                        <h4>${move.name.charAt(0).toUpperCase() + move.name.slice(1).replace(/-/g, ' ')}</h4>
+                        <span class="type ${move.type}">${move.type.charAt(0).toUpperCase() + move.type.slice(1)}</span>
+                    </div>
+                    <div class="move-stats">
+                        <span>Power: ${move.power}</span>
+                        <span>Accuracy: ${move.accuracy}%</span>
+                        <span>PP: ${move.pp}</span>
+                        <span>Class: ${move.damageClass.charAt(0).toUpperCase() + move.damageClass.slice(1)}</span>
+                    </div>
+                    <p class="move-description">${move.description}</p>
+                `;
+                container.appendChild(moveDiv);
+            });
+        });
+    }
+    
+    if (modal) modal.style.display = 'block';
+}
+
+// Close moves modal
+function closeMovesModal() {
+    const modal = document.getElementById('movesModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Show ability details
+function showAbilityDetails(abilityUrl, abilityName) {
+    const modal = document.getElementById('abilityModal');
+    const title = document.getElementById('abilityModalTitle');
+    const container = document.getElementById('abilityContainer');
+    
+    if (title) title.textContent = abilityName.charAt(0).toUpperCase() + abilityName.slice(1);
+    
+    if (container) {
+        container.innerHTML = '<p>Loading ability details...</p>';
+    }
+    
+    if (modal) modal.style.display = 'block';
+    
+    fetch(abilityUrl)
+        .then(res => res.json())
+        .then(data => {
+            const description = data.effect_entries?.find(e => e.language.name === 'en')?.effect || 
+                              data.flavor_text_entries?.find(e => e.language.name === 'en')?.flavor_text || 
+                              'No description available.';
+            
+            if (container) {
+                container.innerHTML = `
+                    <div class="ability-details">
+                        <h3>${abilityName.charAt(0).toUpperCase() + abilityName.slice(1)}</h3>
+                        <p class="ability-description">${description}</p>
+                        ${data.generation ? `<p><strong>Generation:</strong> ${data.generation.name.charAt(0).toUpperCase() + data.generation.name.slice(1)}</p>` : ''}
+                    </div>
+                `;
+            }
+        })
+        .catch(() => {
+            if (container) {
+                container.innerHTML = '<p>Unable to load ability details.</p>';
+            }
+        });
+}
+
+// Close ability modal
+function closeAbilityModal() {
+    const modal = document.getElementById('abilityModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Search autocomplete
+function handleSearchInput(e) {
+    const query = e.target.value.trim();
+    const suggestionsDiv = document.getElementById('searchSuggestions');
+    
+    if (!suggestionsDiv) return;
+    
+    if (query.length < 2) {
+        suggestionsDiv.style.display = 'none';
+        return;
+    }
+    
+    fetch(`/api/search-suggestions?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.suggestions && data.suggestions.length > 0) {
+                suggestionsDiv.innerHTML = '';
+                data.suggestions.forEach(suggestion => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.textContent = suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
+                    item.onclick = () => {
+                        document.getElementById('searchInput').value = suggestion;
+                        suggestionsDiv.style.display = 'none';
+                        document.querySelector('.search-form').submit();
+                    };
+                    suggestionsDiv.appendChild(item);
+                });
+                suggestionsDiv.style.display = 'block';
+            } else {
+                suggestionsDiv.style.display = 'none';
+            }
+        })
+        .catch(() => {
+            suggestionsDiv.style.display = 'none';
+        });
+}
+
+// Get random Pokémon by type
+function getRandomByType(typeName) {
+    showLoading();
+    fetch(`/api/pokemon-by-type/${typeName}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                showNotification(data.error);
+                return;
+            }
+            // Redirect to the Pokémon page
+            window.location.href = `/pokemon/${data.id}`;
+        })
+        .catch(() => {
+            showNotification('Error fetching Pokémon by type');
+        });
+}
+
+// Comparison feature
+let comparisonPokemon2 = null;
+
+function openComparisonModal() {
+    if (!currentPokemon) return;
+    
+    const modal = document.getElementById('comparisonModal');
+    const container1 = document.getElementById('comparisonPokemon1Data');
+    const name1 = document.getElementById('comparisonPokemon1Name');
+    
+    if (name1) name1.textContent = currentPokemon.name;
+    
+    if (container1) {
+        container1.innerHTML = createComparisonCard(currentPokemon);
+    }
+    
+    // Reset second Pokémon
+    comparisonPokemon2 = null;
+    const container2 = document.getElementById('comparisonPokemon2Data');
+    if (container2) {
+        container2.innerHTML = '<p>Search for a Pokémon to compare</p>';
+    }
+    
+    if (modal) modal.style.display = 'block';
+}
+
+function closeComparisonModal() {
+    const modal = document.getElementById('comparisonModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function addComparisonPokemon() {
+    const input = document.getElementById('comparisonSearchInput');
+    if (!input) return;
+    
+    const query = input.value.trim();
+    if (!query) {
+        showNotification('Please enter a Pokémon name or ID');
+        return;
+    }
+    
+    fetch(`/api/pokemon/${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                showNotification(data.error);
+                return;
+            }
+            
+            comparisonPokemon2 = data;
+            const container2 = document.getElementById('comparisonPokemon2Data');
+            const name2 = document.getElementById('comparisonPokemon2Name');
+            
+            if (name2) name2.textContent = data.name;
+            if (container2) {
+                container2.innerHTML = createComparisonCard(data);
+            }
+            
+            // Update comparison with side-by-side stats
+            updateComparisonStats();
+        })
+        .catch(() => {
+            showNotification('Error fetching Pokémon');
+        });
+}
+
+function createComparisonCard(pokemon) {
+    return `
+        <img src="${pokemon.image_url || ''}" alt="${pokemon.name}" style="width: 120px; height: 120px; margin: 10px auto; display: block;">
+        <div class="comparison-types">
+            ${pokemon.types.map(t => `<span class="type ${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</span>`).join('')}
+        </div>
+        <div class="comparison-stats" data-pokemon-id="${pokemon.id}">
+            ${Object.entries(pokemon.stats || {}).map(([stat, value]) => `
+                <div class="comparison-stat-row">
+                    <span class="comparison-stat-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}:</span>
+                    <span class="comparison-stat-value">${value}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function updateComparisonStats() {
+    if (!currentPokemon || !comparisonPokemon2) return;
+    
+    const stats1 = document.querySelector('.comparison-stats[data-pokemon-id="' + currentPokemon.id + '"]');
+    const stats2 = document.querySelector('.comparison-stats[data-pokemon-id="' + comparisonPokemon2.id + '"]');
+    
+    if (!stats1 || !stats2) return;
+    
+    // Add visual comparison (highlight higher stats)
+    const statRows1 = stats1.querySelectorAll('.comparison-stat-row');
+    const statRows2 = stats2.querySelectorAll('.comparison-stat-row');
+    
+    statRows1.forEach((row1, index) => {
+        const row2 = statRows2[index];
+        if (!row2) return;
+        
+        const value1 = parseInt(row1.querySelector('.comparison-stat-value').textContent);
+        const value2 = parseInt(row2.querySelector('.comparison-stat-value').textContent);
+        
+        if (value1 > value2) {
+            row1.classList.add('stat-higher');
+            row2.classList.add('stat-lower');
+        } else if (value2 > value1) {
+            row1.classList.add('stat-lower');
+            row2.classList.add('stat-higher');
+        } else {
+            row1.classList.add('stat-equal');
+            row2.classList.add('stat-equal');
+        }
+    });
+}
+
 // Close modals when clicking outside
 window.onclick = function(event) {
     const statsModal = document.getElementById('statsModal');
     const spriteModal = document.getElementById('spriteModal');
     const typeModal = document.getElementById('typeEffectivenessModal');
+    const movesModal = document.getElementById('movesModal');
+    const abilityModal = document.getElementById('abilityModal');
+    const comparisonModal = document.getElementById('comparisonModal');
     
     if (event.target == statsModal) {
         closeStatsModal();
@@ -508,5 +863,14 @@ window.onclick = function(event) {
     }
     if (event.target == typeModal) {
         closeTypeEffectivenessModal();
+    }
+    if (event.target == movesModal) {
+        closeMovesModal();
+    }
+    if (event.target == abilityModal) {
+        closeAbilityModal();
+    }
+    if (event.target == comparisonModal) {
+        closeComparisonModal();
     }
 };

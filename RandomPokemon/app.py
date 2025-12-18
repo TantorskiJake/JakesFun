@@ -41,9 +41,9 @@ def get_pokemon_data(pokemon_id_or_name):
             "base_experience": data.get("base_experience"),
             "types": [t['type']['name'] for t in data.get("types", [])],
             "type_urls": [t['type']['url'] for t in data.get("types", [])],
-            "abilities": [a['ability']['name'] for a in data.get("abilities", [])],
+            "abilities": [{"name": a['ability']['name'], "url": a['ability']['url']} for a in data.get("abilities", [])],
             "stats": { stat['stat']['name']: stat['base_stat'] for stat in data.get("stats", []) },
-            "moves": [move["move"]["name"] for move in data.get("moves", [])][:10]  # first 10 moves
+            "moves": [{"name": move["move"]["name"], "url": move["move"]["url"]} for move in data.get("moves", [])][:10]  # first 10 moves
         }
         
         # Calculate type effectiveness
@@ -240,6 +240,21 @@ def search():
 def favorites():
     return render_template("favorites.html")
 
+@app.route("/history")
+def history():
+    return render_template("history.html")
+
+@app.route("/team")
+def random_team():
+    # Generate a random team of 6 Pokémon
+    team_ids = random.sample(range(1, 1026), 6)
+    team = []
+    for pokemon_id in team_ids:
+        pokemon = get_pokemon_data(pokemon_id)
+        if pokemon:
+            team.append(pokemon)
+    return render_template("team.html", team=team)
+
 @app.route("/api/pokemon/<pokemon_id_or_name>")
 def api_get_pokemon(pokemon_id_or_name):
     """API endpoint for fetching Pokémon data"""
@@ -249,6 +264,57 @@ def api_get_pokemon(pokemon_id_or_name):
         return jsonify({"error": "Pokémon not found"}), 404
     
     return jsonify(pokemon)
+
+@app.route("/api/search-suggestions")
+def search_suggestions():
+    """API endpoint for search autocomplete suggestions"""
+    query = request.args.get("q", "").strip().lower()
+    if len(query) < 2:
+        return jsonify({"suggestions": []})
+    
+    # Common Pokémon names for autocomplete (first 151 for speed)
+    # In a real app, you'd cache this or use a proper search index
+    common_names = [
+        "pikachu", "charizard", "blastoise", "venusaur", "mewtwo", "mew",
+        "eevee", "snorlax", "dragonite", "gyarados", "lapras", "arcanine",
+        "alakazam", "gengar", "machamp", "golem", "rhydon", "nidoking",
+        "nidoqueen", "vaporeon", "jolteon", "flareon", "aerodactyl", "kabutops"
+    ]
+    
+    # Filter suggestions based on query
+    suggestions = [name for name in common_names if query in name][:5]
+    
+    return jsonify({"suggestions": suggestions})
+
+@app.route("/api/pokemon-by-type/<type_name>")
+def pokemon_by_type(type_name):
+    """Get a random Pokémon of a specific type"""
+    try:
+        type_url = f"https://pokeapi.co/api/v2/type/{type_name.lower()}"
+        response = requests.get(type_url, timeout=10)
+        
+        if response.status_code != 200:
+            return jsonify({"error": "Type not found"}), 404
+        
+        type_data = response.json()
+        pokemon_list = type_data.get("pokemon", [])
+        
+        if not pokemon_list:
+            return jsonify({"error": "No Pokémon found for this type"}), 404
+        
+        # Get a random Pokémon from this type
+        random_pokemon = random.choice(pokemon_list)
+        pokemon_name = random_pokemon.get("pokemon", {}).get("name", "")
+        
+        if pokemon_name:
+            pokemon = get_pokemon_data(pokemon_name)
+            if pokemon:
+                return jsonify(pokemon)
+        
+        return jsonify({"error": "Failed to fetch Pokémon"}), 500
+    
+    except:
+        return jsonify({"error": "Error fetching type data"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
