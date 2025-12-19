@@ -191,6 +191,24 @@
       {% endif %}
     </div>
     <div class="quick-stat-item">
+      <span class="quick-stat-label">Sp. Atk</span>
+      <span class="quick-stat-value">{{ pokemon.stats['special-attack'] if pokemon.stats.get('special-attack') else 'N/A' }}</span>
+      {% if pokemon.stats.get('special-attack') %}
+      <div class="stat-bar-container">
+        <div class="stat-bar" style="width: {{ (pokemon.stats['special-attack'] / 255 * 100)|round }}%"></div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="quick-stat-item">
+      <span class="quick-stat-label">Sp. Def</span>
+      <span class="quick-stat-value">{{ pokemon.stats['special-defense'] if pokemon.stats.get('special-defense') else 'N/A' }}</span>
+      {% if pokemon.stats.get('special-defense') %}
+      <div class="stat-bar-container">
+        <div class="stat-bar" style="width: {{ (pokemon.stats['special-defense'] / 255 * 100)|round }}%"></div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="quick-stat-item">
       <span class="quick-stat-label">Speed</span>
       <span class="quick-stat-value">{{ pokemon.stats.speed if pokemon.stats.speed else 'N/A' }}</span>
       {% if pokemon.stats.speed %}

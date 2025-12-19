@@ -39,8 +39,15 @@
       </div>
       <div class="team-stats-summary">
         <span>HP: {{ pokemon.stats.hp if pokemon.stats.hp else 'N/A' }}</span>
-        <span>ATK: {{ pokemon.stats.attack if pokemon.stats.attack else 'N/A' }}</span>
-        <span>DEF: {{ pokemon.stats.defense if pokemon.stats.defense else 'N/A' }}</span>
+        {% set atk = pokemon.stats.attack if pokemon.stats.attack else 0 %}
+        {% set spatk = pokemon.stats.get('special-attack', 0) if pokemon.stats.get('special-attack') else 0 %}
+        {% set best_atk = atk if atk >= spatk else spatk %}
+        <span>ATK: {{ best_atk if best_atk > 0 else 'N/A' }}{% if atk != spatk and atk > 0 and spatk > 0 %}{% if atk > spatk %}(Ph){% else %}(Sp){% endif %}{% endif %}</span>
+        {% set def = pokemon.stats.defense if pokemon.stats.defense else 0 %}
+        {% set spdef = pokemon.stats.get('special-defense', 0) if pokemon.stats.get('special-defense') else 0 %}
+        {% set best_def = def if def >= spdef else spdef %}
+        <span>DEF: {{ best_def if best_def > 0 else 'N/A' }}{% if def != spdef and def > 0 and spdef > 0 %}{% if def > spdef %}(Ph){% else %}(Sp){% endif %}{% endif %}</span>
+        <span>SPD: {{ pokemon.stats.speed if pokemon.stats.speed else 'N/A' }}</span>
       </div>
     </div>
     {% endfor %}
