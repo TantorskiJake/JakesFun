@@ -26,7 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
             currentPokemon = JSON.parse(pokemonData);
             updateFavoriteButton();
             addToHistory(currentPokemon);
+            // Hide loading if Pokémon is already loaded
+            hideLoading();
         }
+    } else {
+        // Hide loading if no container (error page, etc.)
+        hideLoading();
     }
     
     // Keyboard shortcuts
@@ -79,13 +84,42 @@ function handleKeyboardShortcuts(e) {
         case 'Escape':
             closeStatsModal();
             closeSpriteModal();
+            closeTypeEffectivenessModal();
+            closeMovesModal();
+            closeAbilityModal();
+            closeComparisonModal();
+            closeKeyboardShortcutsModal();
+            break;
+        case '?':
+            if (!e.shiftKey) {
+                e.preventDefault();
+                openKeyboardShortcutsModal();
+            }
             break;
     }
 }
 
 // Get random Pokémon
 function getRandomPokemon() {
-    showLoading();
+    showLoading('Getting random Pokémon...', [
+        'Selecting random Pokémon',
+        'Fetching Pokémon data',
+        'Loading details',
+        'Almost done...'
+    ]);
+    
+    // Simulate progress
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 10;
+        const stepIndex = Math.floor(progress / 25);
+        updateLoadingProgress(progress, stepIndex);
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+        }
+    }, 150);
+    
     window.location.href = '/random';
 }
 
@@ -96,7 +130,25 @@ function handleSearch(event) {
         event.preventDefault();
         return false;
     }
-    showLoading();
+    showLoading(`Searching for "${query}"...`, [
+        'Searching database',
+        'Fetching Pokémon data',
+        'Loading details',
+        'Finalizing...'
+    ]);
+    
+    // Simulate progress
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 15;
+        const stepIndex = Math.floor(progress / 25);
+        updateLoadingProgress(progress, stepIndex);
+        
+        if (progress >= 100) {
+            clearInterval(interval);
+        }
+    }, 100);
+    
     return true;
 }
 
@@ -277,10 +329,82 @@ function addToHistory(pokemon) {
     localStorage.setItem('pokemonHistory', JSON.stringify(history));
 }
 
-// Show loading spinner
-function showLoading() {
+// Show loading spinner with progress
+function showLoading(message = 'Loading Pokémon...', steps = []) {
     const spinner = document.getElementById('loadingSpinner');
-    if (spinner) spinner.style.display = 'block';
+    const loadingText = document.getElementById('loadingText');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const loadingSteps = document.getElementById('loadingSteps');
+    
+    if (spinner) {
+        spinner.style.display = 'block';
+        if (loadingText) loadingText.textContent = message;
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressText) progressText.textContent = '0%';
+        
+        // Show loading steps
+        if (loadingSteps && steps.length > 0) {
+            loadingSteps.innerHTML = steps.map((step, index) => `
+                <div class="loading-step ${index === 0 ? 'active' : ''}" data-step="${index}">
+                    <span class="step-icon">${index === 0 ? '⏳' : '○'}</span>
+                    <span class="step-text">${step}</span>
+                </div>
+            `).join('');
+        } else if (loadingSteps) {
+            loadingSteps.innerHTML = '';
+        }
+    }
+}
+
+// Update loading progress
+function updateLoadingProgress(percent, stepIndex = null, stepText = null) {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const loadingSteps = document.getElementById('loadingSteps');
+    
+    if (progressBar) {
+        progressBar.style.width = percent + '%';
+        progressBar.style.transition = 'width 0.3s ease';
+    }
+    
+    if (progressText) {
+        progressText.textContent = Math.round(percent) + '%';
+    }
+    
+    // Update active step
+    if (loadingSteps && stepIndex !== null) {
+        const steps = loadingSteps.querySelectorAll('.loading-step');
+        steps.forEach((step, index) => {
+            if (index < stepIndex) {
+                step.classList.remove('active');
+                step.classList.add('completed');
+                step.querySelector('.step-icon').textContent = '✓';
+            } else if (index === stepIndex) {
+                step.classList.add('active');
+                step.querySelector('.step-icon').textContent = '⏳';
+            } else {
+                step.classList.remove('active', 'completed');
+                step.querySelector('.step-icon').textContent = '○';
+            }
+        });
+        
+        if (stepText && steps[stepIndex]) {
+            steps[stepIndex].querySelector('.step-text').textContent = stepText;
+        }
+    }
+}
+
+// Hide loading spinner
+function hideLoading() {
+    const spinner = document.getElementById('loadingSpinner');
+    if (spinner) {
+        spinner.style.display = 'none';
+        // Reset progress
+        setTimeout(() => {
+            updateLoadingProgress(0);
+        }, 300);
+    }
 }
 
 // Show notification
@@ -564,10 +688,14 @@ function openMovesModal() {
     if (title) title.textContent = `${currentPokemon.name} Moves`;
     
     if (container) {
-        container.innerHTML = '<p>Loading move details...</p>';
+        container.innerHTML = '<div class="loading-moves"><p>Loading move details...</p><div class="progress-bar-container"><div class="progress-bar-fill" id="movesProgress" style="width: 0%;"></div></div></div>';
+        
+        const movesProgressBar = document.getElementById('movesProgress');
+        let loadedMoves = 0;
+        const totalMoves = Math.min(currentPokemon.moves.length, 10);
         
         // Fetch move details for each move
-        const movePromises = currentPokemon.moves.slice(0, 10).map(move => {
+        const movePromises = currentPokemon.moves.slice(0, 10).map((move, index) => {
             return fetch(move.url)
                 .then(res => res.json())
                 .then(data => {
@@ -599,9 +727,22 @@ function openMovesModal() {
                 }));
         });
         
+        // Update progress as moves load
+        movePromises.forEach((promise, index) => {
+            promise.then(() => {
+                loadedMoves++;
+                if (movesProgressBar) {
+                    const progress = (loadedMoves / totalMoves) * 100;
+                    movesProgressBar.style.width = progress + '%';
+                }
+            });
+        });
+        
         Promise.all(movePromises).then(moves => {
-            container.innerHTML = '';
-            moves.forEach(move => {
+            if (movesProgressBar) movesProgressBar.style.width = '100%';
+            setTimeout(() => {
+                container.innerHTML = '';
+                moves.forEach(move => {
                 const moveDiv = document.createElement('div');
                 moveDiv.className = 'move-item';
                 moveDiv.innerHTML = `
@@ -618,7 +759,8 @@ function openMovesModal() {
                     <p class="move-description">${move.description}</p>
                 `;
                 container.appendChild(moveDiv);
-            });
+                });
+            }, 200);
         });
     }
     
@@ -715,18 +857,43 @@ function handleSearchInput(e) {
 
 // Get random Pokémon by type
 function getRandomByType(typeName) {
-    showLoading();
+    showLoading(`Finding ${typeName} type Pokémon...`, [
+        'Searching type database',
+        'Selecting random Pokémon',
+        'Fetching data',
+        'Loading details'
+    ]);
+    
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += 12;
+        const stepIndex = Math.floor(progress / 25);
+        updateLoadingProgress(progress, stepIndex);
+        
+        if (progress >= 90) {
+            clearInterval(progressInterval);
+        }
+    }, 100);
+    
     fetch(`/api/pokemon-by-type/${typeName}`)
         .then(res => res.json())
         .then(data => {
-            if (data.error) {
-                showNotification(data.error);
-                return;
-            }
-            // Redirect to the Pokémon page
-            window.location.href = `/pokemon/${data.id}`;
+            clearInterval(progressInterval);
+            updateLoadingProgress(100, 3, 'Complete!');
+            
+            setTimeout(() => {
+                if (data.error) {
+                    hideLoading();
+                    showNotification(data.error);
+                    return;
+                }
+                // Redirect to the Pokémon page
+                window.location.href = `/pokemon/${data.id}`;
+            }, 300);
         })
         .catch(() => {
+            clearInterval(progressInterval);
+            hideLoading();
             showNotification('Error fetching Pokémon by type');
         });
 }
@@ -787,10 +954,11 @@ function addComparisonPokemon() {
             if (name2) name2.textContent = data.name;
             if (container2) {
                 container2.innerHTML = createComparisonCard(data);
+                // Small delay to ensure DOM is updated
+                setTimeout(() => {
+                    updateComparisonStats();
+                }, 100);
             }
-            
-            // Update comparison with side-by-side stats
-            updateComparisonStats();
         })
         .catch(() => {
             showNotification('Error fetching Pokémon');
@@ -810,6 +978,9 @@ function createComparisonCard(pokemon) {
                     <span class="comparison-stat-value">${value}</span>
                 </div>
             `).join('')}
+        </div>
+        <div class="comparison-chart-container" data-pokemon-id="${pokemon.id}">
+            <canvas class="comparison-chart" width="250" height="250"></canvas>
         </div>
     `;
 }
@@ -844,6 +1015,319 @@ function updateComparisonStats() {
             row2.classList.add('stat-equal');
         }
     });
+    
+    // Draw radar charts
+    const chart1 = document.querySelector('.comparison-chart-container[data-pokemon-id="' + currentPokemon.id + '"] .comparison-chart');
+    const chart2 = document.querySelector('.comparison-chart-container[data-pokemon-id="' + comparisonPokemon2.id + '"] .comparison-chart');
+    
+    if (chart1) drawComparisonChart(currentPokemon, chart1, '#3B4CCA');
+    if (chart2) drawComparisonChart(comparisonPokemon2, chart2, '#EE8130');
+}
+
+function drawComparisonChart(pokemon, canvas, color) {
+    if (!canvas || !pokemon.stats) return;
+    
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = 70;
+    const maxStat = 255;
+    
+    const stats = ['hp', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'];
+    const statLabels = ['HP', 'ATK', 'DEF', 'SP.ATK', 'SP.DEF', 'SPD'];
+    const statValues = stats.map(stat => pokemon.stats[stat] || 0);
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid circles
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 5; i++) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, (radius * i) / 5, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    // Draw axes
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < stats.length; i++) {
+        const angle = (Math.PI * 2 * i) / stats.length - Math.PI / 2;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        
+        // Draw labels
+        const labelX = centerX + Math.cos(angle) * (radius + 15);
+        const labelY = centerY + Math.sin(angle) * (radius + 15);
+        ctx.fillStyle = '#333';
+        ctx.font = '8px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(statLabels[i], labelX, labelY);
+    }
+    
+    // Draw stat polygon
+    ctx.fillStyle = color + '80'; // Add transparency
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    for (let i = 0; i < stats.length; i++) {
+        const angle = (Math.PI * 2 * i) / stats.length - Math.PI / 2;
+        const value = statValues[i] / maxStat;
+        const x = centerX + Math.cos(angle) * radius * value;
+        const y = centerY + Math.sin(angle) * radius * value;
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Draw stat values at vertices
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 9px Arial';
+    for (let i = 0; i < stats.length; i++) {
+        const angle = (Math.PI * 2 * i) / stats.length - Math.PI / 2;
+        const value = statValues[i] / maxStat;
+        const x = centerX + Math.cos(angle) * radius * value;
+        const y = centerY + Math.sin(angle) * radius * value;
+        ctx.fillText(statValues[i], x, y - 10);
+    }
+}
+
+// Export favorites
+function exportFavorites(format) {
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    
+    if (favorites.length === 0) {
+        showNotification('No favorites to export!');
+        return;
+    }
+    
+    let content, filename, mimeType;
+    
+    if (format === 'json') {
+        content = JSON.stringify(favorites, null, 2);
+        filename = `pokemon-favorites-${new Date().toISOString().split('T')[0]}.json`;
+        mimeType = 'application/json';
+    } else if (format === 'csv') {
+        const headers = ['ID', 'Name', 'Type 1', 'Type 2', 'HP', 'Attack', 'Defense', 'Sp. Attack', 'Sp. Defense', 'Speed'];
+        const rows = favorites.map(p => {
+            const types = p.types || [];
+            return [
+                p.id,
+                p.name,
+                types[0] || '',
+                types[1] || '',
+                p.stats?.hp || '',
+                p.stats?.attack || '',
+                p.stats?.defense || '',
+                p.stats?.['special-attack'] || '',
+                p.stats?.['special-defense'] || '',
+                p.stats?.speed || ''
+            ].join(',');
+        });
+        content = [headers.join(','), ...rows].join('\n');
+        filename = `pokemon-favorites-${new Date().toISOString().split('T')[0]}.csv`;
+        mimeType = 'text/csv';
+    }
+    
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification(`Favorites exported as ${format.toUpperCase()}!`);
+}
+
+// Import favorites
+function importFavorites() {
+    document.getElementById('importFileInput')?.click();
+}
+
+function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            let imported;
+            if (file.name.endsWith('.json')) {
+                imported = JSON.parse(e.target.result);
+            } else if (file.name.endsWith('.csv')) {
+                // Simple CSV parsing
+                const lines = e.target.result.split('\n');
+                const headers = lines[0].split(',');
+                imported = lines.slice(1).map(line => {
+                    const values = line.split(',');
+                    return {
+                        id: parseInt(values[0]),
+                        name: values[1]
+                    };
+                }).filter(p => p.id && p.name);
+            }
+            
+            if (Array.isArray(imported) && imported.length > 0) {
+                const currentFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                const merged = [...currentFavorites];
+                
+                imported.forEach(p => {
+                    if (!merged.find(f => f.id === p.id)) {
+                        merged.push(p);
+                    }
+                });
+                
+                localStorage.setItem('favorites', JSON.stringify(merged));
+                showNotification(`Imported ${imported.length} Pokémon!`);
+                
+                if (document.getElementById('favoritesContainer')) {
+                    loadFavorites();
+                }
+            }
+        } catch (err) {
+            showNotification('Error importing file. Please check the format.');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Keyboard shortcuts modal
+function openKeyboardShortcutsModal() {
+    const modal = document.getElementById('keyboardShortcutsModal');
+    if (modal) modal.style.display = 'block';
+}
+
+function closeKeyboardShortcutsModal() {
+    const modal = document.getElementById('keyboardShortcutsModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Save current team
+function saveCurrentTeam() {
+    const teamCards = document.querySelectorAll('.team-card');
+    if (teamCards.length === 0) {
+        showNotification('No team to save!');
+        return;
+    }
+    
+    const team = [];
+    teamCards.forEach(card => {
+        const img = card.querySelector('img');
+        const name = card.querySelector('h3');
+        if (img && name) {
+            const pokemonId = parseInt(card.getAttribute('onclick')?.match(/\d+/)?.[0]);
+            if (pokemonId) {
+                team.push(pokemonId);
+            }
+        }
+    });
+    
+    if (team.length === 0) {
+        showNotification('Could not extract team data.');
+        return;
+    }
+    
+    const savedTeams = JSON.parse(localStorage.getItem('savedTeams') || '[]');
+    const teamName = prompt('Enter a name for this team:', `Team ${savedTeams.length + 1}`);
+    
+    if (teamName) {
+        savedTeams.push({
+            name: teamName,
+            pokemonIds: team,
+            date: new Date().toISOString()
+        });
+        localStorage.setItem('savedTeams', JSON.stringify(savedTeams));
+        showNotification('Team saved!');
+    }
+}
+
+// Load saved teams
+function loadSavedTeams() {
+    const container = document.getElementById('savedTeamsContainer');
+    const list = document.getElementById('savedTeamsList');
+    
+    if (!container || !list) return;
+    
+    const savedTeams = JSON.parse(localStorage.getItem('savedTeams') || '[]');
+    
+    if (savedTeams.length === 0) {
+        showNotification('No saved teams found!');
+        return;
+    }
+    
+    container.style.display = 'block';
+    list.innerHTML = '';
+    
+    savedTeams.forEach((team, index) => {
+        const teamDiv = document.createElement('div');
+        teamDiv.className = 'saved-team-item';
+        teamDiv.innerHTML = `
+            <h4>${team.name}</h4>
+            <p>${team.pokemonIds.length} Pokémon</p>
+            <p style="font-size: 0.6rem; color: #666;">${new Date(team.date).toLocaleDateString()}</p>
+            <div class="saved-team-actions">
+                <button class="reload-button" style="font-size: 0.6rem; padding: 5px 10px;" onclick="loadTeam(${index})">Load</button>
+                <button class="reload-button" style="font-size: 0.6rem; padding: 5px 10px;" onclick="deleteTeam(${index})">Delete</button>
+            </div>
+        `;
+        list.appendChild(teamDiv);
+    });
+}
+
+function loadTeam(index) {
+    const savedTeams = JSON.parse(localStorage.getItem('savedTeams') || '[]');
+    const team = savedTeams[index];
+    
+    if (team && team.pokemonIds.length > 0) {
+        // Redirect to team page with IDs (would need backend support)
+        // For now, just show notification
+        showNotification(`Loading team: ${team.name}`);
+        // In a full implementation, you'd pass team IDs to generate the team
+    }
+}
+
+function deleteTeam(index) {
+    const savedTeams = JSON.parse(localStorage.getItem('savedTeams') || '[]');
+    savedTeams.splice(index, 1);
+    localStorage.setItem('savedTeams', JSON.stringify(savedTeams));
+    loadSavedTeams();
+    showNotification('Team deleted!');
+}
+
+// Share team
+function shareTeam() {
+    const teamCards = document.querySelectorAll('.team-card');
+    if (teamCards.length === 0) {
+        showNotification('No team to share!');
+        return;
+    }
+    
+    const teamIds = [];
+    teamCards.forEach(card => {
+        const pokemonId = parseInt(card.getAttribute('onclick')?.match(/\d+/)?.[0]);
+        if (pokemonId) teamIds.push(pokemonId);
+    });
+    
+    const teamUrl = `${window.location.origin}/team?ids=${teamIds.join(',')}`;
+    copyToClipboard(teamUrl);
+    showNotification('Team link copied! Share it with others!');
 }
 
 // Close modals when clicking outside
@@ -854,6 +1338,7 @@ window.onclick = function(event) {
     const movesModal = document.getElementById('movesModal');
     const abilityModal = document.getElementById('abilityModal');
     const comparisonModal = document.getElementById('comparisonModal');
+    const shortcutsModal = document.getElementById('keyboardShortcutsModal');
     
     if (event.target == statsModal) {
         closeStatsModal();
@@ -872,5 +1357,8 @@ window.onclick = function(event) {
     }
     if (event.target == comparisonModal) {
         closeComparisonModal();
+    }
+    if (event.target == shortcutsModal) {
+        closeKeyboardShortcutsModal();
     }
 };

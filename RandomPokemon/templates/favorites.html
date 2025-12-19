@@ -11,6 +11,13 @@
     <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
   </nav>
   
+  <div class="button-container" style="margin-bottom: 20px;">
+    <button class="reload-button" onclick="exportFavorites('json')">Export as JSON</button>
+    <button class="reload-button" onclick="exportFavorites('csv')">Export as CSV</button>
+    <button class="reload-button" onclick="importFavorites()">Import Favorites</button>
+    <input type="file" id="importFileInput" accept=".json,.csv" style="display: none;" onchange="handleFileImport(event)">
+  </div>
+  
   <div id="favoritesContainer" class="favorites-grid">
     <!-- Favorites will be loaded by JavaScript -->
   </div>

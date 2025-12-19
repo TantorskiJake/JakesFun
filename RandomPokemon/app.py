@@ -219,7 +219,12 @@ def get_pokemon(pokemon_id_or_name):
     pokemon = get_pokemon_data(pokemon_id_or_name)
     
     if not pokemon:
-        return render_template("index.html", error=f"Pokémon '{pokemon_id_or_name}' not found. Please try again.")
+        common_names = ["pikachu", "charizard", "blastoise", "venusaur", "mewtwo", "eevee"]
+        suggestions = common_names[:5]
+        return render_template("index.html", 
+                             error=f"Pokémon '{pokemon_id_or_name}' not found.",
+                             error_suggestions=[f"Try: {s.capitalize()}" for s in suggestions] + 
+                                             ["Use ID numbers 1-1025", "Check the type filters", "Visit /random for a random Pokémon"])
     
     return render_template("index.html", pokemon=pokemon)
 
@@ -227,12 +232,22 @@ def get_pokemon(pokemon_id_or_name):
 def search():
     query = request.args.get("q", "").strip().lower()
     if not query:
-        return render_template("index.html", error="Please enter a Pokémon name or ID.")
+        return render_template("index.html", error="Please enter a Pokémon name or ID.", error_suggestions=["Try searching for: Pikachu, Charizard, or 25"])
     
     pokemon = get_pokemon_data(query)
     
     if not pokemon:
-        return render_template("index.html", error=f"Pokémon '{query}' not found. Please try again.")
+        # Generate suggestions based on common names
+        common_names = ["pikachu", "charizard", "blastoise", "venusaur", "mewtwo", "eevee", 
+                       "snorlax", "dragonite", "gyarados", "lucario", "garchomp", "tyranitar"]
+        suggestions = [name for name in common_names if query[0] == name[0] or query in name[:3]][:5]
+        if not suggestions:
+            suggestions = common_names[:5]
+        
+        return render_template("index.html", 
+                             error=f"Pokémon '{query}' not found.",
+                             error_suggestions=[f"Did you mean: {s.capitalize()}?" for s in suggestions] + 
+                                             ["Try searching by ID (1-1025)", "Check your spelling", "Use the type filters below"])
     
     return render_template("index.html", pokemon=pokemon)
 

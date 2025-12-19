@@ -42,19 +42,42 @@
   <a href="/favorites" class="nav-link">Favorites</a>
   <a href="/history" class="nav-link">History</a>
   <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+  <button class="nav-link" onclick="openKeyboardShortcutsModal()" title="Keyboard Shortcuts">⌨️ Shortcuts</button>
 </nav>
 
-<!-- Loading Spinner -->
+<!-- Loading Spinner with Progress -->
 <div id="loadingSpinner" class="loading-spinner" style="display: none;">
   <div class="spinner"></div>
-  <p>Loading Pokémon...</p>
+  <p id="loadingText">Loading Pokémon...</p>
+  <div class="progress-container">
+    <div class="progress-bar-container">
+      <div id="progressBar" class="progress-bar-fill" style="width: 0%;"></div>
+    </div>
+    <span id="progressText" class="progress-text">0%</span>
+  </div>
+  <div id="loadingSteps" class="loading-steps">
+    <!-- Steps will be populated by JavaScript -->
+  </div>
 </div>
 
 <!-- Error Message -->
 {% if error %}
 <div class="error-message">
-  <p>{{ error }}</p>
-  <button class="reload-button" onclick="window.location.href='/random'">Get Random Pokémon</button>
+  <p class="error-title">{{ error }}</p>
+  {% if error_suggestions %}
+  <div class="error-suggestions">
+    <h4>Suggestions:</h4>
+    <ul>
+      {% for suggestion in error_suggestions %}
+      <li>{{ suggestion }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  <div class="error-actions">
+    <button class="reload-button" onclick="window.location.href='/random'">Get Random Pokémon</button>
+    <button class="reload-button" onclick="document.getElementById('searchInput')?.focus()">Try Search Again</button>
+  </div>
 </div>
 {% endif %}
 
@@ -88,18 +111,38 @@
     <div class="quick-stat-item">
       <span class="quick-stat-label">HP</span>
       <span class="quick-stat-value">{{ pokemon.stats.hp if pokemon.stats.hp else 'N/A' }}</span>
+      {% if pokemon.stats.hp %}
+      <div class="stat-bar-container">
+        <div class="stat-bar" style="width: {{ (pokemon.stats.hp / 255 * 100)|round }}%"></div>
+      </div>
+      {% endif %}
     </div>
     <div class="quick-stat-item">
       <span class="quick-stat-label">Attack</span>
       <span class="quick-stat-value">{{ pokemon.stats.attack if pokemon.stats.attack else 'N/A' }}</span>
+      {% if pokemon.stats.attack %}
+      <div class="stat-bar-container">
+        <div class="stat-bar" style="width: {{ (pokemon.stats.attack / 255 * 100)|round }}%"></div>
+      </div>
+      {% endif %}
     </div>
     <div class="quick-stat-item">
       <span class="quick-stat-label">Defense</span>
       <span class="quick-stat-value">{{ pokemon.stats.defense if pokemon.stats.defense else 'N/A' }}</span>
+      {% if pokemon.stats.defense %}
+      <div class="stat-bar-container">
+        <div class="stat-bar" style="width: {{ (pokemon.stats.defense / 255 * 100)|round }}%"></div>
+      </div>
+      {% endif %}
     </div>
     <div class="quick-stat-item">
       <span class="quick-stat-label">Speed</span>
       <span class="quick-stat-value">{{ pokemon.stats.speed if pokemon.stats.speed else 'N/A' }}</span>
+      {% if pokemon.stats.speed %}
+      <div class="stat-bar-container">
+        <div class="stat-bar" style="width: {{ (pokemon.stats.speed / 255 * 100)|round }}%"></div>
+      </div>
+      {% endif %}
     </div>
   </div>
   
@@ -299,6 +342,36 @@
         <div id="comparisonPokemon2Data">
           <p>Search for a Pokémon to compare</p>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for keyboard shortcuts -->
+<div id="keyboardShortcutsModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeKeyboardShortcutsModal()">&times;</span>
+    <h2>Keyboard Shortcuts</h2>
+    <div class="shortcuts-list">
+      <div class="shortcut-item">
+        <span class="shortcut-key">/</span>
+        <span class="shortcut-description">Focus search bar</span>
+      </div>
+      <div class="shortcut-item">
+        <span class="shortcut-key">Ctrl/Cmd + R</span>
+        <span class="shortcut-description">Get random Pokémon</span>
+      </div>
+      <div class="shortcut-item">
+        <span class="shortcut-key">Ctrl/Cmd + S</span>
+        <span class="shortcut-description">Focus search</span>
+      </div>
+      <div class="shortcut-item">
+        <span class="shortcut-key">Esc</span>
+        <span class="shortcut-description">Close modals</span>
+      </div>
+      <div class="shortcut-item">
+        <span class="shortcut-key">?</span>
+        <span class="shortcut-description">Show this help</span>
       </div>
     </div>
   </div>
