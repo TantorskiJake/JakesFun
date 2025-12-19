@@ -569,6 +569,183 @@
     transform: translateY(-1px) scale(1.02);
   }
   
+  /* Generation Filter */
+  .generation-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+  }
+  
+  .filter-label-small {
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    color: var(--text-color);
+    white-space: nowrap;
+  }
+  
+  .generation-select {
+    padding: 6px 12px;
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius-small);
+    background: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--shadow-color);
+  }
+  
+  .generation-select:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--light-text);
+    border-color: var(--accent-color);
+  }
+  
+  .generation-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(59, 76, 202, 0.3);
+  }
+  
+  /* Moves Filters */
+  .moves-filters {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+  }
+  
+  .moves-filters .search-input {
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .filter-select {
+    padding: 8px 12px;
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius-small);
+    background: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--shadow-color);
+  }
+  
+  .filter-select:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--light-text);
+    border-color: var(--accent-color);
+  }
+  
+  .filter-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(59, 76, 202, 0.3);
+  }
+  
+  /* Pagination */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+  }
+  
+  .pagination-btn {
+    padding: 8px 16px;
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius-small);
+    background: var(--card-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--shadow-color);
+  }
+  
+  .pagination-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--light-text);
+    transform: translateY(-2px);
+  }
+  
+  .pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .pagination-info {
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    color: var(--text-color);
+  }
+  
+  .no-results {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-light);
+    font-family: var(--font-main);
+    font-size: 0.7rem;
+  }
+  
+  /* Team Coverage Analysis */
+  .team-coverage-analysis {
+    padding: var(--spacing-md);
+  }
+  
+  .coverage-section {
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: linear-gradient(135deg, var(--section-bg) 0%, rgba(255, 255, 255, 0.8) 100%);
+    border: 2px solid var(--card-border);
+    border-radius: var(--border-radius-small);
+    box-shadow: 0 2px 8px var(--shadow-color) inset;
+  }
+  
+  .coverage-section h3 {
+    font-family: var(--font-main);
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-md);
+    text-transform: uppercase;
+  }
+  
+  .coverage-summary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--light-text);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-small);
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
+  
+  .coverage-summary h3 {
+    color: var(--light-text);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .coverage-summary ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .coverage-summary li {
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .coverage-summary li:last-child {
+    border-bottom: none;
+  }
+  
   .search-input:focus {
     outline: none;
     border-color: #2a368a;
@@ -1830,6 +2007,72 @@
     background: linear-gradient(135deg, #1e2832 0%, #2a3441 100%);
     border-color: #4a5a6e;
     color: #e0e0e0;
+  }
+  
+  /* Dark mode for generation filter */
+  body.dark-mode .generation-select {
+    background: linear-gradient(135deg, #1e2832 0%, #2a3441 100%);
+    border-color: #4a5a6e;
+    color: #e0e0e0;
+  }
+  
+  body.dark-mode .generation-select:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--light-text);
+  }
+  
+  body.dark-mode .filter-label-small {
+    color: #e0e0e0;
+  }
+  
+  /* Dark mode for moves filters */
+  body.dark-mode .filter-select {
+    background: linear-gradient(135deg, #1e2832 0%, #2a3441 100%);
+    border-color: #4a5a6e;
+    color: #e0e0e0;
+  }
+  
+  body.dark-mode .filter-select:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--light-text);
+  }
+  
+  /* Dark mode for pagination */
+  body.dark-mode .pagination-btn {
+    background: linear-gradient(135deg, #1e2832 0%, #2a3441 100%);
+    border-color: #4a5a6e;
+    color: #e0e0e0;
+  }
+  
+  body.dark-mode .pagination-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: var(--light-text);
+  }
+  
+  body.dark-mode .pagination-info {
+    color: #e0e0e0;
+  }
+  
+  body.dark-mode .no-results {
+    color: #999;
+  }
+  
+  /* Dark mode for team coverage */
+  body.dark-mode .coverage-section {
+    background: linear-gradient(135deg, rgba(30, 40, 50, 0.7) 0%, rgba(42, 52, 65, 0.7) 100%);
+    border-color: #4a5a6e;
+  }
+  
+  body.dark-mode .coverage-section h3 {
+    color: var(--accent-color);
+  }
+  
+  body.dark-mode .coverage-summary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  }
+  
+  body.dark-mode .coverage-summary li {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
   }
   
   body.dark-mode .comparison-pokemon {

@@ -43,7 +43,7 @@ def get_pokemon_data(pokemon_id_or_name):
             "type_urls": [t['type']['url'] for t in data.get("types", [])],
             "abilities": [{"name": a['ability']['name'], "url": a['ability']['url']} for a in data.get("abilities", [])],
             "stats": { stat['stat']['name']: stat['base_stat'] for stat in data.get("stats", []) },
-            "moves": [{"name": move["move"]["name"], "url": move["move"]["url"]} for move in data.get("moves", [])][:10]  # first 10 moves
+            "moves": [{"name": move["move"]["name"], "url": move["move"]["url"]} for move in data.get("moves", [])]  # all moves
         }
         
         # Calculate type effectiveness
@@ -205,8 +205,29 @@ def index():
 
 @app.route("/random")
 def random_pokemon():
-    # Randomly choose a Pokémon ID (from 1 to 1025 for more Pokémon)
-    random_id = random.randint(1, 1025)
+    # Get generation filter if provided
+    generation = request.args.get("generation", "").strip()
+    
+    # Generation ID ranges (approximate, based on Pokémon generations)
+    generation_ranges = {
+        "1": (1, 151),      # Kanto
+        "2": (152, 251),    # Johto
+        "3": (252, 386),    # Hoenn
+        "4": (387, 493),    # Sinnoh
+        "5": (494, 649),    # Unova
+        "6": (650, 721),    # Kalos
+        "7": (722, 809),    # Alola
+        "8": (810, 905),    # Galar
+        "9": (906, 1025)    # Paldea
+    }
+    
+    if generation and generation in generation_ranges:
+        min_id, max_id = generation_ranges[generation]
+        random_id = random.randint(min_id, max_id)
+    else:
+        # Randomly choose a Pokémon ID (from 1 to 1025 for more Pokémon)
+        random_id = random.randint(1, 1025)
+    
     pokemon = get_pokemon_data(random_id)
     
     if not pokemon:

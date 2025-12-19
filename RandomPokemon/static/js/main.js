@@ -677,6 +677,12 @@ function loadHistory() {
     });
 }
 
+// Global variables for moves modal
+let allMovesData = [];
+let filteredMoves = [];
+let currentMovesPage = 1;
+const movesPerPage = 20;
+
 // Open moves modal
 function openMovesModal() {
     if (!currentPokemon || !currentPokemon.moves) return;
@@ -685,17 +691,56 @@ function openMovesModal() {
     const title = document.getElementById('movesModalTitle');
     const container = document.getElementById('movesContainer');
     
-    if (title) title.textContent = `${currentPokemon.name} Moves`;
+    if (title) title.textContent = `${currentPokemon.name} Moves (${currentPokemon.moves.length})`;
+    
+    // Reset pagination
+    currentMovesPage = 1;
+    allMovesData = [];
+    filteredMoves = [];
     
     if (container) {
-        container.innerHTML = '<div class="loading-moves"><p>Loading move details...</p><div class="progress-bar-container"><div class="progress-bar-fill" id="movesProgress" style="width: 0%;"></div></div></div>';
+        container.innerHTML = `
+            <div class="moves-filters">
+                <input type="text" id="movesSearchInput" class="search-input" placeholder="Search moves..." oninput="filterMoves()">
+                <select id="movesTypeFilter" class="filter-select" onchange="filterMoves()">
+                    <option value="">All Types</option>
+                    <option value="normal">Normal</option>
+                    <option value="fire">Fire</option>
+                    <option value="water">Water</option>
+                    <option value="electric">Electric</option>
+                    <option value="grass">Grass</option>
+                    <option value="ice">Ice</option>
+                    <option value="fighting">Fighting</option>
+                    <option value="poison">Poison</option>
+                    <option value="ground">Ground</option>
+                    <option value="flying">Flying</option>
+                    <option value="psychic">Psychic</option>
+                    <option value="bug">Bug</option>
+                    <option value="rock">Rock</option>
+                    <option value="ghost">Ghost</option>
+                    <option value="dragon">Dragon</option>
+                    <option value="dark">Dark</option>
+                    <option value="steel">Steel</option>
+                    <option value="fairy">Fairy</option>
+                </select>
+                <select id="movesClassFilter" class="filter-select" onchange="filterMoves()">
+                    <option value="">All Classes</option>
+                    <option value="physical">Physical</option>
+                    <option value="special">Special</option>
+                    <option value="status">Status</option>
+                </select>
+            </div>
+            <div class="loading-moves"><p>Loading move details... (${currentPokemon.moves.length} moves)</p><div class="progress-bar-container"><div class="progress-bar-fill" id="movesProgress" style="width: 0%;"></div></div></div>
+            <div id="movesList"></div>
+            <div id="movesPagination"></div>
+        `;
         
         const movesProgressBar = document.getElementById('movesProgress');
         let loadedMoves = 0;
-        const totalMoves = Math.min(currentPokemon.moves.length, 10);
+        const totalMoves = currentPokemon.moves.length;
         
-        // Fetch move details for each move
-        const movePromises = currentPokemon.moves.slice(0, 10).map((move, index) => {
+        // Fetch move details for ALL moves
+        const movePromises = currentPokemon.moves.map((move, index) => {
             return fetch(move.url)
                 .then(res => res.json())
                 .then(data => {
@@ -740,31 +785,102 @@ function openMovesModal() {
         
         Promise.all(movePromises).then(moves => {
             if (movesProgressBar) movesProgressBar.style.width = '100%';
+            allMovesData = moves;
+            filteredMoves = moves;
             setTimeout(() => {
-                container.innerHTML = '';
-                moves.forEach(move => {
-                const moveDiv = document.createElement('div');
-                moveDiv.className = 'move-item';
-                moveDiv.innerHTML = `
-                    <div class="move-header">
-                        <h4>${move.name.charAt(0).toUpperCase() + move.name.slice(1).replace(/-/g, ' ')}</h4>
-                        <span class="type ${move.type}">${move.type.charAt(0).toUpperCase() + move.type.slice(1)}</span>
-                    </div>
-                    <div class="move-stats">
-                        <span>Power: ${move.power}</span>
-                        <span>Accuracy: ${move.accuracy}%</span>
-                        <span>PP: ${move.pp}</span>
-                        <span>Class: ${move.damageClass.charAt(0).toUpperCase() + move.damageClass.slice(1)}</span>
-                    </div>
-                    <p class="move-description">${move.description}</p>
-                `;
-                container.appendChild(moveDiv);
-                });
+                document.querySelector('.loading-moves').style.display = 'none';
+                renderMoves();
             }, 200);
         });
     }
     
     if (modal) modal.style.display = 'block';
+}
+
+// Filter moves based on search, type, and class
+function filterMoves() {
+    const searchInput = document.getElementById('movesSearchInput');
+    const typeFilter = document.getElementById('movesTypeFilter');
+    const classFilter = document.getElementById('movesClassFilter');
+    
+    const searchTerm = (searchInput?.value || '').toLowerCase();
+    const selectedType = typeFilter?.value || '';
+    const selectedClass = classFilter?.value || '';
+    
+    filteredMoves = allMovesData.filter(move => {
+        const matchesSearch = !searchTerm || move.name.toLowerCase().includes(searchTerm) || 
+                             move.description.toLowerCase().includes(searchTerm);
+        const matchesType = !selectedType || move.type === selectedType;
+        const matchesClass = !selectedClass || move.damageClass === selectedClass;
+        
+        return matchesSearch && matchesType && matchesClass;
+    });
+    
+    currentMovesPage = 1;
+    renderMoves();
+}
+
+// Render moves with pagination
+function renderMoves() {
+    const movesList = document.getElementById('movesList');
+    const pagination = document.getElementById('movesPagination');
+    
+    if (!movesList) return;
+    
+    const totalPages = Math.ceil(filteredMoves.length / movesPerPage);
+    const startIndex = (currentMovesPage - 1) * movesPerPage;
+    const endIndex = startIndex + movesPerPage;
+    const currentMoves = filteredMoves.slice(startIndex, endIndex);
+    
+    movesList.innerHTML = '';
+    
+    if (currentMoves.length === 0) {
+        movesList.innerHTML = '<p class="no-results">No moves found matching your filters.</p>';
+    } else {
+        currentMoves.forEach(move => {
+            const moveDiv = document.createElement('div');
+            moveDiv.className = 'move-item';
+            moveDiv.innerHTML = `
+                <div class="move-header">
+                    <h4>${move.name.charAt(0).toUpperCase() + move.name.slice(1).replace(/-/g, ' ')}</h4>
+                    <span class="type ${move.type}">${move.type.charAt(0).toUpperCase() + move.type.slice(1)}</span>
+                </div>
+                <div class="move-stats">
+                    <span>Power: ${move.power}</span>
+                    <span>Accuracy: ${move.accuracy}%</span>
+                    <span>PP: ${move.pp}</span>
+                    <span>Class: ${move.damageClass.charAt(0).toUpperCase() + move.damageClass.slice(1)}</span>
+                </div>
+                <p class="move-description">${move.description}</p>
+            `;
+            movesList.appendChild(moveDiv);
+        });
+    }
+    
+    // Render pagination
+    if (pagination) {
+        if (totalPages > 1) {
+            pagination.innerHTML = `
+                <div class="pagination">
+                    <button class="pagination-btn" onclick="changeMovesPage(${currentMovesPage - 1})" ${currentMovesPage === 1 ? 'disabled' : ''}>Previous</button>
+                    <span class="pagination-info">Page ${currentMovesPage} of ${totalPages} (${filteredMoves.length} moves)</span>
+                    <button class="pagination-btn" onclick="changeMovesPage(${currentMovesPage + 1})" ${currentMovesPage === totalPages ? 'disabled' : ''}>Next</button>
+                </div>
+            `;
+        } else {
+            pagination.innerHTML = `<div class="pagination-info">Showing ${filteredMoves.length} move${filteredMoves.length !== 1 ? 's' : ''}</div>`;
+        }
+    }
+}
+
+// Change moves page
+function changeMovesPage(page) {
+    const totalPages = Math.ceil(filteredMoves.length / movesPerPage);
+    if (page >= 1 && page <= totalPages) {
+        currentMovesPage = page;
+        renderMoves();
+        document.getElementById('movesList').scrollTop = 0;
+    }
 }
 
 // Close moves modal
@@ -896,6 +1012,33 @@ function getRandomByType(typeName) {
             hideLoading();
             showNotification('Error fetching Pokémon by type');
         });
+}
+
+// Get random Pokémon by generation
+function getRandomByGeneration() {
+    const generationSelect = document.getElementById('generationSelect');
+    const generation = generationSelect?.value || '';
+    
+    showLoading(`Finding random Pokémon${generation ? ` from Generation ${generation}` : ''}...`, [
+        'Selecting random Pokémon',
+        'Fetching data',
+        'Loading details'
+    ]);
+    
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += 15;
+        const stepIndex = Math.floor(progress / 33);
+        updateLoadingProgress(progress, stepIndex);
+        
+        if (progress >= 90) {
+            clearInterval(progressInterval);
+        }
+    }, 100);
+    
+    const url = generation ? `/random?generation=${generation}` : '/random';
+    
+    window.location.href = url;
 }
 
 // Comparison feature
@@ -1330,6 +1473,185 @@ function shareTeam() {
     showNotification('Team link copied! Share it with others!');
 }
 
+// Analyze team type coverage
+async function analyzeTeamCoverage() {
+    const teamCards = document.querySelectorAll('.team-card');
+    if (teamCards.length === 0) {
+        showNotification('No team to analyze!');
+        return;
+    }
+    
+    const modal = document.getElementById('teamCoverageModal');
+    const container = document.getElementById('teamCoverageContainer');
+    
+    if (!modal || !container) return;
+    
+    container.innerHTML = '<div class="loading-moves"><p>Analyzing team coverage...</p><div class="progress-bar-container"><div class="progress-bar-fill" id="coverageProgress" style="width: 0%;"></div></div></div>';
+    modal.style.display = 'block';
+    
+    // Collect all team types
+    const teamTypes = new Set();
+    const teamTypeUrls = [];
+    
+    teamCards.forEach(card => {
+        const typesJson = card.getAttribute('data-pokemon-types');
+        if (typesJson) {
+            try {
+                const types = JSON.parse(typesJson);
+                types.forEach(type => {
+                    teamTypes.add(type);
+                });
+            } catch (e) {
+                console.error('Error parsing types:', e);
+            }
+        }
+    });
+    
+    // Fetch type data for all team types
+    const typePromises = Array.from(teamTypes).map(typeName => {
+        return fetch(`https://pokeapi.co/api/v2/type/${typeName}`)
+            .then(res => res.json())
+            .catch(() => null);
+    });
+    
+    const typeData = await Promise.all(typePromises);
+    const validTypeData = typeData.filter(data => data !== null);
+    
+    // Calculate team weaknesses, resistances, and immunities
+    const allWeaknesses = new Map();
+    const allResistances = new Map();
+    const allImmunities = new Set();
+    
+    validTypeData.forEach(typeInfo => {
+        const damageRelations = typeInfo.damage_relations || {};
+        
+        // Collect weaknesses (double damage from)
+        if (damageRelations.double_damage_from) {
+            damageRelations.double_damage_from.forEach(type => {
+                allWeaknesses.set(type.name, (allWeaknesses.get(type.name) || 0) + 1);
+            });
+        }
+        
+        // Collect resistances (half damage from)
+        if (damageRelations.half_damage_from) {
+            damageRelations.half_damage_from.forEach(type => {
+                allResistances.set(type.name, (allResistances.get(type.name) || 0) + 1);
+            });
+        }
+        
+        // Collect immunities (no damage from)
+        if (damageRelations.no_damage_from) {
+            damageRelations.no_damage_from.forEach(type => {
+                allImmunities.add(type.name);
+            });
+        }
+    });
+    
+    // Calculate final effectiveness (accounting for multiple types)
+    const finalWeaknesses = [];
+    const finalResistances = [];
+    const finalImmunities = Array.from(allImmunities);
+    
+    allWeaknesses.forEach((count, typeName) => {
+        const resistanceCount = allResistances.get(typeName) || 0;
+        const netEffectiveness = count - resistanceCount;
+        if (netEffectiveness > 0 && !allImmunities.has(typeName)) {
+            finalWeaknesses.push({ type: typeName, multiplier: Math.pow(2, netEffectiveness) });
+        }
+    });
+    
+    allResistances.forEach((count, typeName) => {
+        const weaknessCount = allWeaknesses.get(typeName) || 0;
+        const netEffectiveness = count - weaknessCount;
+        if (netEffectiveness > 0 && !allImmunities.has(typeName)) {
+            finalResistances.push({ type: typeName, multiplier: Math.pow(0.5, netEffectiveness) });
+        }
+    });
+    
+    // Calculate type coverage (what types the team can hit super effectively)
+    const typeCoverage = new Map();
+    const allTypes = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+    
+    validTypeData.forEach(typeInfo => {
+        const damageRelations = typeInfo.damage_relations || {};
+        if (damageRelations.double_damage_to) {
+            damageRelations.double_damage_to.forEach(type => {
+                typeCoverage.set(type.name, (typeCoverage.get(type.name) || 0) + 1);
+            });
+        }
+    });
+    
+    const superEffectiveAgainst = Array.from(typeCoverage.entries())
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count);
+    
+    // Render results
+    container.innerHTML = `
+        <div class="team-coverage-analysis">
+            <div class="coverage-section">
+                <h3>Team Types</h3>
+                <div class="type-list">
+                    ${Array.from(teamTypes).map(type => `<span class="type ${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</span>`).join('')}
+                </div>
+            </div>
+            
+            <div class="coverage-section">
+                <h3 class="weakness-label">Team Weaknesses</h3>
+                ${finalWeaknesses.length > 0 ? `
+                    <div class="type-list">
+                        ${finalWeaknesses.map(w => `<span class="type ${w.type}">${w.type.charAt(0).toUpperCase() + w.type.slice(1)} (${w.multiplier}x)</span>`).join('')}
+                    </div>
+                ` : '<p>No significant weaknesses!</p>'}
+            </div>
+            
+            <div class="coverage-section">
+                <h3 class="resistance-label">Team Resistances</h3>
+                ${finalResistances.length > 0 ? `
+                    <div class="type-list">
+                        ${finalResistances.map(r => `<span class="type ${r.type}">${r.type.charAt(0).toUpperCase() + r.type.slice(1)} (${r.multiplier}x)</span>`).join('')}
+                    </div>
+                ` : '<p>No significant resistances.</p>'}
+            </div>
+            
+            ${finalImmunities.length > 0 ? `
+            <div class="coverage-section">
+                <h3 class="immune-label">Team Immunities</h3>
+                <div class="type-list">
+                    ${finalImmunities.map(type => `<span class="type ${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</span>`).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="coverage-section">
+                <h3>Type Coverage (Super Effective Against)</h3>
+                ${superEffectiveAgainst.length > 0 ? `
+                    <div class="type-list">
+                        ${superEffectiveAgainst.map(c => `<span class="type ${c.type}">${c.type.charAt(0).toUpperCase() + c.type.slice(1)} (${c.count} Pokémon)</span>`).join('')}
+                    </div>
+                ` : '<p>No super effective coverage data available.</p>'}
+            </div>
+            
+            <div class="coverage-summary">
+                <h3>Summary</h3>
+                <ul>
+                    <li><strong>Team Size:</strong> ${teamCards.length} Pokémon</li>
+                    <li><strong>Unique Types:</strong> ${teamTypes.size}</li>
+                    <li><strong>Weaknesses:</strong> ${finalWeaknesses.length}</li>
+                    <li><strong>Resistances:</strong> ${finalResistances.length}</li>
+                    <li><strong>Immunities:</strong> ${finalImmunities.length}</li>
+                    <li><strong>Super Effective Coverage:</strong> ${superEffectiveAgainst.length} types</li>
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+// Close team coverage modal
+function closeTeamCoverageModal() {
+    const modal = document.getElementById('teamCoverageModal');
+    if (modal) modal.style.display = 'none';
+}
+
 // Close modals when clicking outside
 window.onclick = function(event) {
     const statsModal = document.getElementById('statsModal');
@@ -1339,6 +1661,7 @@ window.onclick = function(event) {
     const abilityModal = document.getElementById('abilityModal');
     const comparisonModal = document.getElementById('comparisonModal');
     const shortcutsModal = document.getElementById('keyboardShortcutsModal');
+    const teamCoverageModal = document.getElementById('teamCoverageModal');
     
     if (event.target == statsModal) {
         closeStatsModal();
@@ -1360,5 +1683,8 @@ window.onclick = function(event) {
     }
     if (event.target == shortcutsModal) {
         closeKeyboardShortcutsModal();
+    }
+    if (event.target == teamCoverageModal) {
+        closeTeamCoverageModal();
     }
 };

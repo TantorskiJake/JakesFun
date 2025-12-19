@@ -14,6 +14,7 @@
   
   <div class="button-container" style="margin-bottom: 20px;">
     <button class="reload-button" onclick="window.location.reload()">Generate New Team</button>
+    <button class="reload-button" onclick="analyzeTeamCoverage()">Analyze Team Coverage</button>
     <button class="reload-button" onclick="saveCurrentTeam()">Save Team</button>
     <button class="reload-button" onclick="loadSavedTeams()">Load Teams</button>
     <button class="reload-button" onclick="shareTeam()">Share Team</button>
@@ -28,7 +29,7 @@
   
   <div class="team-grid">
     {% for pokemon in team %}
-    <div class="team-card" onclick="window.location.href='/pokemon/{{ pokemon.id }}'">
+    <div class="team-card" data-pokemon-id="{{ pokemon.id }}" data-pokemon-types='{{ pokemon.types|tojson }}' onclick="window.location.href='/pokemon/{{ pokemon.id }}'">
       <img src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" class="team-img">
       <h3>{{ pokemon.name }} #{{ pokemon.id }}</h3>
       <div class="team-types">
@@ -43,6 +44,17 @@
       </div>
     </div>
     {% endfor %}
+  </div>
+</div>
+
+<!-- Modal for team coverage analysis -->
+<div id="teamCoverageModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeTeamCoverageModal()">&times;</span>
+    <h2>Team Type Coverage Analysis</h2>
+    <div id="teamCoverageContainer">
+      <!-- Content will be populated by JavaScript -->
+    </div>
   </div>
 </div>
 {% endblock %}

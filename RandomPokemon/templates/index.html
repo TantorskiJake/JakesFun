@@ -37,7 +37,22 @@
 
 <!-- Navigation -->
 <nav class="main-nav">
-  <a href="/random" class="nav-link">Random Pokémon</a>
+  <a href="/random" class="nav-link" id="randomLink">Random Pokémon</a>
+  <div class="generation-filter">
+    <label for="generationSelect" class="filter-label-small">Gen:</label>
+    <select id="generationSelect" class="generation-select" onchange="getRandomByGeneration()">
+      <option value="">All</option>
+      <option value="1">Gen 1 (Kanto)</option>
+      <option value="2">Gen 2 (Johto)</option>
+      <option value="3">Gen 3 (Hoenn)</option>
+      <option value="4">Gen 4 (Sinnoh)</option>
+      <option value="5">Gen 5 (Unova)</option>
+      <option value="6">Gen 6 (Kalos)</option>
+      <option value="7">Gen 7 (Alola)</option>
+      <option value="8">Gen 8 (Galar)</option>
+      <option value="9">Gen 9 (Paldea)</option>
+    </select>
+  </div>
   <a href="/team" class="nav-link">Random Team</a>
   <a href="/favorites" class="nav-link">Favorites</a>
   <a href="/history" class="nav-link">History</a>
