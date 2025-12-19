@@ -2,6 +2,8 @@ import random
 import requests
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import time
+import logging
+import re
 
 app = Flask(__name__)
 
@@ -353,4 +355,84 @@ def pokemon_by_type(type_name):
         return jsonify({"error": "Error fetching type data"}), 500
 
 if __name__ == "__main__":
+    # Custom formatter to convert HTTP logs to friendly language
+    class FriendlyFormatter(logging.Formatter):
+        def format(self, record):
+            message = record.getMessage()
+            
+            # Filter out static files
+            if '/static/' in message or '/favicon.ico' in message:
+                return None
+            
+            # Convert HTTP requests to friendly messages
+            if 'GET /pokemon/' in message:
+                # Extract Pokémon name/ID from URL
+                match = re.search(r'/pokemon/([^\s]+)', message)
+                if match:
+                    pokemon_id = match.group(1)
+                    return f"📱 Fetched Pokémon: {pokemon_id.title()}"
+            
+            elif 'GET /random' in message:
+                if 'generation=' in message:
+                    gen_match = re.search(r'generation=(\d+)', message)
+                    if gen_match:
+                        gen = gen_match.group(1)
+                        gen_names = {'1': 'Kanto', '2': 'Johto', '3': 'Hoenn', '4': 'Sinnoh', 
+                                    '5': 'Unova', '6': 'Kalos', '7': 'Alola', '8': 'Galar', '9': 'Paldea'}
+                        gen_name = gen_names.get(gen, f'Gen {gen}')
+                        return f"🎲 Generated random Pokémon from {gen_name}"
+                return "🎲 Generated random Pokémon"
+            
+            elif 'GET /search' in message:
+                query_match = re.search(r'q=([^\s&]+)', message)
+                if query_match:
+                    query = query_match.group(1)
+                    return f"🔍 Searched for: {query.title()}"
+                return "🔍 Search performed"
+            
+            elif 'GET /team' in message:
+                return "👥 Generated random team"
+            
+            elif 'GET /favorites' in message:
+                return "⭐ Viewed favorites"
+            
+            elif 'GET /history' in message:
+                return "📜 Viewed history"
+            
+            elif 'GET /api/pokemon-by-type/' in message:
+                type_match = re.search(r'/pokemon-by-type/([^\s]+)', message)
+                if type_match:
+                    ptype = type_match.group(1)
+                    return f"🔥 Found random {ptype.title()} type Pokémon"
+            
+            elif 'GET /api/' in message:
+                return "📡 API request"
+            
+            elif 'GET /' in message:
+                return "🏠 Home page accessed"
+            
+            # Return None to filter out other messages
+            return None
+    
+    # Custom filter to only show Pokémon-related requests
+    class StaticFileFilter(logging.Filter):
+        def filter(self, record):
+            message = record.getMessage()
+            if '/static/' in message or '/favicon.ico' in message:
+                return False
+            return True
+    
+    # Apply custom formatter and filter to Werkzeug logger
+    log = logging.getLogger('werkzeug')
+    log.addFilter(StaticFileFilter())
+    
+    # Remove default handlers and add our custom formatter
+    for handler in log.handlers[:]:
+        log.removeHandler(handler)
+    
+    handler = logging.StreamHandler()
+    handler.setFormatter(FriendlyFormatter())
+    log.addHandler(handler)
+    log.setLevel(logging.INFO)
+    
     app.run(debug=True, port=5001)
