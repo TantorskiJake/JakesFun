@@ -6,7 +6,22 @@ import logging
 import re
 import os
 
+# Set application root for subpath deployment (e.g., /pokemon)
+APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '/pokemon')
+
 app = Flask(__name__)
+
+# Configure app for subpath if needed
+if APPLICATION_ROOT != '/':
+    from werkzeug.middleware.dispatcher import DispatcherMiddleware
+    from werkzeug.serving import WSGIRequestHandler
+    
+    class SubpathDispatcher(DispatcherMiddleware):
+        def __init__(self, app, mountpoint):
+            super().__init__(None, {mountpoint: app})
+    
+    # This will be handled by the WSGI server configuration
+    # For now, we'll use url_for with _external=False
 
 # Cache for API responses to reduce API calls
 _pokemon_cache = {}
