@@ -1,6 +1,9 @@
 import random
 import requests
 from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask_talisman import Talisman
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import time
 import logging
 import re
@@ -10,6 +13,40 @@ import os
 APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '/pokemon')
 
 app = Flask(__name__)
+
+# Security: Configure Talisman for security headers
+# Content Security Policy allows inline scripts/styles needed for the app
+csp = {
+    'default-src': "'self'",
+    'script-src': "'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com",
+    'style-src': "'self' 'unsafe-inline' https://fonts.googleapis.com",
+    'font-src': "'self' https://fonts.gstatic.com",
+    'img-src': "'self' data: https://raw.githubusercontent.com https://pokeapi.co",
+    'connect-src': "'self' https://pokeapi.co https://raw.githubusercontent.com",
+    'frame-ancestors': "'none'",
+}
+
+Talisman(
+    app,
+    force_https=True,  # Force HTTPS in production
+    strict_transport_security=True,
+    strict_transport_security_max_age=31536000,  # 1 year
+    content_security_policy=csp,
+    referrer_policy='strict-origin-when-cross-origin',
+    feature_policy={
+        'geolocation': "'none'",
+        'camera': "'none'",
+        'microphone': "'none'",
+    }
+)
+
+# Security: Rate limiting to prevent abuse
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per hour", "50 per minute"],
+    storage_uri="memory://"
+)
 
 # Configure app for subpath if needed
 if APPLICATION_ROOT != '/':
@@ -29,6 +66,18 @@ _cache_timeout = 300  # 5 minutes
 
 def get_pokemon_data(pokemon_id_or_name):
     """Fetch Pokémon data from API with caching"""
+    # Additional input validation
+    if not pokemon_id_or_name:
+        return None
+    
+    # Sanitize input
+    pokemon_id_or_name = str(pokemon_id_or_name).strip()
+    # If it's a number, validate it's in valid range
+    if pokemon_id_or_name.isdigit():
+        pokemon_id = int(pokemon_id_or_name)
+        if pokemon_id < 1 or pokemon_id > 1025:
+            return None
+    
     cache_key = str(pokemon_id_or_name).lower()
     
     # Check cache
@@ -38,8 +87,10 @@ def get_pokemon_data(pokemon_id_or_name):
             return cached_data
     
     try:
-        api_url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id_or_name}"
-        response = requests.get(api_url, timeout=10)
+        # Sanitize for URL to prevent injection
+        safe_id = re.sub(r'[^a-zA-Z0-9\-]', '', pokemon_id_or_name)
+        api_url = f"https://pokeapi.co/api/v2/pokemon/{safe_id}"
+        response = requests.get(api_url, timeout=10, verify=True)  # Verify SSL certificates
         
         if response.status_code != 200:
             return None
@@ -254,7 +305,15 @@ def random_pokemon():
     return render_template("index.html", pokemon=pokemon)
 
 @app.route("/pokemon/<pokemon_id_or_name>")
+@limiter.limit("30 per minute")  # Rate limit individual Pokémon requests
 def get_pokemon(pokemon_id_or_name):
+    # Input validation: sanitize pokemon_id_or_name
+    pokemon_id_or_name = re.sub(r'[^a-zA-Z0-9\-]', '', str(pokemon_id_or_name))[:50]  # Limit length and remove special chars
+    if not pokemon_id_or_name:
+        return render_template("index.html", 
+                             error="Invalid Pokémon identifier.",
+                             error_suggestions=["Use a valid Pokémon name or ID (1-1025)"])
+    
     pokemon = get_pokemon_data(pokemon_id_or_name)
     
     if not pokemon:
@@ -268,8 +327,11 @@ def get_pokemon(pokemon_id_or_name):
     return render_template("index.html", pokemon=pokemon)
 
 @app.route("/search")
+@limiter.limit("30 per minute")  # Rate limit search requests
 def search():
     query = request.args.get("q", "").strip().lower()
+    # Input validation: sanitize and limit length
+    query = re.sub(r'[^a-zA-Z0-9\s\-]', '', query)[:50]
     if not query:
         return render_template("index.html", error="Please enter a Pokémon name or ID.", error_suggestions=["Try searching for: Pikachu, Charizard, or 25"])
     
@@ -299,17 +361,27 @@ def history():
     return render_template("history.html")
 
 @app.route("/team")
+@limiter.limit("20 per minute")  # Rate limit team generation
 def random_team():
     # Check if team IDs are provided in query string
     ids_param = request.args.get("ids", "").strip()
     
     if ids_param:
-        # Parse comma-separated IDs
+        # Parse comma-separated IDs with validation
         try:
-            team_ids = [int(id.strip()) for id in ids_param.split(",") if id.strip()]
-            # Limit to 6 Pokémon
-            team_ids = team_ids[:6]
-        except ValueError:
+            # Limit input length and validate
+            ids_param = ids_param[:100]  # Limit input length
+            team_ids = []
+            for id_str in ids_param.split(","):
+                id_str = id_str.strip()
+                if id_str.isdigit():
+                    pokemon_id = int(id_str)
+                    # Validate ID is in valid range
+                    if 1 <= pokemon_id <= 1025:
+                        team_ids.append(pokemon_id)
+                    if len(team_ids) >= 6:  # Limit to 6 Pokémon
+                        break
+        except (ValueError, TypeError):
             team_ids = []
     else:
         # Generate a random team of 6 Pokémon
@@ -324,8 +396,14 @@ def random_team():
     return render_template("team.html", team=team)
 
 @app.route("/api/pokemon/<pokemon_id_or_name>")
+@limiter.limit("60 per minute")  # Rate limit API requests
 def api_get_pokemon(pokemon_id_or_name):
     """API endpoint for fetching Pokémon data"""
+    # Input validation
+    pokemon_id_or_name = re.sub(r'[^a-zA-Z0-9\-]', '', str(pokemon_id_or_name))[:50]
+    if not pokemon_id_or_name:
+        return jsonify({"error": "Invalid Pokémon identifier"}), 400
+    
     pokemon = get_pokemon_data(pokemon_id_or_name)
     
     if not pokemon:
@@ -334,9 +412,12 @@ def api_get_pokemon(pokemon_id_or_name):
     return jsonify(pokemon)
 
 @app.route("/api/search-suggestions")
+@limiter.limit("100 per minute")  # More lenient for autocomplete
 def search_suggestions():
     """API endpoint for search autocomplete suggestions"""
     query = request.args.get("q", "").strip().lower()
+    # Input validation
+    query = re.sub(r'[^a-zA-Z0-9\s\-]', '', query)[:50]
     if len(query) < 2:
         return jsonify({"suggestions": []})
     
@@ -355,7 +436,15 @@ def search_suggestions():
     return jsonify({"suggestions": suggestions})
 
 @app.route("/api/pokemon-by-type/<type_name>")
+@limiter.limit("30 per minute")  # Rate limit type requests
 def pokemon_by_type(type_name):
+    # Input validation: only allow valid type names
+    valid_types = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 
+                   'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 
+                   'dragon', 'dark', 'steel', 'fairy']
+    type_name = type_name.lower().strip()
+    if type_name not in valid_types:
+        return jsonify({"error": "Invalid type name"}), 400
     """Get a random Pokémon of a specific type"""
     try:
         type_url = f"https://pokeapi.co/api/v2/type/{type_name.lower()}"
@@ -468,5 +557,10 @@ if __name__ == "__main__":
     # Production settings
     port = int(os.environ.get('PORT', 5001))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    
+    # Security: Disable debug mode in production
+    if os.environ.get('FLASK_ENV') != 'development':
+        app.config['DEBUG'] = False
+        app.config['TESTING'] = False
     
     app.run(debug=debug_mode, host='0.0.0.0', port=port)
