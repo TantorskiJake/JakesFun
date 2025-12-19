@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 import time
 import logging
 import re
+import os
 
 app = Flask(__name__)
 
@@ -284,13 +285,27 @@ def history():
 
 @app.route("/team")
 def random_team():
-    # Generate a random team of 6 Pokémon
-    team_ids = random.sample(range(1, 1026), 6)
+    # Check if team IDs are provided in query string
+    ids_param = request.args.get("ids", "").strip()
+    
+    if ids_param:
+        # Parse comma-separated IDs
+        try:
+            team_ids = [int(id.strip()) for id in ids_param.split(",") if id.strip()]
+            # Limit to 6 Pokémon
+            team_ids = team_ids[:6]
+        except ValueError:
+            team_ids = []
+    else:
+        # Generate a random team of 6 Pokémon
+        team_ids = random.sample(range(1, 1026), 6)
+    
     team = []
     for pokemon_id in team_ids:
         pokemon = get_pokemon_data(pokemon_id)
         if pokemon:
             team.append(pokemon)
+    
     return render_template("team.html", team=team)
 
 @app.route("/api/pokemon/<pokemon_id_or_name>")
@@ -435,4 +450,8 @@ if __name__ == "__main__":
     log.addHandler(handler)
     log.setLevel(logging.INFO)
     
-    app.run(debug=True, port=5001)
+    # Production settings
+    port = int(os.environ.get('PORT', 5001))
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)

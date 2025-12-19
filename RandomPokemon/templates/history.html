@@ -11,6 +11,20 @@
     <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
   </nav>
   
+  <div class="button-container" style="margin-bottom: 20px;">
+    <div class="sort-container" style="display: inline-block;">
+      <label for="historySort" class="filter-label-small">Sort by:</label>
+      <select id="historySort" class="generation-select" onchange="sortHistory()">
+        <option value="date">Most Recent</option>
+        <option value="date-old">Oldest First</option>
+        <option value="name">Name (A-Z)</option>
+        <option value="name-desc">Name (Z-A)</option>
+        <option value="id">ID (Low-High)</option>
+        <option value="id-desc">ID (High-Low)</option>
+      </select>
+    </div>
+  </div>
+  
   <div id="historyContainer" class="favorites-grid">
     <!-- History will be loaded by JavaScript -->
   </div>

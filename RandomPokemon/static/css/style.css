@@ -2075,6 +2075,175 @@
     border-bottom-color: rgba(255, 255, 255, 0.1);
   }
   
+  /* Advanced Search Panel */
+  .advanced-search-panel {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: linear-gradient(135deg, var(--section-bg) 0%, rgba(255, 255, 255, 0.8) 100%);
+    border: 2px solid var(--card-border);
+    border-radius: var(--border-radius-small);
+    box-shadow: 0 2px 8px var(--shadow-color) inset;
+  }
+  
+  .advanced-search-panel h4 {
+    font-family: var(--font-main);
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .advanced-search-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  
+  .filter-group label {
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    color: var(--text-color);
+  }
+  
+  .stat-input {
+    padding: 6px 10px;
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--border-radius-small);
+    background: var(--card-bg);
+    color: var(--text-color);
+    width: 80px;
+  }
+  
+  .filter-group span {
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    color: var(--text-color);
+    margin: 0 var(--spacing-xs);
+  }
+  
+  /* Loading Skeletons */
+  .skeleton-container {
+    padding: var(--spacing-lg);
+    background: linear-gradient(135deg, var(--section-bg) 0%, rgba(255, 255, 255, 0.8) 100%);
+    border: 2px solid var(--card-border);
+    border-radius: var(--border-radius-small);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  .skeleton-image {
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    border-radius: var(--border-radius-small);
+    margin: 0 auto var(--spacing-md);
+    animation: shimmer 1.5s infinite;
+  }
+  
+  .skeleton-title {
+    width: 60%;
+    height: 30px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin: 0 auto var(--spacing-sm);
+    animation: shimmer 1.5s infinite;
+  }
+  
+  .skeleton-text {
+    width: 80%;
+    height: 20px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin: var(--spacing-xs) auto;
+    animation: shimmer 1.5s infinite;
+  }
+  
+  .skeleton-text.short {
+    width: 50%;
+  }
+  
+  .skeleton-stats {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+    justify-content: center;
+  }
+  
+  .skeleton-stat {
+    width: 100px;
+    height: 60px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    border-radius: var(--border-radius-small);
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+  
+  /* Dark mode for advanced search */
+  body.dark-mode .advanced-search-panel {
+    background: linear-gradient(135deg, rgba(30, 40, 50, 0.7) 0%, rgba(42, 52, 65, 0.7) 100%);
+    border-color: #4a5a6e;
+  }
+  
+  body.dark-mode .advanced-search-panel h4 {
+    color: var(--accent-color);
+  }
+  
+  body.dark-mode .filter-group label {
+    color: #e0e0e0;
+  }
+  
+  body.dark-mode .stat-input {
+    background: linear-gradient(135deg, #1e2832 0%, #2a3441 100%);
+    border-color: #4a5a6e;
+    color: #e0e0e0;
+  }
+  
+  body.dark-mode .filter-group span {
+    color: #e0e0e0;
+  }
+  
+  /* Dark mode for skeletons */
+  body.dark-mode .skeleton-container {
+    background: linear-gradient(135deg, rgba(30, 40, 50, 0.7) 0%, rgba(42, 52, 65, 0.7) 100%);
+    border-color: #4a5a6e;
+  }
+  
+  body.dark-mode .skeleton-image,
+  body.dark-mode .skeleton-title,
+  body.dark-mode .skeleton-text,
+  body.dark-mode .skeleton-stat {
+    background: linear-gradient(90deg, #2a3441 25%, #1e2832 50%, #2a3441 75%);
+    background-size: 200% 100%;
+  }
+  
   body.dark-mode .comparison-pokemon {
     background: linear-gradient(135deg, rgba(30, 40, 50, 0.9) 0%, rgba(42, 52, 65, 0.9) 100%);
     border-color: #4a5a6e;

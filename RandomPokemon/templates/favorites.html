@@ -16,6 +16,16 @@
     <button class="reload-button" onclick="exportFavorites('csv')">Export as CSV</button>
     <button class="reload-button" onclick="importFavorites()">Import Favorites</button>
     <input type="file" id="importFileInput" accept=".json,.csv" style="display: none;" onchange="handleFileImport(event)">
+    <div class="sort-container" style="display: inline-block; margin-left: 20px;">
+      <label for="favoritesSort" class="filter-label-small">Sort by:</label>
+      <select id="favoritesSort" class="generation-select" onchange="sortFavorites()">
+        <option value="date">Date Added</option>
+        <option value="name">Name (A-Z)</option>
+        <option value="name-desc">Name (Z-A)</option>
+        <option value="id">ID (Low-High)</option>
+        <option value="id-desc">ID (High-Low)</option>
+      </select>
+    </div>
   </div>
   
   <div id="favoritesContainer" class="favorites-grid">
