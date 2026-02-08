@@ -1,80 +1,10 @@
 {% extends "base.html" %}
 
-{% block content %}
-<!-- Search Bar -->
-<div class="search-container">
-  <form class="search-form" action="/search" method="get" onsubmit="return handleAdvancedSearch(event)">
-    <div class="search-wrapper">
-      <input type="text" name="q" id="searchInput" class="search-input" placeholder="Search by name or ID (e.g., Pikachu or 25)" autocomplete="off">
-      <div id="searchSuggestions" class="search-suggestions"></div>
-    </div>
-    <button type="submit" class="search-button">Search</button>
-    <button type="button" class="search-button" onclick="toggleAdvancedSearch()" style="margin-left: 10px;">🔍 Advanced</button>
-  </form>
-  <div id="advancedSearchPanel" class="advanced-search-panel" style="display: none;">
-    <h4>Advanced Search Filters</h4>
-    <div class="advanced-search-filters">
-      <div class="filter-group">
-        <label>Ability:</label>
-        <input type="text" id="abilityFilter" class="search-input" placeholder="e.g., static, lightning-rod">
-      </div>
-      <div class="filter-group">
-        <label>Move:</label>
-        <input type="text" id="moveFilter" class="search-input" placeholder="e.g., thunderbolt, flamethrower">
-      </div>
-      <div class="filter-group">
-        <label>HP Range:</label>
-        <input type="number" id="hpMin" class="stat-input" placeholder="Min" min="0" max="255">
-        <span>-</span>
-        <input type="number" id="hpMax" class="stat-input" placeholder="Max" min="0" max="255">
-      </div>
-      <div class="filter-group">
-        <label>Attack Range:</label>
-        <input type="number" id="atkMin" class="stat-input" placeholder="Min" min="0" max="255">
-        <span>-</span>
-        <input type="number" id="atkMax" class="stat-input" placeholder="Max" min="0" max="255">
-      </div>
-      <div class="filter-group">
-        <label>Defense Range:</label>
-        <input type="number" id="defMin" class="stat-input" placeholder="Min" min="0" max="255">
-        <span>-</span>
-        <input type="number" id="defMax" class="stat-input" placeholder="Max" min="0" max="255">
-      </div>
-      <div class="filter-group">
-        <label>Speed Range:</label>
-        <input type="number" id="speedMin" class="stat-input" placeholder="Min" min="0" max="255">
-        <span>-</span>
-        <input type="number" id="speedMax" class="stat-input" placeholder="Max" min="0" max="255">
-      </div>
-    </div>
-    <button type="button" class="reload-button" onclick="performAdvancedSearch()">Search</button>
-    <button type="button" class="reload-button" onclick="clearAdvancedSearch()">Clear</button>
-  </div>
-  <div class="type-filter">
-    <span class="filter-label">Filter by Type:</span>
-    <div class="type-filter-buttons">
-      <button class="type-filter-btn" onclick="getRandomByType('normal')">Normal</button>
-      <button class="type-filter-btn" onclick="getRandomByType('fire')">Fire</button>
-      <button class="type-filter-btn" onclick="getRandomByType('water')">Water</button>
-      <button class="type-filter-btn" onclick="getRandomByType('electric')">Electric</button>
-      <button class="type-filter-btn" onclick="getRandomByType('grass')">Grass</button>
-      <button class="type-filter-btn" onclick="getRandomByType('ice')">Ice</button>
-      <button class="type-filter-btn" onclick="getRandomByType('fighting')">Fighting</button>
-      <button class="type-filter-btn" onclick="getRandomByType('poison')">Poison</button>
-      <button class="type-filter-btn" onclick="getRandomByType('ground')">Ground</button>
-      <button class="type-filter-btn" onclick="getRandomByType('flying')">Flying</button>
-      <button class="type-filter-btn" onclick="getRandomByType('psychic')">Psychic</button>
-      <button class="type-filter-btn" onclick="getRandomByType('bug')">Bug</button>
-      <button class="type-filter-btn" onclick="getRandomByType('rock')">Rock</button>
-      <button class="type-filter-btn" onclick="getRandomByType('ghost')">Ghost</button>
-      <button class="type-filter-btn" onclick="getRandomByType('dragon')">Dragon</button>
-      <button class="type-filter-btn" onclick="getRandomByType('dark')">Dark</button>
-      <button class="type-filter-btn" onclick="getRandomByType('steel')">Steel</button>
-      <button class="type-filter-btn" onclick="getRandomByType('fairy')">Fairy</button>
-    </div>
-  </div>
-</div>
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index-layout.css') }}">
+{% endblock %}
 
+{% block content %}
 <!-- Navigation -->
 <nav class="main-nav">
   <a href="/random" class="nav-link" id="randomLink">Random Pokémon</a>
@@ -99,6 +29,101 @@
   <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
   <button class="nav-link" onclick="openKeyboardShortcutsModal()" title="Keyboard Shortcuts">⌨️ Shortcuts</button>
 </nav>
+
+<!-- Search Bar -->
+<div class="search-container search-layout">
+  <div class="search-layout-header">
+    <h2 class="search-layout-title">Find Pokemon Faster</h2>
+    <p class="search-layout-subtitle">Use quick search, advanced filters, or type shortcuts.</p>
+  </div>
+  <form class="search-form search-form-main" action="/search" method="get" onsubmit="return handleAdvancedSearch(event)">
+    <div class="search-section search-primary-section">
+      <div class="search-wrapper">
+        <input type="text" name="q" id="searchInput" class="search-input" placeholder="Search by name or ID (e.g., Pikachu or 25)" autocomplete="off">
+        <div id="searchSuggestions" class="search-suggestions"></div>
+      </div>
+    </div>
+    <div class="search-actions">
+      <button type="submit" class="search-button">Search</button>
+      <button type="button" class="search-button search-button-secondary" onclick="toggleAdvancedSearch()">Advanced</button>
+    </div>
+  </form>
+  <div id="advancedSearchPanel" class="advanced-search-panel" style="display: none;">
+    <h4>Advanced Search Filters</h4>
+    <div class="advanced-search-filters">
+      <div class="filter-group">
+        <label>Ability:</label>
+        <input type="text" id="abilityFilter" class="search-input" placeholder="e.g., static, lightning-rod">
+      </div>
+      <div class="filter-group">
+        <label>Move:</label>
+        <input type="text" id="moveFilter" class="search-input" placeholder="e.g., thunderbolt, flamethrower">
+      </div>
+      <div class="filter-group">
+        <label>HP Range:</label>
+        <div class="range-inputs">
+          <input type="number" id="hpMin" class="stat-input" placeholder="Min" min="0" max="255">
+          <span>-</span>
+          <input type="number" id="hpMax" class="stat-input" placeholder="Max" min="0" max="255">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Attack Range:</label>
+        <div class="range-inputs">
+          <input type="number" id="atkMin" class="stat-input" placeholder="Min" min="0" max="255">
+          <span>-</span>
+          <input type="number" id="atkMax" class="stat-input" placeholder="Max" min="0" max="255">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Defense Range:</label>
+        <div class="range-inputs">
+          <input type="number" id="defMin" class="stat-input" placeholder="Min" min="0" max="255">
+          <span>-</span>
+          <input type="number" id="defMax" class="stat-input" placeholder="Max" min="0" max="255">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Speed Range:</label>
+        <div class="range-inputs">
+          <input type="number" id="speedMin" class="stat-input" placeholder="Min" min="0" max="255">
+          <span>-</span>
+          <input type="number" id="speedMax" class="stat-input" placeholder="Max" min="0" max="255">
+        </div>
+      </div>
+    </div>
+    <div class="advanced-search-actions">
+      <button type="button" class="reload-button action-button action-button-primary" onclick="performAdvancedSearch()">Search</button>
+      <button type="button" class="reload-button action-button action-button-tertiary" onclick="clearAdvancedSearch()">Clear</button>
+    </div>
+  </div>
+  <details class="type-filter type-filter-collapsible">
+    <summary>
+      <span class="filter-label">Filter by Type</span>
+      <span class="type-filter-summary-hint">Tap to show or hide all types</span>
+    </summary>
+    <div class="type-filter-buttons" role="group" aria-label="Pokemon type filters">
+      <button class="type-filter-btn" onclick="getRandomByType('normal')">Normal</button>
+      <button class="type-filter-btn" onclick="getRandomByType('fire')">Fire</button>
+      <button class="type-filter-btn" onclick="getRandomByType('water')">Water</button>
+      <button class="type-filter-btn" onclick="getRandomByType('electric')">Electric</button>
+      <button class="type-filter-btn" onclick="getRandomByType('grass')">Grass</button>
+      <button class="type-filter-btn" onclick="getRandomByType('ice')">Ice</button>
+      <button class="type-filter-btn" onclick="getRandomByType('fighting')">Fighting</button>
+      <button class="type-filter-btn" onclick="getRandomByType('poison')">Poison</button>
+      <button class="type-filter-btn" onclick="getRandomByType('ground')">Ground</button>
+      <button class="type-filter-btn" onclick="getRandomByType('flying')">Flying</button>
+      <button class="type-filter-btn" onclick="getRandomByType('psychic')">Psychic</button>
+      <button class="type-filter-btn" onclick="getRandomByType('bug')">Bug</button>
+      <button class="type-filter-btn" onclick="getRandomByType('rock')">Rock</button>
+      <button class="type-filter-btn" onclick="getRandomByType('ghost')">Ghost</button>
+      <button class="type-filter-btn" onclick="getRandomByType('dragon')">Dragon</button>
+      <button class="type-filter-btn" onclick="getRandomByType('dark')">Dark</button>
+      <button class="type-filter-btn" onclick="getRandomByType('steel')">Steel</button>
+      <button class="type-filter-btn" onclick="getRandomByType('fairy')">Fairy</button>
+    </div>
+  </details>
+</div>
 
 <!-- Loading Spinner with Progress -->
 <div id="loadingSpinner" class="loading-spinner" style="display: none;">
@@ -140,203 +165,209 @@
 {% if pokemon %}
 <div class="container" id="pokemonContainer" data-pokemon='{{ pokemon|tojson }}'>
   <h1 class="pokemon-name">{{ pokemon.name }} <span class="pokemon-id">#{{ pokemon.id }}</span></h1>
-  
-  <div class="pokemon-image-container">
-    {% if pokemon.image_url %}
-      <div class="sprite-toggle">
-        <button class="sprite-btn active" onclick="switchSprite('front')">Front</button>
-        <button class="sprite-btn" onclick="switchSprite('back')">Back</button>
-        <button class="sprite-btn" onclick="switchSprite('shiny')">Shiny</button>
-      </div>
-      <img class="pokemon-img" id="pokemonSprite" src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" onclick="openSpriteModal()">
-    {% else %}
-      <p>No image available.</p>
-    {% endif %}
-  </div>
-  
-  <!-- Types -->
-  <div class="types-container">
-    {% for t in pokemon.types %}
-      <span class="type {{ t }}">{{ t|capitalize }}</span>
-    {% endfor %}
-  </div>
-  
-  <!-- Quick Stats Summary -->
-  <div class="quick-stats">
-    <div class="quick-stat-item">
-      <span class="quick-stat-label">HP</span>
-      <span class="quick-stat-value">{{ pokemon.stats.hp if pokemon.stats.hp else 'N/A' }}</span>
-      {% if pokemon.stats.hp %}
-      <div class="stat-bar-container">
-        <div class="stat-bar" style="width: {{ (pokemon.stats.hp / 255 * 100)|round }}%"></div>
-      </div>
-      {% endif %}
-    </div>
-    <div class="quick-stat-item">
-      <span class="quick-stat-label">Attack</span>
-      <span class="quick-stat-value">{{ pokemon.stats.attack if pokemon.stats.attack else 'N/A' }}</span>
-      {% if pokemon.stats.attack %}
-      <div class="stat-bar-container">
-        <div class="stat-bar" style="width: {{ (pokemon.stats.attack / 255 * 100)|round }}%"></div>
-      </div>
-      {% endif %}
-    </div>
-    <div class="quick-stat-item">
-      <span class="quick-stat-label">Defense</span>
-      <span class="quick-stat-value">{{ pokemon.stats.defense if pokemon.stats.defense else 'N/A' }}</span>
-      {% if pokemon.stats.defense %}
-      <div class="stat-bar-container">
-        <div class="stat-bar" style="width: {{ (pokemon.stats.defense / 255 * 100)|round }}%"></div>
-      </div>
-      {% endif %}
-    </div>
-    <div class="quick-stat-item">
-      <span class="quick-stat-label">Sp. Atk</span>
-      <span class="quick-stat-value">{{ pokemon.stats['special-attack'] if pokemon.stats.get('special-attack') else 'N/A' }}</span>
-      {% if pokemon.stats.get('special-attack') %}
-      <div class="stat-bar-container">
-        <div class="stat-bar" style="width: {{ (pokemon.stats['special-attack'] / 255 * 100)|round }}%"></div>
-      </div>
-      {% endif %}
-    </div>
-    <div class="quick-stat-item">
-      <span class="quick-stat-label">Sp. Def</span>
-      <span class="quick-stat-value">{{ pokemon.stats['special-defense'] if pokemon.stats.get('special-defense') else 'N/A' }}</span>
-      {% if pokemon.stats.get('special-defense') %}
-      <div class="stat-bar-container">
-        <div class="stat-bar" style="width: {{ (pokemon.stats['special-defense'] / 255 * 100)|round }}%"></div>
-      </div>
-      {% endif %}
-    </div>
-    <div class="quick-stat-item">
-      <span class="quick-stat-label">Speed</span>
-      <span class="quick-stat-value">{{ pokemon.stats.speed if pokemon.stats.speed else 'N/A' }}</span>
-      {% if pokemon.stats.speed %}
-      <div class="stat-bar-container">
-        <div class="stat-bar" style="width: {{ (pokemon.stats.speed / 255 * 100)|round }}%"></div>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-  
-  <!-- Details Section -->
-  <div class="details">
-    <div class="detail-row">
-      <span class="detail-label">Height:</span>
-      <span class="detail-value">{{ "%.1f"|format(pokemon.height / 10) }} m</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Weight:</span>
-      <span class="detail-value">{{ "%.1f"|format(pokemon.weight / 10) }} kg</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Base Experience:</span>
-      <span class="detail-value">{{ pokemon.base_experience }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Abilities:</span>
-      <span class="detail-value">
-        {% for ability in pokemon.abilities %}
-          {% if ability.url %}
-            <span class="ability-item" data-ability-url="{{ ability.url }}" onclick="showAbilityDetails('{{ ability.url }}', '{{ ability.name }}')" title="Click for details">{{ ability.name|capitalize }}</span>{% if not loop.last %}, {% endif %}
-          {% else %}
-            <span>{{ ability|capitalize if ability is string else ability.name|capitalize }}</span>{% if not loop.last %}, {% endif %}
-          {% endif %}
-        {% endfor %}
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Moves:</span>
-      <span class="detail-value">
-        <button class="reload-button" style="font-size: 0.7rem; padding: 5px 10px;" onclick="openMovesModal()">View Moves ({{ pokemon.moves|length }})</button>
-      </span>
-    </div>
-    {% if pokemon.generation %}
-    <div class="detail-row">
-      <span class="detail-label">Generation:</span>
-      <span class="detail-value">{{ pokemon.generation | capitalize }}</span>
-    </div>
-    {% endif %}
-    <div class="detail-row">
-      <span class="detail-label">Color:</span>
-      <span class="detail-value">{{ pokemon.color | capitalize }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Habitat:</span>
-      <span class="detail-value">{{ pokemon.habitat | capitalize }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Capture Rate:</span>
-      <span class="detail-value">{{ pokemon.capture_rate }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Description:</span>
-      <span class="detail-value">{{ pokemon.flavor_text }}</span>
-    </div>
-  </div>
-  
-  <!-- Type Effectiveness -->
-  {% if pokemon.type_effectiveness %}
-  <div class="type-effectiveness">
-    <h3>Type Effectiveness</h3>
-    {% if pokemon.type_effectiveness.weak_to %}
-    <div class="effectiveness-section">
-      <h4 class="weakness-label">Weak To (2x):</h4>
-      <div class="type-list">
-        {% for type_name in pokemon.type_effectiveness.weak_to %}
-          <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-    {% if pokemon.type_effectiveness.resistant_to %}
-    <div class="effectiveness-section">
-      <h4 class="resistance-label">Resistant To (0.5x):</h4>
-      <div class="type-list">
-        {% for type_name in pokemon.type_effectiveness.resistant_to %}
-          <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-    {% if pokemon.type_effectiveness.immune_to %}
-    <div class="effectiveness-section">
-      <h4 class="immune-label">Immune To (0x):</h4>
-      <div class="type-list">
-        {% for type_name in pokemon.type_effectiveness.immune_to %}
-          <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-  
-  <!-- Evolution Chain -->
-  {% if pokemon.evolution_chain and pokemon.evolution_chain|length > 1 %}
-  <div class="evolution-chain">
-    <h3>Evolution Chain</h3>
-    <div class="evolution-list">
-      {% for evo in pokemon.evolution_chain %}
-        <span class="evolution-item" onclick="searchPokemon('{{ evo }}')">{{ evo|capitalize }}</span>
-        {% if not loop.last %}
-          <span class="evolution-arrow">→</span>
+
+  <div class="pokemon-layout">
+    <section class="pokemon-overview-column">
+      <div class="pokemon-image-container">
+        {% if pokemon.image_url %}
+          <div class="sprite-toggle">
+            <button class="sprite-btn active" onclick="switchSprite('front')">Front</button>
+            <button class="sprite-btn" onclick="switchSprite('back')">Back</button>
+            <button class="sprite-btn" onclick="switchSprite('shiny')">Shiny</button>
+          </div>
+          <img class="pokemon-img" id="pokemonSprite" src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" onclick="openSpriteModal()">
+        {% else %}
+          <p>No image available.</p>
         {% endif %}
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-  
-  <!-- Action Buttons -->
-  <div class="button-container">
-    <button class="reload-button" onclick="getRandomPokemon()">Random Pokémon</button>
-    <button class="reload-button" onclick="openStatsModal()">View Stats</button>
-    <button class="reload-button" onclick="openTypeEffectivenessModal()">Type Chart</button>
-    <button class="reload-button" onclick="openComparisonModal()">Compare</button>
-    <button class="reload-button" id="favoriteBtn" onclick="toggleFavorite()">
-      <span id="favoriteText">Add to Favorites</span>
-    </button>
-    <button class="reload-button" onclick="sharePokemon()">Share</button>
+      </div>
+
+      <!-- Types -->
+      <div class="types-container">
+        {% for t in pokemon.types %}
+          <span class="type {{ t }}">{{ t|capitalize }}</span>
+        {% endfor %}
+      </div>
+
+      <!-- Quick Stats Summary -->
+      <div class="quick-stats">
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">HP</span>
+          <span class="quick-stat-value">{{ pokemon.stats.hp if pokemon.stats.hp else 'N/A' }}</span>
+          {% if pokemon.stats.hp %}
+          <div class="stat-bar-container">
+            <div class="stat-bar" style="width: {{ (pokemon.stats.hp / 255 * 100)|round }}%"></div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">Attack</span>
+          <span class="quick-stat-value">{{ pokemon.stats.attack if pokemon.stats.attack else 'N/A' }}</span>
+          {% if pokemon.stats.attack %}
+          <div class="stat-bar-container">
+            <div class="stat-bar" style="width: {{ (pokemon.stats.attack / 255 * 100)|round }}%"></div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">Defense</span>
+          <span class="quick-stat-value">{{ pokemon.stats.defense if pokemon.stats.defense else 'N/A' }}</span>
+          {% if pokemon.stats.defense %}
+          <div class="stat-bar-container">
+            <div class="stat-bar" style="width: {{ (pokemon.stats.defense / 255 * 100)|round }}%"></div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">Sp. Atk</span>
+          <span class="quick-stat-value">{{ pokemon.stats['special-attack'] if pokemon.stats.get('special-attack') else 'N/A' }}</span>
+          {% if pokemon.stats.get('special-attack') %}
+          <div class="stat-bar-container">
+            <div class="stat-bar" style="width: {{ (pokemon.stats['special-attack'] / 255 * 100)|round }}%"></div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">Sp. Def</span>
+          <span class="quick-stat-value">{{ pokemon.stats['special-defense'] if pokemon.stats.get('special-defense') else 'N/A' }}</span>
+          {% if pokemon.stats.get('special-defense') %}
+          <div class="stat-bar-container">
+            <div class="stat-bar" style="width: {{ (pokemon.stats['special-defense'] / 255 * 100)|round }}%"></div>
+          </div>
+          {% endif %}
+        </div>
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">Speed</span>
+          <span class="quick-stat-value">{{ pokemon.stats.speed if pokemon.stats.speed else 'N/A' }}</span>
+          {% if pokemon.stats.speed %}
+          <div class="stat-bar-container">
+            <div class="stat-bar" style="width: {{ (pokemon.stats.speed / 255 * 100)|round }}%"></div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="button-container action-button-row">
+        <button class="reload-button action-button action-button-primary" onclick="getRandomPokemon()">Random Pokemon</button>
+        <button class="reload-button action-button action-button-secondary" onclick="openStatsModal()">View Stats</button>
+        <button class="reload-button action-button action-button-secondary" onclick="openTypeEffectivenessModal()">Type Chart</button>
+        <button class="reload-button action-button action-button-secondary" onclick="openComparisonModal()">Compare</button>
+        <button class="reload-button action-button action-button-secondary" id="favoriteBtn" onclick="toggleFavorite()">
+          <span id="favoriteText">Add to Favorites</span>
+        </button>
+        <button class="reload-button action-button action-button-tertiary" onclick="sharePokemon()">Share</button>
+      </div>
+    </section>
+
+    <section class="pokemon-data-column">
+      <!-- Details Section -->
+      <div class="details details-card">
+        <div class="detail-row">
+          <span class="detail-label">Height:</span>
+          <span class="detail-value">{{ "%.1f"|format(pokemon.height / 10) }} m</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Weight:</span>
+          <span class="detail-value">{{ "%.1f"|format(pokemon.weight / 10) }} kg</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Base Experience:</span>
+          <span class="detail-value">{{ pokemon.base_experience }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Abilities:</span>
+          <span class="detail-value">
+            {% for ability in pokemon.abilities %}
+              {% if ability.url %}
+                <span class="ability-item" data-ability-url="{{ ability.url }}" onclick="showAbilityDetails('{{ ability.url }}', '{{ ability.name }}')" title="Click for details">{{ ability.name|capitalize }}</span>{% if not loop.last %}, {% endif %}
+              {% else %}
+                <span>{{ ability|capitalize if ability is string else ability.name|capitalize }}</span>{% if not loop.last %}, {% endif %}
+              {% endif %}
+            {% endfor %}
+          </span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Moves:</span>
+          <span class="detail-value">
+            <button class="reload-button detail-action-button action-button action-button-secondary" onclick="openMovesModal()">View Moves ({{ pokemon.moves|length }})</button>
+          </span>
+        </div>
+        {% if pokemon.generation %}
+        <div class="detail-row">
+          <span class="detail-label">Generation:</span>
+          <span class="detail-value">{{ pokemon.generation | capitalize }}</span>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+          <span class="detail-label">Color:</span>
+          <span class="detail-value">{{ pokemon.color | capitalize }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Habitat:</span>
+          <span class="detail-value">{{ pokemon.habitat | capitalize }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Capture Rate:</span>
+          <span class="detail-value">{{ pokemon.capture_rate }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Description:</span>
+          <span class="detail-value">{{ pokemon.flavor_text }}</span>
+        </div>
+      </div>
+
+      <!-- Type Effectiveness -->
+      {% if pokemon.type_effectiveness %}
+      <div class="type-effectiveness details-card">
+        <h3>Type Effectiveness</h3>
+        {% if pokemon.type_effectiveness.weak_to %}
+        <div class="effectiveness-section">
+          <h4 class="weakness-label">Weak To (2x):</h4>
+          <div class="type-list">
+            {% for type_name in pokemon.type_effectiveness.weak_to %}
+              <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if pokemon.type_effectiveness.resistant_to %}
+        <div class="effectiveness-section">
+          <h4 class="resistance-label">Resistant To (0.5x):</h4>
+          <div class="type-list">
+            {% for type_name in pokemon.type_effectiveness.resistant_to %}
+              <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if pokemon.type_effectiveness.immune_to %}
+        <div class="effectiveness-section">
+          <h4 class="immune-label">Immune To (0x):</h4>
+          <div class="type-list">
+            {% for type_name in pokemon.type_effectiveness.immune_to %}
+              <span class="type {{ type_name }}">{{ type_name|capitalize }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Evolution Chain -->
+      {% if pokemon.evolution_chain and pokemon.evolution_chain|length > 1 %}
+      <div class="evolution-chain details-card">
+        <h3>Evolution Chain</h3>
+        <div class="evolution-list">
+          {% for evo in pokemon.evolution_chain %}
+            <span class="evolution-item" onclick="searchPokemon('{{ evo }}')">{{ evo|capitalize }}</span>
+            {% if not loop.last %}
+              <span class="evolution-arrow">→</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </section>
   </div>
 </div>
 {% endif %}

@@ -1,18 +1,28 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/collection-layout.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h1>Recently Viewed Pokémon</h1>
-  
-  <nav class="main-nav">
-    <a href="/random" class="nav-link">Random Pokémon</a>
-    <a href="/favorites" class="nav-link">Favorites</a>
-    <a href="/team" class="nav-link">Random Team</a>
-    <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
-  </nav>
-  
-  <div class="button-container" style="margin-bottom: 20px;">
-    <div class="sort-container" style="display: inline-block;">
+<div class="container collection-page">
+  <header class="collection-header">
+    <h1 class="collection-title">Recently Viewed Pokémon</h1>
+
+    <nav class="main-nav collection-nav">
+      <a href="/random" class="nav-link">Random Pokémon</a>
+      <a href="/favorites" class="nav-link">Favorites</a>
+      <a href="/team" class="nav-link">Random Team</a>
+      <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    </nav>
+  </header>
+
+  <section class="button-container collection-toolbar">
+    <div class="collection-actions">
+      <p class="collection-toolbar-note">Review and sort the Pokémon you opened most recently.</p>
+    </div>
+
+    <div class="sort-container collection-sort-container">
       <label for="historySort" class="filter-label-small">Sort by:</label>
       <select id="historySort" class="generation-select" onchange="sortHistory()">
         <option value="date">Most Recent</option>
@@ -23,16 +33,15 @@
         <option value="id-desc">ID (High-Low)</option>
       </select>
     </div>
-  </div>
-  
-  <div id="historyContainer" class="favorites-grid">
+  </section>
+
+  <div id="historyContainer" class="favorites-grid collection-grid">
     <!-- History will be loaded by JavaScript -->
   </div>
-  
-  <div id="emptyHistory" class="empty-state" style="display: none;">
+
+  <div id="emptyHistory" class="empty-state collection-empty-state collection-hidden">
     <p>No history yet! Start viewing Pokémon to build your history.</p>
     <a href="/random" class="reload-button">Get Random Pokémon</a>
   </div>
 </div>
 {% endblock %}
-

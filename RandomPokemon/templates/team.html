@@ -1,33 +1,41 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/collection-layout.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h1>Random Pokémon Team</h1>
-  
-  <nav class="main-nav">
-    <a href="/random" class="nav-link">Random Pokémon</a>
-    <a href="/team" class="nav-link">Random Team</a>
-    <a href="/favorites" class="nav-link">Favorites</a>
-    <a href="/history" class="nav-link">History</a>
-    <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
-  </nav>
-  
-  <div class="button-container" style="margin-bottom: 20px;">
-    <button class="reload-button" onclick="window.location.reload()">Generate New Team</button>
-    <button class="reload-button" onclick="analyzeTeamCoverage()">Analyze Team Coverage</button>
-    <button class="reload-button" onclick="saveCurrentTeam()">Save Team</button>
-    <button class="reload-button" onclick="loadSavedTeams()">Load Teams</button>
-    <button class="reload-button" onclick="shareTeam()">Share Team</button>
-  </div>
-  
-  <div id="savedTeamsContainer" style="display: none; margin-top: 20px;">
-    <h3>Saved Teams</h3>
-    <div id="savedTeamsList" class="team-grid">
+<div class="container collection-page">
+  <header class="collection-header">
+    <h1 class="collection-title">Random Pokémon Team</h1>
+
+    <nav class="main-nav collection-nav">
+      <a href="/random" class="nav-link">Random Pokémon</a>
+      <a href="/team" class="nav-link">Random Team</a>
+      <a href="/favorites" class="nav-link">Favorites</a>
+      <a href="/history" class="nav-link">History</a>
+      <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    </nav>
+  </header>
+
+  <section class="button-container collection-toolbar">
+    <div class="collection-actions">
+      <button class="reload-button" onclick="window.location.reload()">Generate New Team</button>
+      <button class="reload-button" onclick="analyzeTeamCoverage()">Analyze Team Coverage</button>
+      <button class="reload-button" onclick="saveCurrentTeam()">Save Team</button>
+      <button class="reload-button" onclick="loadSavedTeams()">Load Teams</button>
+      <button class="reload-button" onclick="shareTeam()">Share Team</button>
+    </div>
+  </section>
+
+  <div id="savedTeamsContainer" class="collection-saved-teams collection-hidden">
+    <h3 class="collection-section-title">Saved Teams</h3>
+    <div id="savedTeamsList" class="team-grid collection-grid collection-secondary-grid">
       <!-- Saved teams will be loaded here -->
     </div>
   </div>
-  
-  <div class="team-grid">
+
+  <div class="team-grid collection-grid">
     {% for pokemon in team %}
     <div class="team-card" data-pokemon-id="{{ pokemon.id }}" data-pokemon-types='{{ pokemon.types|tojson }}' onclick="window.location.href='/pokemon/{{ pokemon.id }}'">
       <img src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" class="team-img">
@@ -65,4 +73,3 @@
   </div>
 </div>
 {% endblock %}
-

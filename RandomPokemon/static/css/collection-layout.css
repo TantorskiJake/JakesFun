@@ -1,0 +1,188 @@
+.collection-page {
+  display: grid;
+  gap: 20px;
+}
+
+.collection-header {
+  display: grid;
+  gap: 12px;
+}
+
+.collection-title {
+  margin: 0;
+}
+
+.collection-nav {
+  margin: 0;
+}
+
+.collection-toolbar {
+  margin: 0;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.collection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.collection-page .collection-actions .reload-button {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 0.6rem;
+  box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.collection-page .collection-actions .reload-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px var(--shadow-color);
+}
+
+.collection-toolbar-note {
+  margin: 0;
+  font-size: 0.58rem;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.collection-sort-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--border-radius-small);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.collection-sort-container .generation-select {
+  min-width: 160px;
+}
+
+.collection-file-input {
+  display: none;
+}
+
+.collection-grid {
+  margin-top: 0;
+}
+
+.collection-page .favorites-grid {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.collection-page .team-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.collection-empty-state {
+  margin-top: 4px;
+  padding: 28px 20px;
+  border: 2px dashed var(--card-border);
+  border-radius: var(--border-radius-small);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.collection-empty-state p {
+  margin: 0 0 14px;
+  line-height: 1.7;
+}
+
+.collection-hidden {
+  display: none;
+}
+
+.collection-saved-teams {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.collection-section-title {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--primary-color);
+}
+
+.collection-secondary-grid {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .collection-toolbar {
+    align-items: stretch;
+  }
+
+  .collection-sort-container {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .collection-page {
+    gap: 16px;
+  }
+
+  .collection-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .collection-actions {
+    width: 100%;
+  }
+
+  .collection-page .collection-actions .reload-button {
+    flex: 1 1 100%;
+    width: 100%;
+    padding: 11px 14px;
+  }
+
+  .collection-sort-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .collection-sort-container .generation-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .collection-page .favorites-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .collection-page .team-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+
+  .collection-page .team-stats-summary {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+}
+
+body.dark-mode .collection-toolbar-note {
+  color: #b0b0b0;
+}
+
+body.dark-mode .collection-sort-container {
+  border-color: #4a5a6e;
+  background: rgba(30, 40, 50, 0.85);
+}
+
+body.dark-mode .collection-empty-state {
+  border-color: #4a5a6e;
+  background: rgba(30, 40, 50, 0.7);
+}
+
+body.dark-mode .collection-section-title {
+  color: #8a8aff;
+}

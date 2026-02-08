@@ -1,22 +1,31 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/collection-layout.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h1>My Favorite Pokémon</h1>
-  
-  <nav class="main-nav">
-    <a href="/random" class="nav-link">Random Pokémon</a>
-    <a href="/team" class="nav-link">Random Team</a>
-    <a href="/history" class="nav-link">History</a>
-    <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
-  </nav>
-  
-  <div class="button-container" style="margin-bottom: 20px;">
-    <button class="reload-button" onclick="exportFavorites('json')">Export as JSON</button>
-    <button class="reload-button" onclick="exportFavorites('csv')">Export as CSV</button>
-    <button class="reload-button" onclick="importFavorites()">Import Favorites</button>
-    <input type="file" id="importFileInput" accept=".json,.csv" style="display: none;" onchange="handleFileImport(event)">
-    <div class="sort-container" style="display: inline-block; margin-left: 20px;">
+<div class="container collection-page">
+  <header class="collection-header">
+    <h1 class="collection-title">My Favorite Pokémon</h1>
+
+    <nav class="main-nav collection-nav">
+      <a href="/random" class="nav-link">Random Pokémon</a>
+      <a href="/team" class="nav-link">Random Team</a>
+      <a href="/history" class="nav-link">History</a>
+      <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    </nav>
+  </header>
+
+  <section class="button-container collection-toolbar">
+    <div class="collection-actions">
+      <button class="reload-button" onclick="exportFavorites('json')">Export as JSON</button>
+      <button class="reload-button" onclick="exportFavorites('csv')">Export as CSV</button>
+      <button class="reload-button" onclick="importFavorites()">Import Favorites</button>
+      <input type="file" id="importFileInput" class="collection-file-input" accept=".json,.csv" onchange="handleFileImport(event)">
+    </div>
+
+    <div class="sort-container collection-sort-container">
       <label for="favoritesSort" class="filter-label-small">Sort by:</label>
       <select id="favoritesSort" class="generation-select" onchange="sortFavorites()">
         <option value="date">Date Added</option>
@@ -26,17 +35,15 @@
         <option value="id-desc">ID (High-Low)</option>
       </select>
     </div>
-  </div>
-  
-  <div id="favoritesContainer" class="favorites-grid">
+  </section>
+
+  <div id="favoritesContainer" class="favorites-grid collection-grid">
     <!-- Favorites will be loaded by JavaScript -->
   </div>
-  
-  <div id="emptyFavorites" class="empty-state" style="display: none;">
+
+  <div id="emptyFavorites" class="empty-state collection-empty-state collection-hidden">
     <p>No favorites yet! Start adding Pokémon to your favorites.</p>
     <a href="/random" class="reload-button">Get Random Pokémon</a>
   </div>
 </div>
 {% endblock %}
-
-

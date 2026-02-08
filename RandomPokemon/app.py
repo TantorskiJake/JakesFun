@@ -12,6 +12,19 @@ import os
 # Set application root for subpath deployment (e.g., /pokemon)
 APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '/pokemon')
 
+# HTTPS redirect policy:
+# - explicit env var wins if set (FORCE_HTTPS=1/0)
+# - otherwise enable automatically on known production environments
+#   (e.g., Render or FLASK_ENV=production)
+force_https_env = os.environ.get('FORCE_HTTPS')
+if force_https_env is not None:
+    FORCE_HTTPS = force_https_env == '1'
+else:
+    FORCE_HTTPS = (
+        os.environ.get('RENDER', '').lower() == 'true'
+        or os.environ.get('FLASK_ENV') == 'production'
+    )
+
 app = Flask(__name__)
 
 # Security: Configure Talisman for security headers
@@ -28,7 +41,7 @@ csp = {
 
 Talisman(
     app,
-    force_https=True,  # Force HTTPS in production
+    force_https=FORCE_HTTPS,
     strict_transport_security=True,
     strict_transport_security_max_age=31536000,  # 1 year
     content_security_policy=csp,
@@ -219,15 +232,6 @@ def calculate_type_effectiveness(type_urls):
                     all_damage_relations["no_damage_from"].extend([t["name"] for t in damage_relations["no_damage_from"]])
         except:
             continue
-    
-    # For dual types: multiply effectiveness
-    # Count occurrences to determine final effectiveness
-    type_counts = {}
-    for type_name in all_damage_relations["double_damage_from"]:
-        type_counts[type_name] = type_counts.get(type_name, 0) + 1
-    
-    for type_name in all_damage_relations["half_damage_from"]:
-        type_counts[type_name] = type_counts.get(type_name, 0) - 1
     
     # Calculate final effectiveness
     weak_to = []
@@ -479,10 +483,6 @@ if __name__ == "__main__":
         def format(self, record):
             message = record.getMessage()
             
-            # Filter out static files
-            if '/static/' in message or '/favicon.ico' in message:
-                return None
-            
             # Convert HTTP requests to friendly messages
             if 'GET /pokemon/' in message:
                 # Extract Pokémon name/ID from URL
@@ -530,8 +530,8 @@ if __name__ == "__main__":
             elif 'GET /' in message:
                 return "🏠 Home page accessed"
             
-            # Return None to filter out other messages
-            return None
+            # Fallback to original message for non-HTTP/startup logs
+            return message
     
     # Custom filter to only show Pokémon-related requests
     class StaticFileFilter(logging.Filter):

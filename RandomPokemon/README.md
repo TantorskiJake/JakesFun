@@ -86,7 +86,12 @@ For deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 4. **Run the application**
    ```bash
-   python app.py
+   ./run-dev.sh
+   ```
+
+   From repository root, you can also run:
+   ```bash
+   ./RandomPokemon/run-dev.sh
    ```
 
 5. **Open your browser**
@@ -249,11 +254,17 @@ The app uses browser localStorage for:
 
 ### Running in Development Mode
 
-The app runs with debug mode enabled by default:
+Use the helper script to start local development with the correct env vars:
 
 ```bash
-python app.py
+./run-dev.sh
 ```
+
+The script will:
+- Activate the first virtualenv it finds in: `.venv`, `venv`, `../.venv`, or `../venv`
+- Set `FLASK_ENV=development`
+- Set `FLASK_DEBUG=1`
+- Run `python3 app.py`
 
 This will:
 - Enable Flask debug mode
@@ -386,4 +397,3 @@ For issues, questions, or suggestions:
 ---
 
 **Enjoy exploring the world of Pokémon!** 🎮✨
-

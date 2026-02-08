@@ -1,0 +1,76 @@
+:root {
+    --a11y-focus-ring-color: #0b63ce;
+    --a11y-focus-ring-outer: rgba(11, 99, 206, 0.26);
+    --a11y-high-contrast-text: #0f172a;
+    --a11y-high-contrast-bg: #ffffff;
+    --a11y-high-contrast-border: #1f2937;
+}
+
+/* Strong but non-invasive keyboard focus visibility */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--a11y-focus-ring-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--a11y-focus-ring-outer);
+}
+
+/* Keep hidden focus states from drawing in pointer use */
+:where(a, button, input, select, textarea, [tabindex]):focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Avoid background scroll when a modal is open */
+body.modal-open {
+    overflow: hidden;
+    touch-action: none;
+}
+
+/* Motion reduction support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Utility: enforce minimum touch target size */
+.a11y-tap-target,
+button.a11y-tap-target,
+a.a11y-tap-target,
+[role="button"].a11y-tap-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Utility: readable text style on patterned/colored backgrounds */
+.a11y-text-contrast {
+    color: var(--a11y-high-contrast-text) !important;
+    text-shadow: none !important;
+}
+
+/* Utility: contrast-safe surface */
+.a11y-surface-contrast {
+    background: var(--a11y-high-contrast-bg) !important;
+    color: var(--a11y-high-contrast-text) !important;
+    border: 1px solid var(--a11y-high-contrast-border) !important;
+}
+
+/* Utility: screen-reader only text */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}

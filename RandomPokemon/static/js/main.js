@@ -1,11 +1,26 @@
 // Global variables
 let currentPokemon = null;
 let currentSpriteType = 'front';
+const MODAL_IDS = [
+    'statsModal',
+    'spriteModal',
+    'typeEffectivenessModal',
+    'movesModal',
+    'abilityModal',
+    'comparisonModal',
+    'keyboardShortcutsModal',
+    'teamCoverageModal'
+];
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+
+let activeModal = null;
+let lastFocusedElement = null;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize dark mode
     initDarkMode();
+    initAccessibilityEnhancements();
     
     // Check if we're on the favorites page
     if (document.getElementById('favoritesContainer')) {
@@ -56,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 const suggestions = document.getElementById('searchSuggestions');
                 if (suggestions) suggestions.style.display = 'none';
+                searchInput.setAttribute('aria-expanded', 'false');
             }, 200);
         });
     }
@@ -63,6 +79,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Handle keyboard shortcuts
 function handleKeyboardShortcuts(e) {
+    if (e.key === 'Escape') {
+        closeActiveModal();
+        return;
+    }
+
     // Don't trigger if typing in input
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
@@ -83,21 +104,200 @@ function handleKeyboardShortcuts(e) {
                 document.getElementById('searchInput')?.focus();
             }
             break;
-        case 'Escape':
-            closeStatsModal();
-            closeSpriteModal();
-            closeTypeEffectivenessModal();
-            closeMovesModal();
-            closeAbilityModal();
-            closeComparisonModal();
-            closeKeyboardShortcutsModal();
-            break;
         case '?':
-            if (!e.shiftKey) {
-                e.preventDefault();
-                openKeyboardShortcutsModal();
-            }
+            e.preventDefault();
+            openKeyboardShortcutsModal();
             break;
+    }
+}
+
+function initAccessibilityEnhancements() {
+    setupModalAccessibility();
+    setupInteractiveAccessibility();
+    document.addEventListener('keydown', handleModalKeydown, true);
+}
+
+function setupModalAccessibility() {
+    MODAL_IDS.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-hidden', isModalOpen(modal) ? 'false' : 'true');
+
+        const modalTitle = modal.querySelector('[id$="Title"], h1, h2, h3');
+        if (modalTitle) {
+            if (!modalTitle.id) {
+                modalTitle.id = `${modalId}Label`;
+            }
+            modal.setAttribute('aria-labelledby', modalTitle.id);
+        }
+
+        if (!modal.hasAttribute('tabindex')) {
+            modal.setAttribute('tabindex', '-1');
+        }
+
+        const closeControls = modal.querySelectorAll('.close, [data-modal-close]');
+        closeControls.forEach(control => {
+            if (!control.hasAttribute('aria-label')) {
+                control.setAttribute('aria-label', 'Close dialog');
+            }
+            if (!control.matches('button, a, input, select, textarea')) {
+                control.setAttribute('role', 'button');
+                control.setAttribute('tabindex', '0');
+            }
+            if (!control.dataset.a11yKeyHandler) {
+                control.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        closeModal(modalId);
+                    }
+                });
+                control.dataset.a11yKeyHandler = 'true';
+            }
+        });
+    });
+}
+
+function setupInteractiveAccessibility() {
+    const searchInput = document.getElementById('searchInput');
+    const searchSuggestions = document.getElementById('searchSuggestions');
+    if (searchInput) {
+        searchInput.setAttribute('aria-autocomplete', 'list');
+        searchInput.setAttribute('aria-expanded', 'false');
+        if (searchSuggestions && searchSuggestions.id) {
+            searchInput.setAttribute('aria-controls', searchSuggestions.id);
+        }
+    }
+    if (searchSuggestions) {
+        searchSuggestions.setAttribute('role', 'listbox');
+    }
+
+    const advancedPanel = document.getElementById('advancedSearchPanel');
+    if (advancedPanel) {
+        advancedPanel.setAttribute('aria-hidden', window.getComputedStyle(advancedPanel).display === 'none' ? 'true' : 'false');
+    }
+
+    const advancedToggle = document.querySelector('[onclick="toggleAdvancedSearch()"]');
+    if (advancedToggle) {
+        const isExpanded = !advancedPanel || window.getComputedStyle(advancedPanel).display !== 'none';
+        advancedToggle.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        advancedToggle.setAttribute('aria-controls', 'advancedSearchPanel');
+    }
+}
+
+function isModalOpen(modal) {
+    if (!modal) return false;
+    return window.getComputedStyle(modal).display !== 'none';
+}
+
+function isElementVisible(element) {
+    if (!element || !(element instanceof HTMLElement)) return false;
+    return element.offsetParent !== null || element === document.activeElement;
+}
+
+function getFocusableElements(container) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter(isElementVisible);
+}
+
+function focusModalTarget(modal) {
+    if (!modal) return;
+
+    const autofocusTarget = modal.querySelector('[autofocus], [data-modal-initial-focus]');
+    if (autofocusTarget && autofocusTarget instanceof HTMLElement && isElementVisible(autofocusTarget)) {
+        autofocusTarget.focus();
+        return;
+    }
+
+    const focusableElements = getFocusableElements(modal);
+    const firstFocusable = focusableElements[0];
+    if (firstFocusable && firstFocusable instanceof HTMLElement) {
+        firstFocusable.focus();
+    } else {
+        modal.focus();
+    }
+}
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    if (activeModal && activeModal !== modal) {
+        activeModal.setAttribute('aria-hidden', 'true');
+    }
+
+    lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    activeModal = modal;
+
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+
+    document.body.classList.add('modal-open');
+    setTimeout(() => focusModalTarget(modal), 0);
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+
+    if (activeModal === modal) {
+        activeModal = null;
+        document.body.classList.remove('modal-open');
+
+        if (lastFocusedElement && isElementVisible(lastFocusedElement)) {
+            lastFocusedElement.focus();
+        }
+        lastFocusedElement = null;
+    }
+}
+
+function closeActiveModal() {
+    if (activeModal && activeModal.id) {
+        closeModal(activeModal.id);
+        return;
+    }
+
+    MODAL_IDS.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && isModalOpen(modal)) {
+            closeModal(modalId);
+        }
+    });
+}
+
+function handleModalKeydown(event) {
+    if (!activeModal || !isModalOpen(activeModal)) return;
+
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        closeModal(activeModal.id);
+        return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const focusableElements = getFocusableElements(activeModal);
+    if (focusableElements.length === 0) {
+        event.preventDefault();
+        activeModal.focus();
+        return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const activeElement = document.activeElement;
+
+    if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+    } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
     }
 }
 
@@ -123,35 +323,6 @@ function getRandomPokemon() {
     }, 150);
     
     window.location.href = '/random';
-}
-
-// Search Pokémon
-function handleSearch(event) {
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) {
-        event.preventDefault();
-        return false;
-    }
-    showLoading(`Searching for "${query}"...`, [
-        'Searching database',
-        'Fetching Pokémon data',
-        'Loading details',
-        'Finalizing...'
-    ]);
-    
-    // Simulate progress
-    let progress = 0;
-    const interval = setInterval(() => {
-        progress += 15;
-        const stepIndex = Math.floor(progress / 25);
-        updateLoadingProgress(progress, stepIndex);
-        
-        if (progress >= 100) {
-            clearInterval(interval);
-        }
-    }, 100);
-    
-    return true;
 }
 
 // Search Pokémon by name
@@ -199,7 +370,6 @@ function switchSprite(type) {
 function openStatsModal() {
     if (!currentPokemon) return;
     
-    const modal = document.getElementById('statsModal');
     const title = document.getElementById('statsModalTitle');
     const container = document.getElementById('statsContainer');
     
@@ -230,20 +400,18 @@ function openStatsModal() {
         });
     }
     
-    if (modal) modal.style.display = 'block';
+    openModal('statsModal');
 }
 
 // Close stats modal
 function closeStatsModal() {
-    const modal = document.getElementById('statsModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('statsModal');
 }
 
 // Open sprite modal
 function openSpriteModal() {
     if (!currentPokemon) return;
     
-    const modal = document.getElementById('spriteModal');
     const title = document.getElementById('spriteModalTitle');
     const img = document.getElementById('spriteModalImg');
     
@@ -259,13 +427,12 @@ function openSpriteModal() {
         playPokemonCry(currentPokemon.id);
     }
     
-    if (modal) modal.style.display = 'block';
+    openModal('spriteModal');
 }
 
 // Close sprite modal
 function closeSpriteModal() {
-    const modal = document.getElementById('spriteModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('spriteModal');
 }
 
 // Toggle favorite
@@ -302,6 +469,7 @@ function updateFavoriteButton() {
     const text = document.getElementById('favoriteText');
     
     if (btn && text) {
+        btn.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
         if (isFavorite) {
             btn.classList.add('favorited');
             text.textContent = 'Remove from Favorites';
@@ -345,6 +513,8 @@ function showLoading(message = 'Loading Pokémon...', steps = []) {
     
     if (spinner) {
         spinner.style.display = 'block';
+        spinner.setAttribute('aria-busy', 'true');
+        spinner.setAttribute('aria-live', 'polite');
         if (loadingText) loadingText.textContent = message;
         if (progressBar) progressBar.style.width = '0%';
         if (progressText) progressText.textContent = '0%';
@@ -406,6 +576,7 @@ function hideLoading() {
     const spinner = document.getElementById('loadingSpinner');
     if (spinner) {
         spinner.style.display = 'none';
+        spinner.setAttribute('aria-busy', 'false');
         // Reset progress
         setTimeout(() => {
             updateLoadingProgress(0);
@@ -422,6 +593,8 @@ function showNotification(message) {
     const notification = document.createElement('div');
     notification.className = 'notification';
     notification.textContent = message;
+    notification.setAttribute('role', 'status');
+    notification.setAttribute('aria-live', 'polite');
     document.body.appendChild(notification);
     
     // Animate in
@@ -465,6 +638,8 @@ function loadFavorites(sortBy = null) {
     favorites.forEach(pokemon => {
         const card = document.createElement('div');
         card.className = 'favorite-card';
+        card.setAttribute('role', 'link');
+        card.setAttribute('tabindex', '0');
         
         card.innerHTML = `
             <img src="${pokemon.image_url || ''}" alt="${pokemon.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3C/svg%3E'">
@@ -477,6 +652,12 @@ function loadFavorites(sortBy = null) {
         
         card.addEventListener('click', function(e) {
             if (e.target.tagName !== 'BUTTON') {
+                viewPokemon(pokemon.id);
+            }
+        });
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
                 viewPokemon(pokemon.id);
             }
         });
@@ -539,7 +720,6 @@ function removeFavorite(id) {
 function openTypeEffectivenessModal() {
     if (!currentPokemon || !currentPokemon.type_effectiveness) return;
     
-    const modal = document.getElementById('typeEffectivenessModal');
     const title = document.getElementById('typeEffectivenessTitle');
     const container = document.getElementById('typeEffectivenessContainer');
     
@@ -602,13 +782,12 @@ function openTypeEffectivenessModal() {
         }
     }
     
-    if (modal) modal.style.display = 'block';
+    openModal('typeEffectivenessModal');
 }
 
 // Close type effectiveness modal
 function closeTypeEffectivenessModal() {
-    const modal = document.getElementById('typeEffectivenessModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('typeEffectivenessModal');
 }
 
 // Toggle dark mode
@@ -635,6 +814,7 @@ function updateDarkModeButton(isDark) {
     const button = document.getElementById('darkModeToggle');
     if (button) {
         button.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+        button.setAttribute('aria-pressed', isDark ? 'true' : 'false');
     }
 }
 
@@ -720,6 +900,8 @@ function loadHistory(sortBy = null) {
     history.forEach(pokemon => {
         const card = document.createElement('div');
         card.className = 'favorite-card';
+        card.setAttribute('role', 'link');
+        card.setAttribute('tabindex', '0');
         
         card.innerHTML = `
             <img src="${pokemon.image_url || ''}" alt="${pokemon.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3C/svg%3E'">
@@ -731,6 +913,12 @@ function loadHistory(sortBy = null) {
         
         card.addEventListener('click', function(e) {
             if (e.target.tagName !== 'BUTTON') {
+                viewPokemon(pokemon.id);
+            }
+        });
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
                 viewPokemon(pokemon.id);
             }
         });
@@ -757,7 +945,6 @@ const movesPerPage = 20;
 function openMovesModal() {
     if (!currentPokemon || !currentPokemon.moves) return;
     
-    const modal = document.getElementById('movesModal');
     const title = document.getElementById('movesModalTitle');
     const container = document.getElementById('movesContainer');
     
@@ -858,13 +1045,16 @@ function openMovesModal() {
             allMovesData = moves;
             filteredMoves = moves;
             setTimeout(() => {
-                document.querySelector('.loading-moves').style.display = 'none';
+                const loadingMoves = document.querySelector('.loading-moves');
+                if (loadingMoves) {
+                    loadingMoves.style.display = 'none';
+                }
                 renderMoves();
             }, 200);
         });
     }
     
-    if (modal) modal.style.display = 'block';
+    openModal('movesModal');
 }
 
 // Filter moves based on search, type, and class
@@ -955,13 +1145,11 @@ function changeMovesPage(page) {
 
 // Close moves modal
 function closeMovesModal() {
-    const modal = document.getElementById('movesModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('movesModal');
 }
 
 // Show ability details
 function showAbilityDetails(abilityUrl, abilityName) {
-    const modal = document.getElementById('abilityModal');
     const title = document.getElementById('abilityModalTitle');
     const container = document.getElementById('abilityContainer');
     
@@ -971,7 +1159,7 @@ function showAbilityDetails(abilityUrl, abilityName) {
         container.innerHTML = '<p>Loading ability details...</p>';
     }
     
-    if (modal) modal.style.display = 'block';
+    openModal('abilityModal');
     
     fetch(abilityUrl)
         .then(res => res.json())
@@ -999,8 +1187,7 @@ function showAbilityDetails(abilityUrl, abilityName) {
 
 // Close ability modal
 function closeAbilityModal() {
-    const modal = document.getElementById('abilityModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('abilityModal');
 }
 
 // Search autocomplete
@@ -1012,6 +1199,7 @@ function handleSearchInput(e) {
     
     if (query.length < 2) {
         suggestionsDiv.style.display = 'none';
+        document.getElementById('searchInput')?.setAttribute('aria-expanded', 'false');
         return;
     }
     
@@ -1024,20 +1212,32 @@ function handleSearchInput(e) {
                     const item = document.createElement('div');
                     item.className = 'suggestion-item';
                     item.textContent = suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
+                    item.setAttribute('role', 'option');
+                    item.setAttribute('tabindex', '0');
                     item.onclick = () => {
                         document.getElementById('searchInput').value = suggestion;
                         suggestionsDiv.style.display = 'none';
+                        document.getElementById('searchInput')?.setAttribute('aria-expanded', 'false');
                         document.querySelector('.search-form').submit();
+                    };
+                    item.onkeydown = (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            item.click();
+                        }
                     };
                     suggestionsDiv.appendChild(item);
                 });
                 suggestionsDiv.style.display = 'block';
+                document.getElementById('searchInput')?.setAttribute('aria-expanded', 'true');
             } else {
                 suggestionsDiv.style.display = 'none';
+                document.getElementById('searchInput')?.setAttribute('aria-expanded', 'false');
             }
         })
         .catch(() => {
             suggestionsDiv.style.display = 'none';
+            document.getElementById('searchInput')?.setAttribute('aria-expanded', 'false');
         });
 }
 
@@ -1117,7 +1317,6 @@ let comparisonPokemon2 = null;
 function openComparisonModal() {
     if (!currentPokemon) return;
     
-    const modal = document.getElementById('comparisonModal');
     const container1 = document.getElementById('comparisonPokemon1Data');
     const name1 = document.getElementById('comparisonPokemon1Name');
     
@@ -1134,12 +1333,11 @@ function openComparisonModal() {
         container2.innerHTML = '<p>Search for a Pokémon to compare</p>';
     }
     
-    if (modal) modal.style.display = 'block';
+    openModal('comparisonModal');
 }
 
 function closeComparisonModal() {
-    const modal = document.getElementById('comparisonModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('comparisonModal');
 }
 
 function addComparisonPokemon() {
@@ -1423,13 +1621,11 @@ function handleFileImport(event) {
 
 // Keyboard shortcuts modal
 function openKeyboardShortcutsModal() {
-    const modal = document.getElementById('keyboardShortcutsModal');
-    if (modal) modal.style.display = 'block';
+    openModal('keyboardShortcutsModal');
 }
 
 function closeKeyboardShortcutsModal() {
-    const modal = document.getElementById('keyboardShortcutsModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('keyboardShortcutsModal');
 }
 
 // Save current team
@@ -1550,17 +1746,15 @@ async function analyzeTeamCoverage() {
         return;
     }
     
-    const modal = document.getElementById('teamCoverageModal');
     const container = document.getElementById('teamCoverageContainer');
     
-    if (!modal || !container) return;
+    if (!container) return;
     
     container.innerHTML = '<div class="loading-moves"><p>Analyzing team coverage...</p><div class="progress-bar-container"><div class="progress-bar-fill" id="coverageProgress" style="width: 0%;"></div></div></div>';
-    modal.style.display = 'block';
+    openModal('teamCoverageModal');
     
     // Collect all team types
     const teamTypes = new Set();
-    const teamTypeUrls = [];
     
     teamCards.forEach(card => {
         const typesJson = card.getAttribute('data-pokemon-types');
@@ -1639,7 +1833,6 @@ async function analyzeTeamCoverage() {
     
     // Calculate type coverage (what types the team can hit super effectively)
     const typeCoverage = new Map();
-    const allTypes = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
     
     validTypeData.forEach(typeInfo => {
         const damageRelations = typeInfo.damage_relations || {};
@@ -1717,8 +1910,7 @@ async function analyzeTeamCoverage() {
 
 // Close team coverage modal
 function closeTeamCoverageModal() {
-    const modal = document.getElementById('teamCoverageModal');
-    if (modal) modal.style.display = 'none';
+    closeModal('teamCoverageModal');
 }
 
 // Close modals when clicking outside
@@ -1779,7 +1971,15 @@ function playPokemonCry(pokemonId) {
 function toggleAdvancedSearch() {
     const panel = document.getElementById('advancedSearchPanel');
     if (panel) {
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        const isHidden = window.getComputedStyle(panel).display === 'none';
+        panel.style.display = isHidden ? 'block' : 'none';
+        const isExpanded = isHidden;
+        panel.setAttribute('aria-hidden', isExpanded ? 'false' : 'true');
+        const toggleButton = document.querySelector('[onclick="toggleAdvancedSearch()"]');
+        if (toggleButton) {
+            toggleButton.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+            toggleButton.setAttribute('aria-controls', 'advancedSearchPanel');
+        }
     }
 }
 
@@ -1896,29 +2096,4 @@ function handleAdvancedSearch(event) {
     }
     
     return true;
-}
-
-// Show loading skeleton
-function showLoadingSkeleton(container) {
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="skeleton-container">
-            <div class="skeleton-image"></div>
-            <div class="skeleton-title"></div>
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-            <div class="skeleton-stats">
-                <div class="skeleton-stat"></div>
-                <div class="skeleton-stat"></div>
-                <div class="skeleton-stat"></div>
-            </div>
-        </div>
-    `;
-}
-
-// Hide loading skeleton
-function hideLoadingSkeleton(container) {
-    if (!container) return;
-    // Skeleton will be replaced by actual content
 }

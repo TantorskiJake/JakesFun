@@ -1,0 +1,177 @@
+:root {
+  --shell-max-width: 1100px;
+  --shell-space-1: 0.5rem;
+  --shell-space-2: 0.75rem;
+  --shell-space-3: 1rem;
+  --shell-space-4: 1.5rem;
+  --shell-space-5: 2rem;
+  --shell-nav-search-gap: 1rem;
+  --shell-nav-bridge-height: 0.65rem;
+  --shell-body-font: "Atkinson Hyperlegible", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  --shell-focus-color: #104ac6;
+  --shell-focus-ring: 0 0 0 3px rgba(16, 74, 198, 0.24);
+}
+
+html {
+  scroll-padding-top: 6.5rem;
+}
+
+body {
+  font-family: var(--shell-body-font);
+  line-height: 1.6;
+  letter-spacing: 0;
+  padding: clamp(var(--shell-space-2), 1.6vw, var(--shell-space-4));
+}
+
+p,
+li,
+.detail-value,
+.comparison-stat-label,
+.comparison-stat-value,
+.move-description,
+.loading-step,
+.pagination-info,
+.team-stats-summary {
+  font-size: clamp(0.9rem, 0.82rem + 0.25vw, 1rem);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+button,
+.nav-link,
+.reload-button,
+.search-button,
+.type-filter-btn,
+.sprite-btn,
+.pagination-btn,
+.generation-select,
+.filter-select,
+.filter-label,
+.filter-label-small,
+.search-input,
+.suggestion-item {
+  font-family: "Press Start 2P", cursive;
+}
+
+.main-nav,
+.search-container,
+.container,
+.error-message,
+.loading-spinner {
+  width: min(100%, var(--shell-max-width));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.main-nav {
+  position: -webkit-sticky;
+  position: sticky;
+  top: var(--shell-space-2);
+  z-index: 250;
+  isolation: isolate;
+  margin-top: var(--shell-space-2);
+  margin-bottom: var(--shell-nav-search-gap);
+  backdrop-filter: saturate(1.08) blur(2px);
+  -webkit-backdrop-filter: saturate(1.08) blur(2px);
+}
+
+.main-nav::after {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  right: 0.4rem;
+  bottom: calc(-1 * var(--shell-nav-bridge-height));
+  height: var(--shell-nav-bridge-height);
+  pointer-events: none;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(180deg, rgba(59, 76, 202, 0.14) 0%, rgba(59, 76, 202, 0) 100%);
+  opacity: 0.75;
+}
+
+.search-container,
+.container,
+.error-message,
+.loading-spinner {
+  margin-top: var(--shell-space-4);
+  margin-bottom: var(--shell-space-4);
+}
+
+.detail-row {
+  gap: var(--shell-space-2);
+  align-items: flex-start;
+}
+
+.detail-label,
+.detail-value,
+.comparison-stat-label,
+.comparison-stat-value,
+.move-stats,
+.team-stats-summary {
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--shell-focus-color);
+  outline-offset: 2px;
+  box-shadow: var(--shell-focus-ring);
+}
+
+a,
+button,
+input,
+select,
+textarea,
+.nav-link,
+.reload-button,
+.search-button,
+.type-filter-btn,
+.sprite-btn,
+.pagination-btn,
+.evolution-item {
+  min-height: 44px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --shell-max-width: 100%;
+    --shell-space-4: 1.25rem;
+    --shell-space-5: 1.5rem;
+    --shell-nav-search-gap: 0.75rem;
+    --shell-nav-bridge-height: 0.5rem;
+  }
+
+  body {
+    line-height: 1.65;
+  }
+
+  .main-nav {
+    top: var(--shell-space-1);
+    margin-bottom: var(--shell-nav-search-gap);
+    gap: var(--shell-space-1);
+    padding: var(--shell-space-2);
+  }
+
+  .search-container,
+  .container,
+  .error-message,
+  .loading-spinner {
+    margin-top: var(--shell-space-3);
+    margin-bottom: var(--shell-space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
