@@ -7,17 +7,22 @@ A comprehensive web application for exploring Pokémon data, built with Flask an
 ## Table of Contents
 
 - [Features](#features)
-- [Screenshots](#screenshots)
+- [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Usage](#usage)
-- [API Endpoints](#api-endpoints)
 - [Project Structure](#project-structure)
+- [Documentation](#documentation)
 - [Technologies Used](#technologies-used)
-- [Features in Detail](#features-in-detail)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
+
+## Quick Start
+
+For a quick setup guide, see [docs/QUICKSTART.md](docs/QUICKSTART.md)
+
+For deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## Features
 
@@ -136,59 +141,46 @@ Each Pokémon page displays:
 - **Import Favorites**: Import previously exported favorites
 - **History**: Automatically tracks viewed Pokémon (accessible via "History" page)
 
-## API Endpoints
+## Documentation
 
-### Web Routes
+Comprehensive documentation is available in the `docs/` folder:
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/` | GET | Redirects to random Pokémon page |
-| `/random` | GET | Get a random Pokémon (supports `?generation=N` query parameter) |
-| `/pokemon/<id_or_name>` | GET | Get specific Pokémon by ID or name |
-| `/search?q=<query>` | GET | Search for Pokémon |
-| `/favorites` | GET | View favorites page |
-| `/history` | GET | View history page |
-| `/team` | GET | Generate random team of 6 Pokémon |
-
-### API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/pokemon/<id_or_name>` | GET | Get Pokémon data as JSON |
-| `/api/search-suggestions?q=<query>` | GET | Get search autocomplete suggestions |
-| `/api/pokemon-by-type/<type_name>` | GET | Get random Pokémon of specified type |
-
-### Example API Usage
-
-```bash
-# Get Pokémon data
-curl http://localhost:5001/api/pokemon/pikachu
-
-# Get search suggestions
-curl http://localhost:5001/api/search-suggestions?q=pika
-
-# Get random fire type Pokémon
-curl http://localhost:5001/api/pokemon-by-type/fire
-```
+- **[API Documentation](docs/API.md)** - Complete API reference
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - How to deploy to production
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in minutes
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute
+- **[Security Documentation](docs/SECURITY.md)** - Security measures and best practices
 
 ## Project Structure
 
 ```
 RandomPokemon/
 ├── app.py                 # Flask application and routes
-├── requirements.txt       # Python dependencies
-├── README.md             # This file
-├── static/
+├── wsgi.py               # WSGI entry point for production
+├── Procfile              # Process file for deployment platforms
+├── requirements.txt      # Python dependencies
+├── .gitignore           # Git ignore rules
+├── .editorconfig        # Editor configuration
+├── .python-version      # Python version specification
+├── LICENSE              # MIT License
+├── README.md            # This file
+├── docs/                # Documentation
+│   ├── API.md          # API documentation
+│   ├── CONTRIBUTING.md # Contributing guidelines
+│   ├── DEPLOYMENT.md   # Deployment guide
+│   ├── QUICKSTART.md   # Quick start guide
+│   └── SECURITY.md     # Security documentation
+├── static/              # Static files
 │   ├── css/
-│   │   └── style.css     # All styling (light/dark mode, responsive)
+│   │   └── style.css   # All styling (light/dark mode, responsive)
 │   └── js/
-│       └── main.js       # Client-side JavaScript functionality
-└── templates/
-    ├── base.html         # Base template with common structure
-    ├── index.html        # Main Pokémon display page
+│       └── main.js      # Client-side JavaScript functionality
+└── templates/           # HTML templates
+    ├── base.html        # Base template with common structure
+    ├── index.html       # Main Pokémon display page
     ├── favorites.html    # Favorites page
-    ├── history.html      # History page
-    └── team.html         # Team builder page
+    ├── history.html     # History page
+    └── team.html        # Team builder page
 ```
 
 ## Technologies Used

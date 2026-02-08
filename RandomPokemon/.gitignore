@@ -5,12 +5,17 @@ __pycache__/
 *.so
 .Python
 *.log
+*.pyc
+*.pyo
+*.pyd
 
 # Virtual Environment
 venv/
 env/
 ENV/
 .venv
+venv.bak/
+env.bak/
 
 # IDE
 .vscode/
@@ -18,21 +23,52 @@ ENV/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
 # Environment variables
 .env
 .env.local
+.env.*.local
 
 # Flask
 instance/
 .webassets-cache
+flask_session/
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+.tox/
+.hypothesis/
+
+# Distribution / Packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
