@@ -1,41 +1,40 @@
 {% extends "base.html" %}
 
+{% block title %}Random Team - Random Pokémon{% endblock %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/collection-layout.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-MCfvkYhp9qsut0kLwawt6cXnUuDbutTMia1Ogs4VR4cVwAjfuflz3zZxx5p1Q9gN" crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block content %}
-<div class="container collection-page">
-  <header class="collection-header">
-    <h1 class="collection-title">Random Pokémon Team</h1>
-
-    <nav class="main-nav collection-nav">
-      <a href="/random" class="nav-link">Random Pokémon</a>
-      <a href="/team" class="nav-link">Random Team</a>
-      <a href="/favorites" class="nav-link">Favorites</a>
-      <a href="/history" class="nav-link">History</a>
-      <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
-    </nav>
-  </header>
-
-  <section class="button-container collection-toolbar">
-    <div class="collection-actions">
-      <button class="reload-button" onclick="window.location.reload()">Generate New Team</button>
-      <button class="reload-button" onclick="analyzeTeamCoverage()">Analyze Team Coverage</button>
-      <button class="reload-button" onclick="saveCurrentTeam()">Save Team</button>
-      <button class="reload-button" onclick="loadSavedTeams()">Load Teams</button>
-      <button class="reload-button" onclick="shareTeam()">Share Team</button>
-    </div>
-  </section>
-
-  <div id="savedTeamsContainer" class="collection-saved-teams collection-hidden">
-    <h3 class="collection-section-title">Saved Teams</h3>
-    <div id="savedTeamsList" class="team-grid collection-grid collection-secondary-grid">
+<div class="container">
+  <h1>Random Pokémon Team</h1>
+  
+  <nav class="main-nav">
+    <a href="/random" class="nav-link">Random Pokémon</a>
+    <a href="/team" class="nav-link">Random Team</a>
+    <a href="/favorites" class="nav-link">Favorites</a>
+    <a href="/history" class="nav-link">History</a>
+    <button class="nav-link" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+  </nav>
+  
+  <div class="button-container" style="margin-bottom: 20px;">
+    <button class="reload-button" onclick="window.location.reload()">Generate New Team</button>
+    <button class="reload-button" onclick="scrollToSynergy()">Analyze Team Synergy</button>
+    <button class="reload-button" onclick="saveCurrentTeam()">Save Team</button>
+    <button class="reload-button" onclick="loadSavedTeams()">Load Teams</button>
+    <button class="reload-button" onclick="shareTeam()">Share Team</button>
+  </div>
+  
+  <div id="savedTeamsContainer" style="display: none; margin-top: 20px;">
+    <h3>Saved Teams</h3>
+    <div id="savedTeamsList" class="team-grid">
       <!-- Saved teams will be loaded here -->
     </div>
   </div>
-
-  <div class="team-grid collection-grid">
+  
+  <div class="team-grid" id="teamGrid">
     {% for pokemon in team %}
     <div class="team-card" data-pokemon-id="{{ pokemon.id }}" data-pokemon-types='{{ pokemon.types|tojson }}' onclick="window.location.href='/pokemon/{{ pokemon.id }}'">
       <img src="{{ pokemon.image_url }}" alt="{{ pokemon.name }}" class="team-img">
@@ -62,14 +61,37 @@
   </div>
 </div>
 
-<!-- Modal for team coverage analysis -->
-<div id="teamCoverageModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeTeamCoverageModal()">&times;</span>
-    <h2>Team Type Coverage Analysis</h2>
-    <div id="teamCoverageContainer">
-      <!-- Content will be populated by JavaScript -->
+{% set team_id_attr = team_ids if team_ids else team | map(attribute='id') | list %}
+<section id="teamSynergy" class="synergy-section" data-team-ids="{{ team_id_attr|join(',') }}" data-initial-analysis='{{ team_analysis|tojson }}'>
+  <div class="synergy-header">
+    <div>
+      <h2>Advanced Team Synergy</h2>
+      <p class="synergy-subtitle">Quantifies defensive coverage, offensive reach, stats, and roles for this squad.</p>
+    </div>
+    <div>
+      <button class="reload-button secondary" onclick="refreshTeamAnalysis()">Re-run Analysis</button>
     </div>
   </div>
-</div>
+  <div id="analysisStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <div id="synergySummaryCards" class="synergy-summary-cards" aria-live="polite">
+    <!-- Summary cards rendered via JS -->
+  </div>
+  <div class="synergy-tabs" role="tablist" aria-label="Team synergy insights">
+    <button id="tab-defense" class="synergy-tab active" data-synergy-tab="defense" role="tab" aria-controls="defensePanel" aria-selected="true" tabindex="0">Defense</button>
+    <button id="tab-offense" class="synergy-tab" data-synergy-tab="offense" role="tab" aria-controls="offensePanel" aria-selected="false" tabindex="-1">Offense</button>
+    <button id="tab-stats" class="synergy-tab" data-synergy-tab="stats" role="tab" aria-controls="statsPanel" aria-selected="false" tabindex="-1">Stats & Roles</button>
+    <button id="tab-recommendations" class="synergy-tab" data-synergy-tab="recommendations" role="tab" aria-controls="recommendationsPanel" aria-selected="false" tabindex="-1">Recommendations</button>
+  </div>
+  <div class="synergy-panels">
+    <div class="synergy-panel active" id="defensePanel" data-panel="defense" role="tabpanel" aria-labelledby="tab-defense"></div>
+    <div class="synergy-panel" id="offensePanel" data-panel="offense" role="tabpanel" aria-labelledby="tab-offense" hidden></div>
+    <div class="synergy-panel" id="statsPanel" data-panel="stats" role="tabpanel" aria-labelledby="tab-stats" hidden></div>
+    <div class="synergy-panel" id="recommendationsPanel" data-panel="recommendations" role="tabpanel" aria-labelledby="tab-recommendations" hidden></div>
+  </div>
+  <button type="button" class="back-to-top" onclick="scrollToTop()" aria-label="Back to top of page">Back to top</button>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/team.js') }}"></script>
 {% endblock %}

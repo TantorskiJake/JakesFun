@@ -245,6 +245,48 @@ curl http://localhost:5001/api/pokemon-by-type/fire
 
 ---
 
+### Team Synergy Analysis
+
+**GET /api/team-analysis?ids=<comma-separated-ids>**  
+Compute defensive/offensive/stat breakdowns for up to 6 Pokémon IDs.
+
+**Query Parameters:**
+- `ids` (required): Comma-separated Pokédex IDs (`1-1025`), limited to 6 entries.
+
+**Example Request:**
+```bash
+curl "http://localhost:5001/api/team-analysis?ids=6,445,423,130,91,681"
+```
+
+**Response:**
+```json
+{
+  "team": [{"id":6,"name":"charizard","types":["fire","flying"],"...":"..."}],
+  "defensiveMatrix": [
+    {"type":"ice","quadWeak":1,"weak":1,"neutral":4,"resist":0,"immune":0}
+  ],
+  "offensiveMatrix": [
+    {"target":"steel","coverage":3,"sources":["Charizard","Garchomp"],"typeBreakdown":[{"type":"fire","count":2,"pokemon":["Charizard"]}]}
+  ],
+  "statSummary": {
+    "teamSize":6,
+    "average":{"hp":82.0,"attack":95.5,"defense":86.0,"special-attack":92.5,"special-defense":88.3,"speed":93.2},
+    "peaks":{"speed":{"name":"Dragapult","value":142}},
+    "lows":{"special-defense":{"name":"Gengar","value":75}},
+    "averageBST": 520.1
+  },
+  "roles":[{"name":"Gastrodon","role":"Tank","reasons":["High bulk stats","HP >= 90"]}],
+  "synergyScore":{"value":78.5,"breakdown":{"defense":34.0,"offense":25.0,"stats":19.5}},
+  "recommendations":[{"severity":"high","message":"3 Pokémon are weak to Ice. Add counters or resistances.","type":"ice"}]
+}
+```
+
+**Error Responses:**
+- `400`: Missing or invalid IDs.
+- `404`: Unable to assemble a team using provided IDs.
+
+---
+
 ## Data Structures
 
 ### Pokémon Object
@@ -400,4 +442,3 @@ This app uses the **PokeAPI** (https://pokeapi.co):
 - Type names are lowercase
 - IDs are integers (1-1025)
 - Image URLs point to PokeAPI CDN
-

@@ -9,6 +9,8 @@ import logging
 import re
 import os
 
+from analysis import analyze_team
+
 # Set application root for subpath deployment (e.g., /pokemon)
 APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '/pokemon')
 
@@ -39,9 +41,11 @@ csp = {
     'frame-ancestors': "'none'",
 }
 
+FORCE_HTTPS = os.environ.get('FORCE_HTTPS', '1') != '0'
+
 Talisman(
     app,
-    force_https=FORCE_HTTPS,
+    force_https=FORCE_HTTPS,  # Force HTTPS unless disabled locally
     strict_transport_security=True,
     strict_transport_security_max_age=31536000,  # 1 year
     content_security_policy=csp,
@@ -76,6 +80,12 @@ if APPLICATION_ROOT != '/':
 # Cache for API responses to reduce API calls
 _pokemon_cache = {}
 _cache_timeout = 300  # 5 minutes
+
+VALID_TYPES = [
+    'normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting',
+    'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost',
+    'dragon', 'dark', 'steel', 'fairy'
+]
 
 def get_pokemon_data(pokemon_id_or_name):
     """Fetch Pokémon data from API with caching"""
@@ -369,18 +379,17 @@ def history():
 def random_team():
     # Check if team IDs are provided in query string
     ids_param = request.args.get("ids", "").strip()
+    preferred_type = request.args.get("preferred_type", "").strip().lower()
     
     if ids_param:
         # Parse comma-separated IDs with validation
         try:
-            # Limit input length and validate
             ids_param = ids_param[:100]  # Limit input length
             team_ids = []
             for id_str in ids_param.split(","):
                 id_str = id_str.strip()
                 if id_str.isdigit():
                     pokemon_id = int(id_str)
-                    # Validate ID is in valid range
                     if 1 <= pokemon_id <= 1025:
                         team_ids.append(pokemon_id)
                     if len(team_ids) >= 6:  # Limit to 6 Pokémon
@@ -388,7 +397,6 @@ def random_team():
         except (ValueError, TypeError):
             team_ids = []
     else:
-        # Generate a random team of 6 Pokémon
         team_ids = random.sample(range(1, 1026), 6)
     
     team = []
@@ -396,8 +404,30 @@ def random_team():
         pokemon = get_pokemon_data(pokemon_id)
         if pokemon:
             team.append(pokemon)
+
+    if preferred_type in VALID_TYPES:
+        has_preferred = any(
+            preferred_type in [t.lower() for t in pokemon.get("types", [])]
+            for pokemon in team
+        )
+        if not has_preferred:
+            preferred_pokemon = fetch_random_pokemon_of_type(preferred_type)
+            if preferred_pokemon:
+                if len(team) >= 6:
+                    team[-1] = preferred_pokemon
+                    team_ids[-1] = preferred_pokemon["id"]
+                else:
+                    team.append(preferred_pokemon)
+                    team_ids.append(preferred_pokemon["id"])
     
-    return render_template("team.html", team=team)
+    team_analysis = analyze_team(team) if team else {}
+    
+    return render_template(
+        "team.html",
+        team=team,
+        team_ids=team_ids,
+        team_analysis=team_analysis,
+    )
 
 @app.route("/api/pokemon/<pokemon_id_or_name>")
 @limiter.limit("60 per minute")  # Rate limit API requests
@@ -439,43 +469,77 @@ def search_suggestions():
     
     return jsonify({"suggestions": suggestions})
 
+def fetch_random_pokemon_of_type(type_name):
+    """Return Pokémon data for a random Pokémon of the given type."""
+    type_name = type_name.lower().strip()
+    if type_name not in VALID_TYPES:
+        return None
+    try:
+        type_url = f"https://pokeapi.co/api/v2/type/{type_name}"
+        response = requests.get(type_url, timeout=10)
+        if response.status_code != 200:
+            return None
+        type_data = response.json()
+        pokemon_list = type_data.get("pokemon", [])
+        if not pokemon_list:
+            return None
+        random_pokemon = random.choice(pokemon_list)
+        pokemon_name = random_pokemon.get("pokemon", {}).get("name", "")
+        if pokemon_name:
+            return get_pokemon_data(pokemon_name)
+    except requests.exceptions.RequestException:
+        return None
+    return None
+
 @app.route("/api/pokemon-by-type/<type_name>")
 @limiter.limit("30 per minute")  # Rate limit type requests
 def pokemon_by_type(type_name):
     # Input validation: only allow valid type names
-    valid_types = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 
-                   'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 
-                   'dragon', 'dark', 'steel', 'fairy']
-    type_name = type_name.lower().strip()
-    if type_name not in valid_types:
+    normalized_type = type_name.lower().strip()
+    if normalized_type not in VALID_TYPES:
         return jsonify({"error": "Invalid type name"}), 400
-    """Get a random Pokémon of a specific type"""
-    try:
-        type_url = f"https://pokeapi.co/api/v2/type/{type_name.lower()}"
-        response = requests.get(type_url, timeout=10)
-        
-        if response.status_code != 200:
-            return jsonify({"error": "Type not found"}), 404
-        
-        type_data = response.json()
-        pokemon_list = type_data.get("pokemon", [])
-        
-        if not pokemon_list:
-            return jsonify({"error": "No Pokémon found for this type"}), 404
-        
-        # Get a random Pokémon from this type
-        random_pokemon = random.choice(pokemon_list)
-        pokemon_name = random_pokemon.get("pokemon", {}).get("name", "")
-        
-        if pokemon_name:
-            pokemon = get_pokemon_data(pokemon_name)
-            if pokemon:
-                return jsonify(pokemon)
-        
-        return jsonify({"error": "Failed to fetch Pokémon"}), 500
     
-    except:
-        return jsonify({"error": "Error fetching type data"}), 500
+    pokemon = fetch_random_pokemon_of_type(normalized_type)
+    if pokemon:
+        return jsonify(pokemon)
+    
+    return jsonify({"error": "Failed to fetch Pokémon"}), 500
+
+@app.route("/api/team-analysis")
+@limiter.limit("15 per minute")
+def api_team_analysis():
+    ids_param = request.args.get("ids", "").strip()
+    if not ids_param:
+        return jsonify({"error": "Team IDs are required"}), 400
+    
+    try:
+        ids_param = ids_param[:100]
+        team_ids = []
+        for id_str in ids_param.split(","):
+            id_str = id_str.strip()
+            if id_str.isdigit():
+                pokemon_id = int(id_str)
+                if 1 <= pokemon_id <= 1025:
+                    team_ids.append(pokemon_id)
+                if len(team_ids) >= 6:
+                    break
+    except (ValueError, TypeError):
+        team_ids = []
+    
+    if not team_ids:
+        return jsonify({"error": "No valid Pokémon IDs provided"}), 400
+    
+    team = []
+    for pokemon_id in team_ids:
+        pokemon = get_pokemon_data(pokemon_id)
+        if pokemon:
+            team.append(pokemon)
+    
+    if not team:
+        return jsonify({"error": "Unable to assemble team"}), 404
+    
+    analysis = analyze_team(team)
+    return jsonify(analysis)
 
 if __name__ == "__main__":
     # Custom formatter to convert HTTP logs to friendly language
@@ -483,6 +547,10 @@ if __name__ == "__main__":
         def format(self, record):
             message = record.getMessage()
             
+            # Filter out static files
+            if '/static/' in message or '/favicon.ico' in message:
+                return ""
+
             # Convert HTTP requests to friendly messages
             if 'GET /pokemon/' in message:
                 # Extract Pokémon name/ID from URL
@@ -530,8 +598,8 @@ if __name__ == "__main__":
             elif 'GET /' in message:
                 return "🏠 Home page accessed"
             
-            # Fallback to original message for non-HTTP/startup logs
-            return message
+            # Return empty string to avoid breaking log emitters
+            return ""
     
     # Custom filter to only show Pokémon-related requests
     class StaticFileFilter(logging.Filter):
