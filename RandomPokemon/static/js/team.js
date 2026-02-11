@@ -49,7 +49,12 @@ function initTeamPage() {
   };
 
   window.refreshTeamAnalysis = function refreshTeamAnalysis() {
-    fetchTeamAnalysis();
+    const ids = getCurrentTeamIds();
+    if (ids.length) {
+      fetchTeamAnalysis(ids.join(','), { updateGrid: true });
+    } else {
+      fetchTeamAnalysis();
+    }
   };
 
   setupSynergyTabs();
@@ -615,6 +620,27 @@ function syncTeamIdsAttribute(teamList) {
   }
 }
 
+function getCurrentTeamIds() {
+  const team = Array.isArray(window.teamState.currentTeam) ? window.teamState.currentTeam : [];
+  const ids = team
+    .map(pokemon => pokemon && pokemon.id)
+    .filter(Boolean);
+  if (ids.length) {
+    return ids;
+  }
+  const synergySection = document.getElementById('teamSynergy');
+  if (synergySection) {
+    const attr = synergySection.getAttribute('data-team-ids');
+    if (attr) {
+      return attr
+        .split(',')
+        .map(str => parseInt(str.trim(), 10))
+        .filter(Number.isFinite);
+    }
+  }
+  return [];
+}
+
 function renderBestAttackSpan(stats = {}) {
   const atk = stats['attack'] || 0;
   const spAtk = stats['special-attack'] || 0;
@@ -1055,8 +1081,8 @@ window.deleteTeam = function deleteTeam(index) {
 };
 
 window.shareTeam = function shareTeam() {
-  const synergySection = document.getElementById('teamSynergy');
-  const ids = synergySection ? synergySection.getAttribute('data-team-ids') : null;
+  const idsArray = getCurrentTeamIds();
+  const ids = idsArray.length ? idsArray.join(',') : null;
   if (!ids) {
     showNotification('No team to share!');
     return;
