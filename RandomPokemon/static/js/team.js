@@ -7,12 +7,38 @@ let statsRadarChart = null;
 const reduceMotionQuery = typeof window !== 'undefined' && window.matchMedia
   ? window.matchMedia('(prefers-reduced-motion: reduce)')
   : { matches: false };
+const MAX_POKEMON_ID = 1025;
+const slotSuggestionCache = new Map();
+let slotSuggestionAbortController = null;
+
+function formatTypeLabel(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatReadableList(items) {
+  const filtered = (items || []).filter(Boolean);
+  if (!filtered.length) return '';
+  if (filtered.length === 1) return filtered[0];
+  if (filtered.length === 2) return `${filtered[0]} and ${filtered[1]}`;
+  return `${filtered.slice(0, -1).join(', ')}, and ${filtered[filtered.length - 1]}`;
+}
 
 function initTeamPage() {
   const synergySection = document.getElementById('teamSynergy');
   if (!synergySection) {
     return;
   }
+
+  window.teamState = window.teamState || {
+    currentTeam: [],
+  };
 
   window.scrollToTop = function scrollToTop() {
     window.scrollTo({ top: 0, behavior: reduceMotionQuery.matches ? 'auto' : 'smooth' });
@@ -27,6 +53,7 @@ function initTeamPage() {
   };
 
   setupSynergyTabs();
+  setupSlotControls();
   hydrateSavedTeamsList();
 
   const initialAnalysisAttr = synergySection.getAttribute('data-initial-analysis');
@@ -44,6 +71,11 @@ function initTeamPage() {
 
   if (initialData) {
     renderFullAnalysis(initialData, { updateGrid: false });
+    if (Array.isArray(initialData.team)) {
+      window.teamState.currentTeam = initialData.team.map((pokemon, index) =>
+        normalizePokemonForSlot(pokemon, index)
+      );
+    }
     const initialTeamSize = initialData && Array.isArray(initialData.team) ? initialData.team.length : 0;
     announceAnalysisStatus(`Loaded analysis for ${initialTeamSize} Pokémon`);
   } else {
@@ -128,7 +160,7 @@ function showSynergyLoading() {
   });
 }
 
-function fetchTeamAnalysis(idsOverride = null) {
+function fetchTeamAnalysis(idsOverride = null, options = { updateGrid: true }) {
   const synergySection = document.getElementById('teamSynergy');
   if (!synergySection) return;
   const teamIds = idsOverride || synergySection.getAttribute('data-team-ids');
@@ -148,7 +180,10 @@ function fetchTeamAnalysis(idsOverride = null) {
       return response.json();
     })
     .then(data => {
-      renderFullAnalysis(data, { updateGrid: true });
+      const shouldUpdateGrid = options && Object.prototype.hasOwnProperty.call(options, 'updateGrid')
+        ? options.updateGrid
+        : true;
+      renderFullAnalysis(data, { updateGrid: shouldUpdateGrid });
       const teamSize = data && Array.isArray(data.team) ? data.team.length : 0;
       announceAnalysisStatus(`Analysis updated for ${teamSize} Pokémon`);
     })
@@ -163,10 +198,8 @@ function fetchTeamAnalysis(idsOverride = null) {
 
 function renderFullAnalysis(analysis, options = { updateGrid: true }) {
   if (!analysis) return;
-  const synergySection = document.getElementById('teamSynergy');
-  if (synergySection && analysis.team) {
-    const ids = analysis.team.map(p => p.id).join(',');
-    synergySection.setAttribute('data-team-ids', ids);
+  if (analysis.team) {
+    syncTeamIdsAttribute(analysis.team);
   }
 
   if (options.updateGrid && analysis.team) {
@@ -232,6 +265,45 @@ function renderDefensePanel(matrix) {
     panel.innerHTML = '<p class="synergy-error">No defensive data available.</p>';
     return;
   }
+  const defenseTotals = matrix.map(entry => ({
+    type: entry.type,
+    weakOverlap: entry.weak + entry.quadWeak,
+    quadWeak: entry.quadWeak,
+    resistTotal: entry.resist,
+    immuneTotal: entry.immune,
+  }));
+  const topWeaknesses = defenseTotals
+    .filter(item => item.weakOverlap > 0)
+    .sort((a, b) => b.weakOverlap - a.weakOverlap)
+    .slice(0, 3);
+  const topResists = defenseTotals
+    .filter(item => item.resistTotal > 0 || item.immuneTotal > 0)
+    .sort((a, b) => b.resistTotal + b.immuneTotal - (a.resistTotal + a.immuneTotal))
+    .slice(0, 3);
+  const immunityHighlights = defenseTotals.filter(item => item.immuneTotal > 0).slice(0, 3);
+
+  const weaknessText = topWeaknesses.length
+    ? formatReadableList(
+        topWeaknesses.map(item => {
+          const quadNote = item.quadWeak ? `, ${item.quadWeak} ×4` : '';
+          return `${formatTypeLabel(item.type)} (${item.weakOverlap} weak${quadNote})`;
+        })
+      )
+    : 'No overlapping weaknesses detected.';
+  const resistanceText = topResists.length
+    ? formatReadableList(
+        topResists.map(item => {
+          const immuneNote = item.immuneTotal ? `, ${item.immuneTotal} immune` : '';
+          return `${formatTypeLabel(item.type)} (${item.resistTotal} resist${item.resistTotal === 1 ? '' : 's'}${immuneNote})`;
+        })
+      )
+    : 'Balanced resistances across the chart.';
+  const immunityText = immunityHighlights.length
+    ? formatReadableList(
+        immunityHighlights.map(item => `${formatTypeLabel(item.type)} (${item.immuneTotal} immune)`)
+      )
+    : 'No natural immunities yet.';
+
   const rows = matrix
     .map(entry => {
       const total = entry.quadWeak + entry.weak + entry.neutral + entry.resist + entry.immune || 1;
@@ -259,7 +331,17 @@ function renderDefensePanel(matrix) {
       `;
     })
     .join('');
-  panel.innerHTML = `<div class="defense-table">${rows}</div>`;
+  panel.innerHTML = `
+    <div class="synergy-panel-summary">
+      <h3>Quick takeaways</h3>
+      <ul>
+        <li><strong>Biggest threats:</strong> ${weaknessText}</li>
+        <li><strong>Reliable resistances:</strong> ${resistanceText}</li>
+        <li><strong>Free switch-ins:</strong> ${immunityText}</li>
+      </ul>
+    </div>
+    <div class="defense-table">${rows}</div>
+  `;
 }
 
 function renderOffensePanel(matrix) {
@@ -276,6 +358,33 @@ function renderOffensePanel(matrix) {
       heatmap[key] = breakdown;
     });
   });
+  const uncovered = matrix.filter(entry => entry.coverage === 0).map(entry => formatTypeLabel(entry.target));
+  const singleAnswers = matrix
+    .filter(entry => entry.coverage === 1)
+    .slice(0, 3)
+    .map(entry => {
+      const attacker = entry.sources && entry.sources.length ? entry.sources[0] : '1 option';
+      return `${formatTypeLabel(entry.target)} (only ${attacker})`;
+    });
+  const strongMatchups = matrix
+    .filter(entry => entry.coverage > 1)
+    .sort((a, b) => b.coverage - a.coverage)
+    .slice(0, 3)
+    .map(entry => {
+      const previewSources = (entry.sources || []).slice(0, 2).join(', ');
+      const more = entry.sources && entry.sources.length > 2 ? '…' : '';
+      return `${formatTypeLabel(entry.target)} (${entry.coverage} answers${previewSources ? ` via ${previewSources}${more}` : ''})`;
+    });
+
+  const uncoveredText = uncovered.length
+    ? formatReadableList(uncovered)
+    : 'You can hit every type super effectively.';
+  const singleAnswerText = singleAnswers.length
+    ? formatReadableList(singleAnswers)
+    : 'Multiple answers cover each remaining type.';
+  const strongMatchupText = strongMatchups.length
+    ? formatReadableList(strongMatchups)
+    : 'Build out offenses to find reliable targets.';
 
   let table = `
     <div class="heatmap" tabindex="0">
@@ -305,7 +414,17 @@ function renderOffensePanel(matrix) {
   });
 
   table += '</tbody></table></div>';
-  panel.innerHTML = table;
+  panel.innerHTML = `
+    <div class="synergy-panel-summary">
+      <h3>Quick takeaways</h3>
+      <ul>
+        <li><strong>Needs coverage:</strong> ${uncoveredText}</li>
+        <li><strong>Single answers:</strong> ${singleAnswerText}</li>
+        <li><strong>Confident matchups:</strong> ${strongMatchupText}</li>
+      </ul>
+    </div>
+    ${table}
+  `;
 }
 
 function renderStatsPanel(statsSummary, roles) {
@@ -393,12 +512,14 @@ function renderRecommendationsPanel(recommendations) {
   panel.innerHTML = recommendations
     .map(rec => {
       const severityClass = `severity-${rec.severity}`;
+      const typeLabel = formatTypeLabel(rec.type);
+      const showTypeChip = rec.type && rec.type !== 'roles' && rec.type !== 'stats';
       return `
         <div class="recommendation-card ${severityClass}">
           <p class="recommendation-severity">${rec.severity.toUpperCase()}</p>
           <p>${rec.message}</p>
-          ${rec.type && rec.type !== 'roles' && rec.type !== 'stats'
-            ? `<button class="chip" onclick="window.location.href='/team?preferred_type=${rec.type}'">Find ${rec.type.title()} support</button>`
+          ${showTypeChip
+            ? `<button class="chip" onclick="window.location.href='/team?preferred_type=${rec.type}'">Find ${typeLabel || 'type'} support</button>`
             : ''}
         </div>
       `;
@@ -410,29 +531,85 @@ function renderTeamGrid(team) {
   const grid = document.getElementById('teamGrid');
   if (!grid || !Array.isArray(team)) return;
   grid.innerHTML = '';
-  team.forEach(pokemon => {
-    const card = document.createElement('div');
-    card.className = 'team-card';
-    card.dataset.pokemonId = pokemon.id;
-    card.dataset.pokemonTypes = JSON.stringify(pokemon.types || []);
-    card.addEventListener('click', () => {
-      window.location.href = `/pokemon/${pokemon.id}`;
+
+  const normalizedTeam = team
+    .filter(Boolean)
+    .map((pokemon, index) => normalizePokemonForSlot(pokemon, index));
+
+  window.teamState.currentTeam = normalizedTeam;
+  syncTeamIdsAttribute(normalizedTeam);
+
+  for (let i = 0; i < normalizedTeam.length; i += 3) {
+    const row = document.createElement('div');
+    row.className = 'team-grid-six-row';
+    const chunk = normalizedTeam.slice(i, i + 3);
+    chunk.forEach(pokemon => {
+      const card = createTeamCard(pokemon);
+      row.appendChild(card);
     });
-    card.innerHTML = `
-      <img src="${pokemon.image_url}" alt="${pokemon.name}" class="team-img">
-      <h3>${pokemon.name} #${pokemon.id}</h3>
-      <div class="team-types">
-        ${(pokemon.types || []).map(type => `<span class="type ${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</span>`).join('')}
+    grid.appendChild(row);
+  }
+}
+
+function createTeamCard(pokemon) {
+  const slotIndex = typeof pokemon.slotIndex === 'number' ? pokemon.slotIndex : 0;
+  const card = document.createElement('div');
+  card.className = 'team-card';
+  card.dataset.pokemonId = pokemon.id;
+  card.dataset.slotIndex = slotIndex;
+  card.dataset.pokemonTypes = JSON.stringify(pokemon.types || []);
+  const typesMarkup = (pokemon.types || [])
+    .map(type => `<span class="type ${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</span>`)
+    .join('');
+  card.innerHTML = `
+      <div class="team-card-toolbar">
+        <button class="icon-button slot-control slot-reroll" type="button" data-slot-index="${slotIndex}" aria-label="Get a new random Pokémon for this slot">🎲</button>
+        <div class="slot-edit-wrapper" data-slot-index="${slotIndex}">
+          <button class="icon-button slot-control slot-edit-btn" type="button" data-slot-index="${slotIndex}" aria-label="Search for a specific Pokémon for this slot">✏️</button>
+          <div class="slot-search-field" hidden aria-hidden="true">
+          <input type="text" class="slot-search-input" data-slot-index="${slotIndex}" placeholder="Name or ID" autocomplete="off" aria-label="Search Pokémon for this slot" list="slot-suggestions-${slotIndex}">
+          <datalist id="slot-suggestions-${slotIndex}"></datalist>
+          <button class="icon-button slot-search-submit" type="button" data-slot-index="${slotIndex}" aria-label="Apply the selected Pokémon to this slot">✔️</button>
+          <button class="icon-button slot-search-cancel" type="button" data-slot-index="${slotIndex}" aria-label="Cancel search">✕</button>
+        </div>
       </div>
-      <div class="team-stats-summary">
-        <span>HP: ${pokemon.stats && typeof pokemon.stats.hp !== 'undefined' ? pokemon.stats.hp : 'N/A'}</span>
-        ${renderBestAttackSpan(pokemon.stats)}
-        ${renderBestDefenseSpan(pokemon.stats)}
-        <span>SPD: ${pokemon.stats && typeof pokemon.stats.speed !== 'undefined' ? pokemon.stats.speed : 'N/A'}</span>
-      </div>
+    </div>
+      <a class="team-card-link" href="/pokemon/${pokemon.id}">
+        <img src="${pokemon.image_url || ''}" alt="${pokemon.name}" class="team-img">
+        <h3>${pokemon.name} #${pokemon.id}</h3>
+        <div class="team-types">
+          ${typesMarkup}
+        </div>
+        <div class="team-stats-summary">
+          <span>HP: ${pokemon.stats && typeof pokemon.stats.hp !== 'undefined' ? pokemon.stats.hp : 'N/A'}</span>
+          ${renderBestAttackSpan(pokemon.stats)}
+          ${renderBestDefenseSpan(pokemon.stats)}
+          <span>SPD: ${pokemon.stats && typeof pokemon.stats.speed !== 'undefined' ? pokemon.stats.speed : 'N/A'}</span>
+        </div>
+      </a>
     `;
-    grid.appendChild(card);
-  });
+  return card;
+}
+
+function updateSlotCard(slotIndex, pokemon) {
+  const grid = document.getElementById('teamGrid');
+  if (!grid) return;
+  const existingCard = grid.querySelector(`.team-card[data-slot-index="${slotIndex}"]`);
+  if (!existingCard) return;
+  const replacement = createTeamCard(pokemon);
+  existingCard.replaceWith(replacement);
+}
+
+function syncTeamIdsAttribute(teamList) {
+  const synergySection = document.getElementById('teamSynergy');
+  if (!synergySection || !Array.isArray(teamList)) return;
+  const ids = teamList
+    .map(pokemon => pokemon && pokemon.id)
+    .filter(Boolean)
+    .join(',');
+  if (ids) {
+    synergySection.setAttribute('data-team-ids', ids);
+  }
 }
 
 function renderBestAttackSpan(stats = {}) {
@@ -447,6 +624,287 @@ function renderBestAttackSpan(stats = {}) {
   return `<span>ATK: ${best}${label}</span>`;
 }
 
+function setupSlotControls() {
+  const grid = document.getElementById('teamGrid');
+  if (!grid) return;
+  grid.addEventListener('click', handleTeamGridClick);
+  grid.addEventListener('keydown', handleSlotKeydown);
+  grid.addEventListener('input', handleSlotInput);
+}
+
+function handleTeamGridClick(event) {
+  if (handleSlotControlInteraction(event)) {
+    return;
+  }
+  if (!event.target.closest('.slot-edit-wrapper')) {
+    closeAllSlotSearches();
+  }
+}
+
+function handleSlotControlInteraction(event) {
+  const rerollBtn = event.target.closest('.slot-reroll');
+  if (rerollBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const slotIndex = parseInt(rerollBtn.dataset.slotIndex, 10);
+    if (!Number.isNaN(slotIndex)) {
+      rerollSlot(slotIndex);
+    }
+    return true;
+  }
+
+  const editBtn = event.target.closest('.slot-edit-btn');
+  if (editBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const slotIndex = parseInt(editBtn.dataset.slotIndex, 10);
+    if (!Number.isNaN(slotIndex)) {
+      toggleSlotSearch(slotIndex, true);
+    }
+    return true;
+  }
+
+  const submitBtn = event.target.closest('.slot-search-submit');
+  if (submitBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const slotIndex = parseInt(submitBtn.dataset.slotIndex, 10);
+    if (!Number.isNaN(slotIndex)) {
+      submitSlotSearch(slotIndex);
+    }
+    return true;
+  }
+
+  const cancelBtn = event.target.closest('.slot-search-cancel');
+  if (cancelBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const slotIndex = parseInt(cancelBtn.dataset.slotIndex, 10);
+    if (!Number.isNaN(slotIndex)) {
+      toggleSlotSearch(slotIndex, false);
+    }
+    return true;
+  }
+
+  const searchField = event.target.closest('.slot-search-field');
+  if (searchField) {
+    event.stopPropagation();
+    return true;
+  }
+
+  return false;
+}
+
+function handleSlotKeydown(event) {
+  const slotInput = event.target.closest('.slot-search-input');
+  if (!slotInput) {
+    return;
+  }
+  const slotIndex = parseInt(slotInput.dataset.slotIndex, 10);
+  if (Number.isNaN(slotIndex)) {
+    return;
+  }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    submitSlotSearch(slotIndex);
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    toggleSlotSearch(slotIndex, false);
+  }
+}
+
+function handleSlotInput(event) {
+  const slotInput = event.target.closest('.slot-search-input');
+  if (!slotInput) {
+    return;
+  }
+  const value = slotInput.value.trim();
+  const datalistId = slotInput.getAttribute('list');
+  if (!datalistId) {
+    return;
+  }
+  const datalist = document.getElementById(datalistId);
+  if (!datalist) {
+    return;
+  }
+  if (value.length < 2) {
+    datalist.innerHTML = '';
+    return;
+  }
+  fetchSlotSuggestions(value)
+    .then(suggestions => {
+      if (!Array.isArray(suggestions)) {
+        datalist.innerHTML = '';
+        return;
+      }
+      datalist.innerHTML = suggestions.map(name => `<option value="${name}">`).join('');
+    })
+    .catch(() => {
+      datalist.innerHTML = '';
+    });
+}
+
+function fetchSlotSuggestions(query) {
+  const normalized = query.toLowerCase();
+  if (slotSuggestionCache.has(normalized)) {
+    return Promise.resolve(slotSuggestionCache.get(normalized));
+  }
+  if (slotSuggestionAbortController) {
+    slotSuggestionAbortController.abort();
+  }
+  slotSuggestionAbortController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const fetchOptions = slotSuggestionAbortController ? { signal: slotSuggestionAbortController.signal } : {};
+  return fetch(`/api/search-suggestions?q=${encodeURIComponent(query)}`, fetchOptions)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('suggestions failed');
+      }
+      return response.json();
+    })
+    .then(data => {
+      const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+      slotSuggestionCache.set(normalized, suggestions);
+      return suggestions;
+    })
+    .catch(err => {
+      if (err && err.name === 'AbortError') {
+        return [];
+      }
+      return [];
+    });
+}
+
+function toggleSlotSearch(slotIndex, show) {
+  const wrapper = document.querySelector(`.slot-edit-wrapper[data-slot-index="${slotIndex}"]`);
+  if (!wrapper) return;
+  const field = wrapper.querySelector('.slot-search-field');
+  const input = wrapper.querySelector('.slot-search-input');
+  if (!field || !input) return;
+  if (show) {
+    closeAllSlotSearches(slotIndex);
+    wrapper.classList.add('search-open');
+    field.hidden = false;
+    field.setAttribute('aria-hidden', 'false');
+    input.focus();
+  } else {
+    wrapper.classList.remove('search-open');
+    field.hidden = true;
+    field.setAttribute('aria-hidden', 'true');
+    input.value = '';
+  }
+}
+
+function closeAllSlotSearches(exceptIndex = null) {
+  document.querySelectorAll('.slot-edit-wrapper').forEach(wrapper => {
+    const field = wrapper.querySelector('.slot-search-field');
+    const input = wrapper.querySelector('.slot-search-input');
+    if (!field || !input) return;
+    const wrapperIndex = parseInt(wrapper.dataset.slotIndex, 10);
+    if (exceptIndex !== null && wrapperIndex === exceptIndex) {
+      return;
+    }
+    wrapper.classList.remove('search-open');
+    field.hidden = true;
+    field.setAttribute('aria-hidden', 'true');
+    input.value = '';
+  });
+}
+
+function getSlotInput(slotIndex) {
+  return document.querySelector(`.slot-search-input[data-slot-index="${slotIndex}"]`);
+}
+
+function submitSlotSearch(slotIndex) {
+  const input = getSlotInput(slotIndex);
+  if (!input) return;
+  const searchValue = input.value.trim();
+  if (!searchValue) {
+    showNotification('Please enter a Pokémon name or ID.');
+    input.focus();
+    return;
+  }
+  setSlotLoading(slotIndex, true);
+  fetchPokemonByIdentifier(searchValue)
+    .then(pokemon => {
+      toggleSlotSearch(slotIndex, false);
+      applyPokemonToSlot(slotIndex, pokemon);
+      showNotification(`${pokemon.name} joined slot ${slotIndex + 1}!`);
+    })
+    .catch(err => {
+      showNotification(err.message || 'Pokémon not found. Try another search.');
+    })
+    .finally(() => {
+      setSlotLoading(slotIndex, false);
+    });
+}
+
+function rerollSlot(slotIndex) {
+  if (Number.isNaN(slotIndex)) return;
+  setSlotLoading(slotIndex, true);
+  fetchRandomPokemonData()
+    .then(pokemon => {
+      applyPokemonToSlot(slotIndex, pokemon);
+      showNotification(`${pokemon.name} rolled into slot ${slotIndex + 1}!`);
+    })
+    .catch(err => {
+      showNotification(err.message || 'Failed to fetch a random Pokémon.');
+    })
+    .finally(() => {
+      setSlotLoading(slotIndex, false);
+    });
+}
+
+function fetchPokemonByIdentifier(identifier) {
+  const trimmed = String(identifier || '').trim();
+  if (!trimmed) {
+    return Promise.reject(new Error('Please enter a Pokémon name or ID.'));
+  }
+  const safeIdentifier = encodeURIComponent(trimmed.toLowerCase());
+  return fetch(`/api/pokemon/${safeIdentifier}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Pokémon not found. Try another search.');
+      }
+      return response.json();
+    });
+}
+
+function fetchRandomPokemonData() {
+  const randomId = Math.floor(Math.random() * MAX_POKEMON_ID) + 1;
+  return fetchPokemonByIdentifier(randomId);
+}
+
+function applyPokemonToSlot(slotIndex, pokemon) {
+  if (Number.isNaN(slotIndex) || !pokemon) {
+    return;
+  }
+  const currentTeam = (window.teamState.currentTeam || []).slice();
+  const normalized = normalizePokemonForSlot(pokemon, slotIndex);
+  currentTeam[slotIndex] = normalized;
+  window.teamState.currentTeam = currentTeam;
+  syncTeamIdsAttribute(currentTeam);
+  updateSlotCard(slotIndex, normalized);
+  triggerTeamAnalysisFromState();
+}
+
+function triggerTeamAnalysisFromState() {
+  const teamIds = (window.teamState.currentTeam || [])
+    .map(pokemon => pokemon && pokemon.id)
+    .filter(Boolean);
+  if (!teamIds.length) return;
+  fetchTeamAnalysis(teamIds.join(','), { updateGrid: false });
+}
+
+function setSlotLoading(slotIndex, isLoading) {
+  const card = document.querySelector(`.team-card[data-slot-index="${slotIndex}"]`);
+  if (!card) return;
+  card.classList.toggle('is-loading', isLoading);
+  const interactiveElements = card.querySelectorAll('button, input');
+  interactiveElements.forEach(element => {
+    element.disabled = isLoading;
+  });
+}
+
 function renderBestDefenseSpan(stats = {}) {
   const def = stats['defense'] || 0;
   const spDef = stats['special-defense'] || 0;
@@ -457,6 +915,31 @@ function renderBestDefenseSpan(stats = {}) {
     label = def > spDef ? '(Ph)' : '(Sp)';
   }
   return `<span>DEF: ${best}${label}</span>`;
+}
+
+function normalizePokemonForSlot(pokemon, slotIndex) {
+  if (!pokemon) return null;
+  const normalized = { ...pokemon };
+  const derivedIndex = typeof pokemon.slotIndex === 'number' ? pokemon.slotIndex : 0;
+  normalized.slotIndex = typeof slotIndex === 'number' ? slotIndex : derivedIndex;
+  normalized.types = Array.isArray(normalized.types) ? normalized.types : [];
+  normalized.stats = normalizeStatsObject(normalized.stats);
+  normalized.image_url = normalized.image_url || normalized.imageUrl || '';
+  normalized.name = normalized.name || `#${normalized.id}`;
+  return normalized;
+}
+
+function normalizeStatsObject(stats) {
+  if (!stats) return {};
+  if (Array.isArray(stats)) {
+    return stats.reduce((acc, entry) => {
+      if (entry && entry.stat && entry.stat.name) {
+        acc[entry.stat.name] = entry.base_stat;
+      }
+      return acc;
+    }, {});
+  }
+  return stats;
 }
 
 function hydrateSavedTeamsList() {
