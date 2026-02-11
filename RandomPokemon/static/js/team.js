@@ -71,16 +71,13 @@ function initTeamPage() {
 
   if (initialData) {
     renderFullAnalysis(initialData, { updateGrid: false });
-    if (Array.isArray(initialData.team)) {
-      window.teamState.currentTeam = initialData.team.map((pokemon, index) =>
-        normalizePokemonForSlot(pokemon, index)
-      );
-    }
     const initialTeamSize = initialData && Array.isArray(initialData.team) ? initialData.team.length : 0;
     announceAnalysisStatus(`Loaded analysis for ${initialTeamSize} Pokémon`);
   } else {
     fetchTeamAnalysis();
   }
+
+  hydrateInitialTeamFromGrid();
 
   if (typeof reduceMotionQuery.addEventListener === 'function') {
     reduceMotionQuery.addEventListener('change', handleMotionPreferenceChange);
@@ -198,12 +195,15 @@ function fetchTeamAnalysis(idsOverride = null, options = { updateGrid: true }) {
 
 function renderFullAnalysis(analysis, options = { updateGrid: true }) {
   if (!analysis) return;
+  let normalizedTeam = [];
   if (analysis.team) {
-    syncTeamIdsAttribute(analysis.team);
+    normalizedTeam = analysis.team.map((pokemon, index) => normalizePokemonForSlot(pokemon, index));
+    window.teamState.currentTeam = normalizedTeam;
+    syncTeamIdsAttribute(normalizedTeam);
   }
 
-  if (options.updateGrid && analysis.team) {
-    renderTeamGrid(analysis.team);
+  if (options.updateGrid && normalizedTeam && normalizedTeam.length) {
+    renderTeamGrid(normalizedTeam);
   }
 
   renderSummaryCards(analysis);
@@ -532,9 +532,9 @@ function renderTeamGrid(team) {
   if (!grid || !Array.isArray(team)) return;
   grid.innerHTML = '';
 
-  const normalizedTeam = team
-    .filter(Boolean)
-    .map((pokemon, index) => normalizePokemonForSlot(pokemon, index));
+  const normalizedTeam = team.map((pokemon, index) =>
+    pokemon ? normalizePokemonForSlot(pokemon, index) : null
+  );
 
   window.teamState.currentTeam = normalizedTeam;
   syncTeamIdsAttribute(normalizedTeam);
@@ -544,6 +544,9 @@ function renderTeamGrid(team) {
     row.className = 'team-grid-six-row';
     const chunk = normalizedTeam.slice(i, i + 3);
     chunk.forEach(pokemon => {
+      if (!pokemon) {
+        return;
+      }
       const card = createTeamCard(pokemon);
       row.appendChild(card);
     });
@@ -940,6 +943,45 @@ function normalizeStatsObject(stats) {
     }, {});
   }
   return stats;
+}
+
+function safeParseJson(value, fallback = null) {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+  try {
+    return JSON.parse(value);
+  } catch (err) {
+    return fallback;
+  }
+}
+
+function hydrateInitialTeamFromGrid() {
+  if (window.teamState.currentTeam && window.teamState.currentTeam.length) {
+    return;
+  }
+  const cards = document.querySelectorAll('#teamGrid .team-card');
+  if (!cards.length) {
+    return;
+  }
+  const initialTeam = Array.from(cards).map((card, index) => {
+    const id = parseInt(card.dataset.pokemonId, 10);
+    const nameElement = card.querySelector('h3');
+    const imgElement = card.querySelector('img');
+    const types = safeParseJson(card.dataset.pokemonTypes) || [];
+    return normalizePokemonForSlot(
+      {
+        id,
+        name: nameElement ? nameElement.textContent.replace(/\s*#.+$/, '') : `#${id}`,
+        image_url: imgElement ? imgElement.getAttribute('src') : '',
+        types,
+        stats: {},
+      },
+      index
+    );
+  });
+  window.teamState.currentTeam = initialTeam;
+  syncTeamIdsAttribute(initialTeam);
 }
 
 function hydrateSavedTeamsList() {
