@@ -1401,6 +1401,101 @@ img {
 .flag-choice-btn--reveal-correct .flag-choice-result-icon { color: var(--success); }
 
 /* =========================================================
+   Type Answer
+   ========================================================= */
+.type-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.type-answer-row {
+  display: flex;
+  gap: 10px;
+}
+
+.type-answer-input {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.type-answer-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.type-answer-input:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.type-answer-input::placeholder {
+  color: var(--text-muted);
+}
+
+.type-answer-btn {
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.type-answer-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.type-answer-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.type-answer-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.type-answer-feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  animation: fadeSlideIn 0.2s ease;
+}
+
+.type-answer-feedback--correct {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1.5px solid var(--success);
+}
+
+.type-answer-feedback--wrong {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1.5px solid var(--error);
+}
+
+.type-answer-feedback-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* =========================================================
    Responsive
    ========================================================= */
 @media (max-width: 600px) {

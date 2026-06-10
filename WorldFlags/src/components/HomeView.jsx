@@ -91,26 +91,35 @@ export default function HomeView({
         </div>
       </div>
 
+      <div className="home-section-title">Quiz mode</div>
+      <div className="quiz-mode-toggle">
+        <button
+          className={`quiz-mode-btn${quizMode === 'classic' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onQuizModeChange('classic')}
+        >
+          Classic
+          <span className="quiz-mode-desc">Flag → Name</span>
+        </button>
+        <button
+          className={`quiz-mode-btn${quizMode === 'reverse' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onQuizModeChange('reverse')}
+        >
+          Reverse
+          <span className="quiz-mode-desc">Name → Flag</span>
+        </button>
+        <button
+          className={`quiz-mode-btn${quizMode === 'typing' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onQuizModeChange('typing')}
+        >
+          Type It
+          <span className="quiz-mode-desc">Free response</span>
+        </button>
+      </div>
+
       <div className="home-section-title">Study region</div>
       <RegionFilter selected={selectedRegions} onChange={onRegionsChange} />
 
       <div className="home-actions">
-        <div className="quiz-mode-toggle">
-          <button
-            className={`quiz-mode-btn${quizMode === 'classic' ? ' quiz-mode-btn--active' : ''}`}
-            onClick={() => onQuizModeChange('classic')}
-          >
-            Classic
-            <span className="quiz-mode-desc">Flag → Name</span>
-          </button>
-          <button
-            className={`quiz-mode-btn${quizMode === 'reverse' ? ' quiz-mode-btn--active' : ''}`}
-            onClick={() => onQuizModeChange('reverse')}
-          >
-            Reverse
-            <span className="quiz-mode-desc">Name → Flag</span>
-          </button>
-        </div>
         <button className="btn-primary" onClick={onStartQuiz} disabled={!canStart}>
           {poolDue > 0 ? `Start Quiz · ${poolDue} due` : 'Start Quiz'}
         </button>
