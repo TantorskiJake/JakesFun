@@ -9,6 +9,7 @@ export default function HomeView({
   selectedRegions,
   onRegionsChange,
   onStartQuiz,
+  onStartTrickyDrill,
   onResetProgress,
   progress,
 }) {
@@ -59,6 +60,14 @@ export default function HomeView({
         <button className="btn-primary" onClick={onStartQuiz} disabled={!canStart}>
           {poolDue > 0 ? `Start Quiz · ${poolDue} due` : 'Start Quiz'}
         </button>
+        {canStart && (
+          <div className="tricky-drill-wrap">
+            <button className="btn-secondary" onClick={onStartTrickyDrill}>
+              Drill Tricky Flags
+            </button>
+            <div className="tricky-drill-hint">Confusable pairs + your hardest flags</div>
+          </div>
+        )}
         {seenCount > 0 && (
           <button className="btn-danger-ghost" onClick={handleReset}>
             Reset progress
