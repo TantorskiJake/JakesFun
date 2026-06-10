@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const KEY = 'world-flags-streak-v1';
+export const STREAK_KEY = 'world-flags-streak-v1';
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -14,7 +14,7 @@ function yesterdayStr() {
 
 function load() {
   try {
-    const stored = localStorage.getItem(KEY);
+    const stored = localStorage.getItem(STREAK_KEY);
     if (!stored) return defaultState();
     return { ...defaultState(), ...JSON.parse(stored) };
   } catch {
@@ -30,6 +30,10 @@ function defaultState() {
     totalXP: 0,
     level: 1,
   };
+}
+
+function save(streakData) {
+  localStorage.setItem(STREAK_KEY, JSON.stringify(streakData));
 }
 
 export function useStreak() {
@@ -66,11 +70,25 @@ export function useStreak() {
         level: newLevel,
       };
 
-      localStorage.setItem(KEY, JSON.stringify(next));
+      save(next);
       return next;
     });
   }, []);
 
+  const replaceStreak = useCallback((next) => {
+    const safeNext = { ...defaultState(), ...(next || {}) };
+    save(safeNext);
+    setStreakData(safeNext);
+  }, []);
+
   const { currentStreak, longestStreak, totalXP, level } = streakData;
-  return { currentStreak, longestStreak, totalXP, level, recordSession };
+  return {
+    ...streakData,
+    currentStreak,
+    longestStreak,
+    totalXP,
+    level,
+    recordSession,
+    replaceStreak,
+  };
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgress } from './hooks/useProgress.js';
 import { useStreak } from './hooks/useStreak.js';
+import { useProfileSync } from './hooks/useProfileSync.js';
 import { buildSession, buildTrickySession } from './hooks/useQuiz.js';
 import { countries } from './data/countries.js';
 import { masteryLevel, isDue } from './utils/sm2.js';
@@ -34,8 +35,20 @@ export default function App() {
   const [sessionIndex, setSessionIndex] = useState(0);
   const [sessionResults, setSessionResults] = useState([]);
 
-  const { progress, recordAnswer, resetProgress } = useProgress();
+  const { progress, recordAnswer, resetProgress, replaceProgress } = useProgress();
   const streak = useStreak();
+  const profile = useProfileSync({
+    progress,
+    streakData: {
+      currentStreak: streak.currentStreak,
+      longestStreak: streak.longestStreak,
+      lastPracticeDate: streak.lastPracticeDate,
+      totalXP: streak.totalXP,
+      level: streak.level,
+    },
+    replaceProgress,
+    replaceStreak: streak.replaceStreak,
+  });
 
   // Apply theme to document
   useEffect(() => {
@@ -122,6 +135,7 @@ export default function App() {
             onResetProgress={resetProgress}
             progress={progress}
             streak={streak}
+            profile={profile}
             quizMode={quizMode}
             onQuizModeChange={handleSetQuizMode}
           />

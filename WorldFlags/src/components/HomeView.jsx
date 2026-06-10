@@ -1,5 +1,6 @@
 import { countries } from '../data/countries.js';
 import { isDue } from '../utils/sm2.js';
+import ProfilePanel from './ProfilePanel.jsx';
 import RegionFilter from './RegionFilter.jsx';
 
 export default function HomeView({
@@ -15,6 +16,7 @@ export default function HomeView({
   onResetProgress,
   progress,
   streak,
+  profile,
 }) {
   const pool = selectedRegions.includes('all')
     ? countries
@@ -45,6 +47,8 @@ export default function HomeView({
         <h1>Learn Every Flag</h1>
         <p>Master all {totalCount} world flags with spaced repetition</p>
       </div>
+
+      <ProfilePanel profile={profile} />
 
       {showStreak && (
         <div className="streak-bar">
