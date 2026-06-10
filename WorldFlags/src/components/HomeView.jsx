@@ -11,6 +11,8 @@ export default function HomeView({
   onStartQuiz,
   onResetProgress,
   progress,
+  quizMode,
+  onQuizModeChange,
 }) {
   const pool = selectedRegions.includes('all')
     ? countries
@@ -56,6 +58,22 @@ export default function HomeView({
       <RegionFilter selected={selectedRegions} onChange={onRegionsChange} />
 
       <div className="home-actions">
+        <div className="quiz-mode-toggle">
+          <button
+            className={`quiz-mode-btn${quizMode === 'classic' ? ' quiz-mode-btn--active' : ''}`}
+            onClick={() => onQuizModeChange('classic')}
+          >
+            Classic
+            <span className="quiz-mode-desc">Flag → Name</span>
+          </button>
+          <button
+            className={`quiz-mode-btn${quizMode === 'reverse' ? ' quiz-mode-btn--active' : ''}`}
+            onClick={() => onQuizModeChange('reverse')}
+          >
+            Reverse
+            <span className="quiz-mode-desc">Name → Flag</span>
+          </button>
+        </div>
         <button className="btn-primary" onClick={onStartQuiz} disabled={!canStart}>
           {poolDue > 0 ? `Start Quiz · ${poolDue} due` : 'Start Quiz'}
         </button>
