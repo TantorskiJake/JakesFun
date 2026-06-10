@@ -5,6 +5,7 @@ import ProgressBar from './ProgressBar.jsx';
 import FlagCard from './FlagCard.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
 import FeedbackOverlay from './FeedbackOverlay.jsx';
+import TypeAnswer from './TypeAnswer.jsx';
 
 const ADVANCE_DELAY = 1400;
 
@@ -19,6 +20,7 @@ export default function QuizView({
   onDone,
   onHome,
   onRestartQuiz,
+  quizMode,
 }) {
   const isDone = sessionIndex >= session.length;
   const current = session[sessionIndex];
@@ -51,8 +53,9 @@ export default function QuizView({
     }, ADVANCE_DELAY);
   }, [feedback, current, sessionIndex, session.length, onAnswer, onNext, onDone]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (multiple-choice mode only)
   useEffect(() => {
+    if (quizMode === 'typing') return;
     function onKey(e) {
       if (isDone) return;
       if (feedback) return;
@@ -63,7 +66,7 @@ export default function QuizView({
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [choices, feedback, isDone, handleSelect]);
+  }, [choices, feedback, isDone, handleSelect, quizMode]);
 
   if (isDone) {
     const correct = sessionResults.filter(r => r.correct).length;
@@ -114,17 +117,29 @@ export default function QuizView({
 
       <FlagCard code={current.code} />
 
-      <AnswerGrid
-        choices={choices}
-        onSelect={handleSelect}
-        feedback={feedback}
-        disabled={!!feedback}
-      />
+      {quizMode === 'typing' ? (
+        <TypeAnswer
+          correct={current}
+          onAnswer={onAnswer}
+          onNext={onNext}
+          onDone={onDone}
+          isLast={sessionIndex + 1 >= session.length}
+        />
+      ) : (
+        <>
+          <AnswerGrid
+            choices={choices}
+            onSelect={handleSelect}
+            feedback={feedback}
+            disabled={!!feedback}
+          />
 
-      {feedback
-        ? <FeedbackOverlay feedback={feedback} />
-        : <p className="keyboard-hint">Press 1–4 to answer</p>
-      }
+          {feedback
+            ? <FeedbackOverlay feedback={feedback} />
+            : <p className="keyboard-hint">Press 1–4 to answer</p>
+          }
+        </>
+      )}
     </div>
   );
 }

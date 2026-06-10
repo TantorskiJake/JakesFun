@@ -11,6 +11,8 @@ export default function HomeView({
   onStartQuiz,
   onResetProgress,
   progress,
+  quizMode,
+  onSetQuizMode,
 }) {
   const pool = selectedRegions.includes('all')
     ? countries
@@ -50,6 +52,22 @@ export default function HomeView({
           <div className="home-stat-number">{accuracy !== null ? `${accuracy}%` : '—'}</div>
           <div className="home-stat-label">Accuracy</div>
         </div>
+      </div>
+
+      <div className="home-section-title">Quiz mode</div>
+      <div className="quiz-mode-toggle">
+        <button
+          className={`quiz-mode-btn${quizMode === 'multiple-choice' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onSetQuizMode('multiple-choice')}
+        >
+          Multiple Choice
+        </button>
+        <button
+          className={`quiz-mode-btn${quizMode === 'typing' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onSetQuizMode('typing')}
+        >
+          Type It
+        </button>
       </div>
 
       <div className="home-section-title">Study region</div>
