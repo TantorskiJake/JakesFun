@@ -7,6 +7,7 @@ import Header from './components/Header.jsx';
 import HomeView from './components/HomeView.jsx';
 import QuizView from './components/QuizView.jsx';
 import StatsView from './components/StatsView.jsx';
+import WorldMapView from './components/WorldMapView.jsx';
 
 const DARK_KEY = 'world-flags-dark-mode';
 
@@ -109,6 +110,11 @@ export default function App() {
         )}
         {view === 'stats' && (
           <StatsView
+            progress={progress}
+          />
+        )}
+        {view === 'map' && (
+          <WorldMapView
             progress={progress}
           />
         )}

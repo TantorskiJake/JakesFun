@@ -18,6 +18,12 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark }) {
         >
           Stats
         </button>
+        <button
+          className={`nav-btn${view === 'map' ? ' nav-btn--active' : ''}`}
+          onClick={() => onNavigate('map')}
+        >
+          Map
+        </button>
       </nav>
       <button
         className="dark-toggle"
