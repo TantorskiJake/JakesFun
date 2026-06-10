@@ -8,6 +8,8 @@ export default function HomeView({
   totalCount,
   selectedRegions,
   onRegionsChange,
+  quizMode,
+  onQuizModeChange,
   onStartQuiz,
   onResetProgress,
   progress,
@@ -52,7 +54,23 @@ export default function HomeView({
         </div>
       </div>
 
-      <div className="home-section-title">Study region</div>
+      <div className="home-section-title">Quiz mode</div>
+      <div className="quiz-mode-toggle">
+        <button
+          className={`quiz-mode-btn${quizMode === 'flags' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onQuizModeChange('flags')}
+        >
+          Flags
+        </button>
+        <button
+          className={`quiz-mode-btn${quizMode === 'capitals' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onQuizModeChange('capitals')}
+        >
+          Capitals
+        </button>
+      </div>
+
+      <div className="home-section-title" style={{ marginTop: '28px' }}>Study region</div>
       <RegionFilter selected={selectedRegions} onChange={onRegionsChange} />
 
       <div className="home-actions">

@@ -313,6 +313,36 @@ img {
 }
 
 /* =========================================================
+   Quiz Mode Toggle
+   ========================================================= */
+.quiz-mode-toggle {
+  display: inline-flex;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.quiz-mode-btn {
+  padding: 7px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.quiz-mode-btn:hover:not(.quiz-mode-btn--active) {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.quiz-mode-btn--active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* =========================================================
    Region Filter
    ========================================================= */
 .region-filter {
@@ -407,6 +437,16 @@ img {
 .quiz-back-btn:hover {
   background: var(--surface2);
   color: var(--text);
+}
+
+/* Capital label */
+.quiz-capital-label {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.1px;
+  margin-bottom: -8px;
 }
 
 /* Session Complete */

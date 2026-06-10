@@ -9,6 +9,7 @@ import QuizView from './components/QuizView.jsx';
 import StatsView from './components/StatsView.jsx';
 
 const DARK_KEY = 'world-flags-dark-mode';
+const QUIZ_MODE_KEY = 'world-flags-quiz-mode';
 
 function loadDark() {
   const stored = localStorage.getItem(DARK_KEY);
@@ -16,9 +17,14 @@ function loadDark() {
   return true; // default dark
 }
 
+function loadQuizMode() {
+  return localStorage.getItem(QUIZ_MODE_KEY) || 'flags';
+}
+
 export default function App() {
   const [view, setView] = useState('home');
   const [darkMode, setDarkMode] = useState(loadDark);
+  const [quizMode, setQuizMode] = useState(loadQuizMode);
   const [selectedRegions, setSelectedRegions] = useState(['all']);
   const [session, setSession] = useState([]);
   const [sessionIndex, setSessionIndex] = useState(0);
@@ -34,6 +40,11 @@ export default function App() {
 
   const handleToggleDark = useCallback(() => {
     setDarkMode(d => !d);
+  }, []);
+
+  const handleSetQuizMode = useCallback((mode) => {
+    setQuizMode(mode);
+    localStorage.setItem(QUIZ_MODE_KEY, mode);
   }, []);
 
   const handleNavigate = useCallback((target) => {
@@ -88,6 +99,8 @@ export default function App() {
             totalCount={countries.length}
             selectedRegions={selectedRegions}
             onRegionsChange={setSelectedRegions}
+            quizMode={quizMode}
+            onQuizModeChange={handleSetQuizMode}
             onStartQuiz={handleStartQuiz}
             onResetProgress={resetProgress}
             progress={progress}
@@ -100,6 +113,7 @@ export default function App() {
             sessionResults={sessionResults}
             progress={progress}
             selectedRegions={selectedRegions}
+            quizMode={quizMode}
             onAnswer={handleAnswer}
             onNext={handleNext}
             onDone={handleDone}

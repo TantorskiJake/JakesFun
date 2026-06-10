@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { countries } from '../data/countries.js';
-import { getChoices } from '../hooks/useQuiz.js';
+import { getChoices, getCapitalChoices } from '../hooks/useQuiz.js';
 import ProgressBar from './ProgressBar.jsx';
 import FlagCard from './FlagCard.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
@@ -14,6 +14,7 @@ export default function QuizView({
   sessionResults,
   progress,
   selectedRegions,
+  quizMode,
   onAnswer,
   onNext,
   onDone,
@@ -22,6 +23,7 @@ export default function QuizView({
 }) {
   const isDone = sessionIndex >= session.length;
   const current = session[sessionIndex];
+  const isCapitals = quizMode === 'capitals';
 
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
@@ -29,10 +31,11 @@ export default function QuizView({
   // Build new choices whenever the question changes
   useEffect(() => {
     if (current) {
-      setChoices(getChoices(current, countries, selectedRegions));
+      const fn = isCapitals ? getCapitalChoices : getChoices;
+      setChoices(fn(current, countries, selectedRegions));
       setFeedback(null);
     }
-  }, [current, selectedRegions]);
+  }, [current, selectedRegions, isCapitals]);
 
   const handleSelect = useCallback((selectedCode) => {
     if (feedback) return;
@@ -114,11 +117,16 @@ export default function QuizView({
 
       <FlagCard code={current.code} />
 
+      {isCapitals && (
+        <p className="quiz-capital-label">What is the capital?</p>
+      )}
+
       <AnswerGrid
         choices={choices}
         onSelect={handleSelect}
         feedback={feedback}
         disabled={!!feedback}
+        labelKey={isCapitals ? 'capital' : 'name'}
       />
 
       {feedback
