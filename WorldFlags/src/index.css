@@ -204,6 +204,128 @@ img {
   color: var(--text-muted);
 }
 
+/* =========================================================
+   Streak Bar
+   ========================================================= */
+.streak-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.streak-flame-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.streak-flame {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.streak-flame-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.streak-count {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--warning);
+  letter-spacing: -0.5px;
+}
+
+.streak-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.streak-xp-block {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.streak-level-badge {
+  flex-shrink: 0;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+}
+
+.streak-xp-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.streak-xp-bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface2);
+  overflow: hidden;
+}
+
+.streak-xp-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--primary);
+  transition: width 0.4s ease;
+}
+
+.streak-xp-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.streak-longest-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.streak-longest-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.streak-longest-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Session XP earned */
+.session-xp-earned {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--success);
+  letter-spacing: -0.3px;
+}
+
 .home-stats-row {
   display: flex;
   gap: 16px;
@@ -966,5 +1088,15 @@ img {
 
   .home-hero h1 {
     font-size: 28px;
+  }
+
+  .streak-bar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .streak-xp-block {
+    flex-basis: 100%;
+    order: 3;
   }
 }
