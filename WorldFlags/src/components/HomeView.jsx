@@ -8,13 +8,13 @@ export default function HomeView({
   totalCount,
   selectedRegions,
   onRegionsChange,
+  quizMode,
+  onQuizModeChange,
   onStartQuiz,
   onStartTrickyDrill,
   onResetProgress,
   progress,
   streak,
-  quizMode,
-  onQuizModeChange,
 }) {
   const pool = selectedRegions.includes('all')
     ? countries
@@ -113,6 +113,13 @@ export default function HomeView({
         >
           Type It
           <span className="quiz-mode-desc">Free response</span>
+        </button>
+        <button
+          className={`quiz-mode-btn${quizMode === 'capitals' ? ' quiz-mode-btn--active' : ''}`}
+          onClick={() => onQuizModeChange('capitals')}
+        >
+          Capitals
+          <span className="quiz-mode-desc">Flag → Capital</span>
         </button>
       </div>
 

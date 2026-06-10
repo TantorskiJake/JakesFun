@@ -21,7 +21,8 @@ function loadDark() {
 
 function loadQuizMode() {
   const stored = localStorage.getItem(QUIZ_MODE_KEY);
-  return ['classic', 'reverse', 'typing'].includes(stored) ? stored : 'classic';
+  if (stored === 'flags') return 'classic';
+  return ['classic', 'reverse', 'typing', 'capitals'].includes(stored) ? stored : 'classic';
 }
 
 export default function App() {

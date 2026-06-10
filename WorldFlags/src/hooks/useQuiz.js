@@ -85,3 +85,13 @@ export function getChoices(correct, allCountries, regions) {
   const distractors = others.slice(0, 3);
   return shuffle([correct, ...distractors]);
 }
+
+export function getCapitalChoices(correct, allCountries, regions) {
+  const pool = regions.includes('all')
+    ? allCountries
+    : allCountries.filter((c) => regions.includes(c.region));
+
+  const others = shuffle(pool.filter((c) => c.code !== correct.code));
+  const distractors = others.slice(0, 3);
+  return shuffle([correct, ...distractors]);
+}

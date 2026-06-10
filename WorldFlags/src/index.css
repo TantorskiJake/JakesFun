@@ -575,6 +575,16 @@ img {
   color: var(--text);
 }
 
+/* Capital label */
+.quiz-capital-label {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.1px;
+  margin-bottom: -8px;
+}
+
 /* Session Complete */
 .session-complete {
   display: flex;
