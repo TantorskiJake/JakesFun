@@ -132,13 +132,13 @@ export default function TypeAnswer({
       {feedback === 'correct' && (
         <div className="type-answer-feedback type-answer-feedback--correct">
           <span className="type-answer-feedback-icon">✓</span>
-          Correct!
+          Nice.
         </div>
       )}
       {feedback === 'wrong' && (
         <div className="type-answer-feedback type-answer-feedback--wrong">
           <span className="type-answer-feedback-icon">✗</span>
-          Wrong — it was <strong>{correct.name}</strong>
+          Almost. This one is <strong>{correct.name}</strong>
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ export default function FeedbackOverlay({ feedback, labelKey = 'name' }) {
     return (
       <div className="feedback-banner feedback-banner--correct">
         <span className="feedback-banner-icon">✓</span>
-        <span>Correct! That&rsquo;s {correctAnswer}</span>
+        <span>Nice. That&rsquo;s {correctAnswer}</span>
       </div>
     );
   }
@@ -19,7 +19,7 @@ export default function FeedbackOverlay({ feedback, labelKey = 'name' }) {
     <div className="feedback-banner feedback-banner--wrong">
       <span className="feedback-banner-icon">✗</span>
       <span>
-        Wrong &mdash; it was <strong>{correctAnswer}</strong>
+        Almost. This one is <strong>{correctAnswer}</strong>
       </span>
     </div>
   );

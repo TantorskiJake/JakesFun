@@ -12,7 +12,7 @@ export default function FlagCard({ code }) {
 
   return (
     <div className="flag-card">
-      <p className="flag-card-prompt">Which country does this flag belong to?</p>
+      <p className="flag-card-prompt">Remember this flag</p>
       <div className="flag-image-wrap">
         {!loaded && !error && (
           <div className="flag-spinner">

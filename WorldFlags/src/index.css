@@ -2,42 +2,46 @@
    CSS Custom Properties (Theming)
    ========================================================= */
 :root[data-theme="dark"] {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --surface2: #334155;
-  --border: #475569;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --success: #22c55e;
-  --success-bg: rgba(34, 197, 94, 0.15);
+  --bg: #0f1714;
+  --surface: #17231f;
+  --surface2: #22322c;
+  --border: #31443c;
+  --text: #f3fbf7;
+  --text-muted: #9db4aa;
+  --primary: #58cc02;
+  --primary-hover: #46a302;
+  --success: #58cc02;
+  --success-bg: rgba(88, 204, 2, 0.14);
   --error: #ef4444;
   --error-bg: rgba(239, 68, 68, 0.15);
-  --warning: #f59e0b;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --warning: #ffc800;
+  --blue: #1cb0f6;
+  --blue-hover: #0a91d0;
+  --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.22);
+  --shadow-md: 0 4px 0 rgba(0, 0, 0, 0.26);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.36);
   --flag-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="light"] {
-  --bg: #f8fafc;
+  --bg: #f7fbf4;
   --surface: #ffffff;
-  --surface2: #f1f5f9;
-  --border: #e2e8f0;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --success: #16a34a;
-  --success-bg: rgba(22, 163, 74, 0.1);
+  --surface2: #eef7e9;
+  --border: #d8e8d0;
+  --text: #24312b;
+  --text-muted: #617167;
+  --primary: #58cc02;
+  --primary-hover: #46a302;
+  --success: #58cc02;
+  --success-bg: rgba(88, 204, 2, 0.12);
   --error: #dc2626;
   --error-bg: rgba(220, 38, 38, 0.1);
-  --warning: #d97706;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --warning: #f5b700;
+  --blue: #1cb0f6;
+  --blue-hover: #0a91d0;
+  --shadow-sm: 0 2px 0 rgba(55, 70, 61, 0.12);
+  --shadow-md: 0 4px 0 rgba(55, 70, 61, 0.12);
+  --shadow-lg: 0 12px 28px rgba(55, 70, 61, 0.12);
   --flag-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
@@ -1716,6 +1720,430 @@ img {
 }
 
 /* =========================================================
+   Learning App Refresh
+   ========================================================= */
+.header {
+  height: 64px;
+  box-shadow: none;
+}
+
+.header-title {
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.nav-btn {
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.nav-btn--active {
+  background: var(--surface2);
+  color: var(--primary);
+}
+
+.nav-btn--active:hover {
+  background: var(--surface2);
+  color: var(--primary);
+}
+
+.dark-toggle {
+  border-radius: 999px;
+  background: var(--surface2);
+}
+
+.home-view {
+  max-width: 1040px;
+}
+
+.study-dashboard {
+  gap: 22px;
+  padding: 24px;
+  border-radius: 24px;
+  box-shadow: none;
+}
+
+.lesson-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(88, 204, 2, 0.16), rgba(28, 176, 246, 0.12));
+  border: 1px solid rgba(88, 204, 2, 0.28);
+}
+
+.lesson-hero-copy {
+  min-width: 0;
+}
+
+.lesson-hero h1 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.lesson-hero p {
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.lesson-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.home-kicker {
+  color: var(--blue);
+  letter-spacing: 0.06em;
+}
+
+.mastery-ring-track {
+  background: rgba(88, 204, 2, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(88, 204, 2, 0.18);
+}
+
+.mastery-ring-fill {
+  background: conic-gradient(var(--primary) var(--mastery-progress), rgba(255, 255, 255, 0.18) 0);
+}
+
+.mastery-ring-track::after {
+  border: 0;
+}
+
+.mastery-ring-center span {
+  color: var(--primary);
+}
+
+.streak-bar {
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.streak-flame,
+.streak-count {
+  color: var(--warning);
+}
+
+.streak-level-badge {
+  background: var(--blue);
+}
+
+.streak-xp-bar-fill {
+  background: var(--primary);
+}
+
+.home-stat-card {
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.home-stat-number {
+  color: var(--primary);
+}
+
+.learning-path {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.learning-path-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.learning-path-header p {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.path-track-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.path-track-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.path-track-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--blue);
+}
+
+.path-track-card--active {
+  border-color: var(--primary);
+  background: var(--success-bg);
+}
+
+.path-track-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface2);
+  font-size: 22px;
+}
+
+.path-track-card--active .path-track-icon {
+  background: var(--primary);
+}
+
+.path-track-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.path-track-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.path-track-meta {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.path-track-progress {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface2);
+}
+
+.path-track-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.path-track-percent {
+  color: var(--blue);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.btn-primary,
+.type-answer-btn {
+  border-bottom: 4px solid rgba(35, 122, 0, 0.55);
+  border-radius: 14px;
+  box-shadow: none;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.btn-primary:hover:not(:disabled),
+.type-answer-btn:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.btn-primary:active:not(:disabled),
+.type-answer-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.btn-continue {
+  min-width: 190px;
+}
+
+.btn-secondary {
+  border: 2px solid var(--border);
+  border-bottom-width: 4px;
+  border-radius: 14px;
+  color: var(--blue);
+  font-weight: 900;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--blue);
+  background: rgba(28, 176, 246, 0.12);
+  color: var(--blue);
+}
+
+.quiz-mode-toggle {
+  border-width: 2px;
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.quiz-mode-btn {
+  border-radius: 13px;
+  font-weight: 900;
+}
+
+.quiz-mode-btn--active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.region-btn {
+  border-width: 2px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-weight: 800;
+}
+
+.region-btn--active {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.quiz-view {
+  max-width: 760px;
+  gap: 20px;
+}
+
+.quiz-header {
+  padding: 10px 0;
+}
+
+.quiz-back-btn {
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.quiz-counter,
+.keyboard-hint {
+  font-weight: 750;
+}
+
+.progress-bar-track {
+  height: 8px;
+  border-radius: 999px;
+}
+
+.progress-bar-fill {
+  border-radius: inherit;
+}
+
+.flag-card,
+.reverse-question {
+  border-radius: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.flag-card-prompt,
+.quiz-capital-label {
+  color: var(--blue);
+  font-weight: 850;
+}
+
+.flag-image {
+  border-radius: 14px;
+}
+
+.answer-btn,
+.flag-choice-btn {
+  border-width: 2px;
+  border-bottom-width: 4px;
+  border-radius: 18px;
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.answer-btn:hover:not(:disabled),
+.flag-choice-btn:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.answer-key {
+  border-radius: 10px;
+  background: var(--surface2);
+  font-weight: 900;
+}
+
+.feedback-banner,
+.type-answer-feedback {
+  border-radius: 18px;
+  font-weight: 850;
+}
+
+.session-complete {
+  max-width: 620px;
+  margin: 0 auto;
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.session-score {
+  color: var(--primary);
+}
+
+.session-results-grid {
+  max-width: 560px;
+}
+
+.session-result-item {
+  border-radius: 999px;
+  font-weight: 750;
+}
+
+.stats-view h2 {
+  letter-spacing: 0;
+}
+
+.stat-card,
+.mastery-card,
+.region-row,
+.countries-table-wrap,
+.map-wrap,
+.map-legend,
+.profile-panel {
+  border-radius: 18px;
+}
+
+.stat-card-value {
+  color: var(--primary);
+}
+
+.map-zoom-btn {
+  border-radius: 12px;
+  font-weight: 900;
+}
+
+/* =========================================================
    Responsive
    ========================================================= */
 @media (max-width: 600px) {
@@ -1737,6 +2165,33 @@ img {
 
   .home-hero h1 {
     font-size: 28px;
+  }
+
+  .lesson-hero {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .lesson-hero h1 {
+    font-size: 30px;
+  }
+
+  .lesson-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .lesson-hero-actions .btn-primary,
+  .lesson-hero-actions .btn-secondary {
+    width: 100%;
+  }
+
+  .path-track-list {
+    grid-template-columns: 1fr;
+  }
+
+  .path-track-card {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
   }
 
   .mastery-ring-track {

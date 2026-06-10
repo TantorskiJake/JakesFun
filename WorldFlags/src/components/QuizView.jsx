@@ -102,9 +102,9 @@ export default function QuizView({
       <div className="quiz-view">
         <div className="session-complete">
           <div className="session-complete-emoji">{emoji}</div>
-          <h2>Session Complete!</h2>
+          <h2>Lesson complete</h2>
           <div className="session-score">{pct}%</div>
-          <p>{correct} of {total} correct</p>
+          <p>{correct} of {total} remembered</p>
           <div className="session-xp-earned">+{xpEarned} XP</div>
 
           <div className="session-results-grid">
@@ -123,7 +123,7 @@ export default function QuizView({
 
           <div className="session-complete-actions">
             <button className="btn-ghost" onClick={onHome}>Home</button>
-            <button className="btn-primary" onClick={onRestartQuiz}>Study Again</button>
+            <button className="btn-primary" onClick={onRestartQuiz}>Practice again</button>
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function QuizView({
 
       {quizMode === 'reverse' ? (
         <div className="reverse-question">
-          <p className="flag-card-prompt">Which flag belongs to this country?</p>
+          <p className="flag-card-prompt">Find this flag</p>
           <h2 className="reverse-country-name">{current.name}</h2>
         </div>
       ) : (
@@ -150,7 +150,7 @@ export default function QuizView({
       )}
 
       {isCapitals && (
-        <p className="quiz-capital-label">What is the capital?</p>
+        <p className="quiz-capital-label">Remember the capital</p>
       )}
 
       {quizMode === 'typing' ? (
@@ -188,7 +188,7 @@ export default function QuizView({
       {quizMode !== 'typing' && (
         feedback
           ? <FeedbackOverlay feedback={feedback} labelKey={isCapitals ? 'capital' : 'name'} />
-          : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Click a flag to answer' : 'Press 1–4 to answer'}</p>
+          : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Choose a flag to continue' : 'Press 1–4 to continue'}</p>
       )}
     </div>
   );
