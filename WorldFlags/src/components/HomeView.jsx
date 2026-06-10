@@ -12,6 +12,7 @@ export default function HomeView({
   onStartTrickyDrill,
   onResetProgress,
   progress,
+  streak,
 }) {
   const pool = selectedRegions.includes('all')
     ? countries
@@ -31,12 +32,47 @@ export default function HomeView({
   const totalCorrect = Object.values(progress).reduce((s, c) => s + c.correctAnswers, 0);
   const accuracy = totalAnswers === 0 ? null : Math.round((totalCorrect / totalAnswers) * 100);
 
+  const { currentStreak, longestStreak, totalXP, level } = streak ?? {};
+  const showStreak = totalXP > 0;
+  const xpInLevel = totalXP % 200;
+  const xpProgress = xpInLevel / 200;
+
   return (
     <div className="home-view">
       <div className="home-hero">
         <h1>Learn Every Flag</h1>
         <p>Master all {totalCount} world flags with spaced repetition</p>
       </div>
+
+      {showStreak && (
+        <div className="streak-bar">
+          <div className="streak-flame-block">
+            <span className="streak-flame">🔥</span>
+            <div className="streak-flame-text">
+              <span className="streak-count">{currentStreak}</span>
+              <span className="streak-label">day streak</span>
+            </div>
+          </div>
+
+          <div className="streak-xp-block">
+            <div className="streak-level-badge">Lv. {level}</div>
+            <div className="streak-xp-wrap">
+              <div className="streak-xp-bar-track">
+                <div
+                  className="streak-xp-bar-fill"
+                  style={{ width: `${xpProgress * 100}%` }}
+                />
+              </div>
+              <span className="streak-xp-label">{xpInLevel} / 200 XP</span>
+            </div>
+          </div>
+
+          <div className="streak-longest-block">
+            <span className="streak-longest-value">{longestStreak}</span>
+            <span className="streak-longest-label">best streak</span>
+          </div>
+        </div>
+      )}
 
       <div className="home-stats-row">
         <div className="home-stat-card">

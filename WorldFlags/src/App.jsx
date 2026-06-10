@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgress } from './hooks/useProgress.js';
+import { useStreak } from './hooks/useStreak.js';
 import { buildSession, buildTrickySession } from './hooks/useQuiz.js';
 import { countries } from './data/countries.js';
 import { masteryLevel, isDue } from './utils/sm2.js';
@@ -26,6 +27,7 @@ export default function App() {
   const [sessionResults, setSessionResults] = useState([]);
 
   const { progress, recordAnswer, resetProgress } = useProgress();
+  const streak = useStreak();
 
   // Apply theme to document
   useEffect(() => {
@@ -78,6 +80,10 @@ export default function App() {
     setSessionIndex(session.length);
   }, [session.length]);
 
+  const handleSessionComplete = useCallback((correct, total) => {
+    streak.recordSession(correct, total);
+  }, [streak.recordSession]);
+
   // Derived stats for HomeView
   const dueCount = countries.filter(c => isDue(progress[c.code])).length;
   const masteredCount = countries.filter(c => masteryLevel(progress[c.code]) === 3).length;
@@ -102,6 +108,7 @@ export default function App() {
             onStartTrickyDrill={handleStartTrickyDrill}
             onResetProgress={resetProgress}
             progress={progress}
+            streak={streak}
           />
         )}
         {view === 'quiz' && (
@@ -114,6 +121,7 @@ export default function App() {
             onAnswer={handleAnswer}
             onNext={handleNext}
             onDone={handleDone}
+            onSessionComplete={handleSessionComplete}
             onHome={() => handleNavigate('home')}
             onRestartQuiz={handleStartQuiz}
           />

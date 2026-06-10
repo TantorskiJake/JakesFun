@@ -17,6 +17,7 @@ export default function QuizView({
   onAnswer,
   onNext,
   onDone,
+  onSessionComplete,
   onHome,
   onRestartQuiz,
 }) {
@@ -25,6 +26,8 @@ export default function QuizView({
 
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  // Track whether we've already fired onSessionComplete for this session
+  const [sessionRecorded, setSessionRecorded] = useState(false);
 
   // Build new choices whenever the question changes
   useEffect(() => {
@@ -33,6 +36,23 @@ export default function QuizView({
       setFeedback(null);
     }
   }, [current, selectedRegions]);
+
+  // Reset recorded flag when a new session starts
+  useEffect(() => {
+    if (!isDone) {
+      setSessionRecorded(false);
+    }
+  }, [isDone]);
+
+  // Fire onSessionComplete exactly once when the results screen appears
+  useEffect(() => {
+    if (isDone && !sessionRecorded && sessionResults.length > 0) {
+      const correct = sessionResults.filter(r => r.correct).length;
+      const total = sessionResults.length;
+      onSessionComplete?.(correct, total);
+      setSessionRecorded(true);
+    }
+  }, [isDone, sessionRecorded, sessionResults, onSessionComplete]);
 
   const handleSelect = useCallback((selectedCode) => {
     if (feedback) return;
@@ -70,6 +90,7 @@ export default function QuizView({
     const total = sessionResults.length;
     const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
     const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '💪';
+    const xpEarned = correct * 10 + (correct === total && total > 0 ? 50 : 0);
 
     return (
       <div className="quiz-view">
@@ -78,6 +99,7 @@ export default function QuizView({
           <h2>Session Complete!</h2>
           <div className="session-score">{pct}%</div>
           <p>{correct} of {total} correct</p>
+          <div className="session-xp-earned">+{xpEarned} XP</div>
 
           <div className="session-results-grid">
             {sessionResults.map((r, i) => {
