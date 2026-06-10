@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgress } from './hooks/useProgress.js';
-import { buildSession } from './hooks/useQuiz.js';
+import { buildSession, buildTrickySession } from './hooks/useQuiz.js';
 import { countries } from './data/countries.js';
 import { masteryLevel, isDue } from './utils/sm2.js';
 import Header from './components/Header.jsx';
@@ -54,6 +54,15 @@ export default function App() {
     setView('quiz');
   }, [selectedRegions, progress]);
 
+  const handleStartTrickyDrill = useCallback(() => {
+    const s = buildTrickySession(progress, selectedRegions);
+    if (s.length === 0) return;
+    setSession(s);
+    setSessionIndex(0);
+    setSessionResults([]);
+    setView('quiz');
+  }, [progress, selectedRegions]);
+
   const handleAnswer = useCallback((code, correct) => {
     recordAnswer(code, correct);
     setSessionResults(prev => [...prev, { code, correct }]);
@@ -89,6 +98,7 @@ export default function App() {
             selectedRegions={selectedRegions}
             onRegionsChange={setSelectedRegions}
             onStartQuiz={handleStartQuiz}
+            onStartTrickyDrill={handleStartTrickyDrill}
             onResetProgress={resetProgress}
             progress={progress}
           />
