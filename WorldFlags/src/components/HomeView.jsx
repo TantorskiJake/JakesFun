@@ -1,4 +1,4 @@
-import { countries } from '../data/countries.js';
+import { REGIONS, countries } from '../data/countries.js';
 import { isDue } from '../utils/sm2.js';
 import ProfilePanel from './ProfilePanel.jsx';
 import RegionFilter from './RegionFilter.jsx';
@@ -35,6 +35,13 @@ export default function HomeView({
   const totalAnswers = Object.values(progress).reduce((s, c) => s + c.totalAnswers, 0);
   const totalCorrect = Object.values(progress).reduce((s, c) => s + c.correctAnswers, 0);
   const accuracy = totalAnswers === 0 ? null : Math.round((totalCorrect / totalAnswers) * 100);
+  const masteredPercent = totalCount === 0 ? 0 : Math.round((masteredCount / totalCount) * 100);
+  const regionLabel = selectedRegions.includes('all')
+    ? 'All regions'
+    : selectedRegions
+      .map(id => REGIONS.find(region => region.id === id)?.label)
+      .filter(Boolean)
+      .join(', ');
 
   const { currentStreak, longestStreak, totalXP, level } = streak ?? {};
   const showStreak = totalXP > 0;
@@ -43,111 +50,137 @@ export default function HomeView({
 
   return (
     <div className="home-view">
-      <div className="home-hero">
-        <h1>Learn Every Flag</h1>
-        <p>Master all {totalCount} world flags with spaced repetition</p>
-      </div>
+      <section className="study-dashboard">
+        <div className="home-hero">
+          <div>
+            <span className="home-kicker">Study dashboard</span>
+            <h1>Learn Every Flag</h1>
+            <p>{regionLabel} · {pool.length} flags in your current study set</p>
+          </div>
+          <div className="mastery-ring" aria-label={`${masteredPercent}% mastered`}>
+            <div className="mastery-ring-track">
+              <div
+                className="mastery-ring-fill"
+                style={{ '--mastery-progress': `${masteredPercent * 3.6}deg` }}
+              />
+              <div className="mastery-ring-center">
+                <span>{masteredPercent}%</span>
+                <small>mastered</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {showStreak && (
+          <div className="streak-bar">
+            <div className="streak-flame-block">
+              <span className="streak-flame">🔥</span>
+              <div className="streak-flame-text">
+                <span className="streak-count">{currentStreak}</span>
+                <span className="streak-label">day streak</span>
+              </div>
+            </div>
+
+            <div className="streak-xp-block">
+              <div className="streak-level-badge">Lv. {level}</div>
+              <div className="streak-xp-wrap">
+                <div className="streak-xp-bar-track">
+                  <div
+                    className="streak-xp-bar-fill"
+                    style={{ width: `${xpProgress * 100}%` }}
+                  />
+                </div>
+                <span className="streak-xp-label">{xpInLevel} / 200 XP</span>
+              </div>
+            </div>
+
+            <div className="streak-longest-block">
+              <span className="streak-longest-value">{longestStreak}</span>
+              <span className="streak-longest-label">best streak</span>
+            </div>
+          </div>
+        )}
+
+        <div className="home-stats-row">
+          <div className="home-stat-card">
+            <div className="home-stat-label">Due today</div>
+            <div className="home-stat-number">{dueCount}</div>
+            <div className="home-stat-subtle">{poolDue} in selection</div>
+          </div>
+          <div className="home-stat-card">
+            <div className="home-stat-label">Mastered</div>
+            <div className="home-stat-number">{masteredCount}</div>
+            <div className="home-stat-subtle">of {totalCount} flags</div>
+          </div>
+          <div className="home-stat-card">
+            <div className="home-stat-label">Accuracy</div>
+            <div className="home-stat-number">{accuracy !== null ? `${accuracy}%` : '—'}</div>
+            <div className="home-stat-subtle">{totalAnswers} answers</div>
+          </div>
+        </div>
+
+        <div className="study-controls">
+          <div className="study-control-section">
+            <div className="home-section-title">Quiz mode</div>
+            <div className="quiz-mode-toggle">
+              <button
+                className={`quiz-mode-btn${quizMode === 'classic' ? ' quiz-mode-btn--active' : ''}`}
+                onClick={() => onQuizModeChange('classic')}
+              >
+                Classic
+                <span className="quiz-mode-desc">Flag → Name</span>
+              </button>
+              <button
+                className={`quiz-mode-btn${quizMode === 'reverse' ? ' quiz-mode-btn--active' : ''}`}
+                onClick={() => onQuizModeChange('reverse')}
+              >
+                Reverse
+                <span className="quiz-mode-desc">Name → Flag</span>
+              </button>
+              <button
+                className={`quiz-mode-btn${quizMode === 'typing' ? ' quiz-mode-btn--active' : ''}`}
+                onClick={() => onQuizModeChange('typing')}
+              >
+                Type It
+                <span className="quiz-mode-desc">Free response</span>
+              </button>
+              <button
+                className={`quiz-mode-btn${quizMode === 'capitals' ? ' quiz-mode-btn--active' : ''}`}
+                onClick={() => onQuizModeChange('capitals')}
+              >
+                Capitals
+                <span className="quiz-mode-desc">Flag → Capital</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="study-control-section">
+            <div className="home-section-title">Study region</div>
+            <RegionFilter selected={selectedRegions} onChange={onRegionsChange} />
+          </div>
+
+          <div className="home-actions">
+            <button className="btn-primary" onClick={onStartQuiz} disabled={!canStart}>
+              {poolDue > 0 ? `Start Quiz · ${poolDue} due` : 'Start Quiz'}
+            </button>
+            {canStart && (
+              <div className="tricky-drill-wrap">
+                <button className="btn-secondary" onClick={onStartTrickyDrill}>
+                  Drill Tricky Flags
+                </button>
+                <div className="tricky-drill-hint">Confusable pairs + your hardest flags</div>
+              </div>
+            )}
+            {seenCount > 0 && (
+              <button className="btn-danger-ghost" onClick={handleReset}>
+                Reset progress
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
 
       <ProfilePanel profile={profile} />
-
-      {showStreak && (
-        <div className="streak-bar">
-          <div className="streak-flame-block">
-            <span className="streak-flame">🔥</span>
-            <div className="streak-flame-text">
-              <span className="streak-count">{currentStreak}</span>
-              <span className="streak-label">day streak</span>
-            </div>
-          </div>
-
-          <div className="streak-xp-block">
-            <div className="streak-level-badge">Lv. {level}</div>
-            <div className="streak-xp-wrap">
-              <div className="streak-xp-bar-track">
-                <div
-                  className="streak-xp-bar-fill"
-                  style={{ width: `${xpProgress * 100}%` }}
-                />
-              </div>
-              <span className="streak-xp-label">{xpInLevel} / 200 XP</span>
-            </div>
-          </div>
-
-          <div className="streak-longest-block">
-            <span className="streak-longest-value">{longestStreak}</span>
-            <span className="streak-longest-label">best streak</span>
-          </div>
-        </div>
-      )}
-
-      <div className="home-stats-row">
-        <div className="home-stat-card">
-          <div className="home-stat-number">{dueCount}</div>
-          <div className="home-stat-label">Due today</div>
-        </div>
-        <div className="home-stat-card">
-          <div className="home-stat-number">{masteredCount}</div>
-          <div className="home-stat-label">Mastered</div>
-        </div>
-        <div className="home-stat-card">
-          <div className="home-stat-number">{accuracy !== null ? `${accuracy}%` : '—'}</div>
-          <div className="home-stat-label">Accuracy</div>
-        </div>
-      </div>
-
-      <div className="home-section-title">Quiz mode</div>
-      <div className="quiz-mode-toggle">
-        <button
-          className={`quiz-mode-btn${quizMode === 'classic' ? ' quiz-mode-btn--active' : ''}`}
-          onClick={() => onQuizModeChange('classic')}
-        >
-          Classic
-          <span className="quiz-mode-desc">Flag → Name</span>
-        </button>
-        <button
-          className={`quiz-mode-btn${quizMode === 'reverse' ? ' quiz-mode-btn--active' : ''}`}
-          onClick={() => onQuizModeChange('reverse')}
-        >
-          Reverse
-          <span className="quiz-mode-desc">Name → Flag</span>
-        </button>
-        <button
-          className={`quiz-mode-btn${quizMode === 'typing' ? ' quiz-mode-btn--active' : ''}`}
-          onClick={() => onQuizModeChange('typing')}
-        >
-          Type It
-          <span className="quiz-mode-desc">Free response</span>
-        </button>
-        <button
-          className={`quiz-mode-btn${quizMode === 'capitals' ? ' quiz-mode-btn--active' : ''}`}
-          onClick={() => onQuizModeChange('capitals')}
-        >
-          Capitals
-          <span className="quiz-mode-desc">Flag → Capital</span>
-        </button>
-      </div>
-
-      <div className="home-section-title">Study region</div>
-      <RegionFilter selected={selectedRegions} onChange={onRegionsChange} />
-
-      <div className="home-actions">
-        <button className="btn-primary" onClick={onStartQuiz} disabled={!canStart}>
-          {poolDue > 0 ? `Start Quiz · ${poolDue} due` : 'Start Quiz'}
-        </button>
-        {canStart && (
-          <div className="tricky-drill-wrap">
-            <button className="btn-secondary" onClick={onStartTrickyDrill}>
-              Drill Tricky Flags
-            </button>
-            <div className="tricky-drill-hint">Confusable pairs + your hardest flags</div>
-          </div>
-        )}
-        {seenCount > 0 && (
-          <button className="btn-danger-ghost" onClick={handleReset}>
-            Reset progress
-          </button>
-        )}
-      </div>
     </div>
   );
 }
