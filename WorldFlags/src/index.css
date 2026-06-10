@@ -1226,6 +1226,181 @@ img {
 }
 
 /* =========================================================
+   Quiz Mode Toggle
+   ========================================================= */
+.quiz-mode-toggle {
+  display: flex;
+  gap: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.quiz-mode-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  line-height: 1.2;
+}
+
+.quiz-mode-btn + .quiz-mode-btn {
+  border-left: 1.5px solid var(--border);
+}
+
+.quiz-mode-btn:hover:not(.quiz-mode-btn--active) {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.quiz-mode-btn--active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.quiz-mode-desc {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* =========================================================
+   Reverse Quiz — Country Name Question
+   ========================================================= */
+.reverse-question {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.reverse-country-name {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+/* =========================================================
+   Flag Choice Grid (Reverse Mode)
+   ========================================================= */
+.flag-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.flag-choice-btn {
+  position: relative;
+  padding: 10px;
+  border-radius: 14px;
+  border: 2.5px solid var(--border);
+  background: var(--surface);
+  transition: all 0.15s ease;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flag-choice-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--surface2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.flag-choice-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.flag-choice-btn:disabled {
+  cursor: default;
+}
+
+.flag-choice-btn--correct {
+  border-color: var(--success);
+  background: var(--success-bg);
+  box-shadow: 0 0 0 2px var(--success);
+}
+
+.flag-choice-btn--wrong {
+  border-color: var(--error);
+  background: var(--error-bg);
+  box-shadow: 0 0 0 2px var(--error);
+}
+
+.flag-choice-btn--reveal-correct {
+  border-color: var(--success);
+  background: var(--success-bg);
+  box-shadow: 0 0 0 2px var(--success);
+}
+
+.flag-choice-btn--dimmed {
+  opacity: 0.35;
+}
+
+.flag-choice-img-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flag-choice-img {
+  width: 100%;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  object-fit: contain;
+  transition: opacity 0.2s ease;
+}
+
+.flag-choice-img--loading {
+  opacity: 0;
+}
+
+.flag-choice-spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flag-choice-result-icon {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.flag-choice-btn--correct .flag-choice-result-icon { color: var(--success); }
+.flag-choice-btn--wrong .flag-choice-result-icon { color: var(--error); }
+.flag-choice-btn--reveal-correct .flag-choice-result-icon { color: var(--success); }
+
+/* =========================================================
    Responsive
    ========================================================= */
 @media (max-width: 600px) {
@@ -1254,5 +1429,14 @@ img {
   .streak-xp-block {
     flex-basis: 100%;
     order: 3;
+  }
+
+  .reverse-country-name {
+    font-size: 28px;
+  }
+
+  .quiz-mode-btn {
+    padding: 10px 16px;
+    font-size: 14px;
   }
 }

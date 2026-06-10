@@ -4,6 +4,7 @@ import { getChoices } from '../hooks/useQuiz.js';
 import ProgressBar from './ProgressBar.jsx';
 import FlagCard from './FlagCard.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
+import FlagChoiceGrid from './FlagChoiceGrid.jsx';
 import FeedbackOverlay from './FeedbackOverlay.jsx';
 
 const ADVANCE_DELAY = 1400;
@@ -14,6 +15,7 @@ export default function QuizView({
   sessionResults,
   progress,
   selectedRegions,
+  quizMode,
   onAnswer,
   onNext,
   onDone,
@@ -134,18 +136,34 @@ export default function QuizView({
         <span className="quiz-counter">{sessionIndex + 1} / {session.length}</span>
       </div>
 
-      <FlagCard code={current.code} />
+      {quizMode === 'reverse' ? (
+        <div className="reverse-question">
+          <p className="flag-card-prompt">Which flag belongs to this country?</p>
+          <h2 className="reverse-country-name">{current.name}</h2>
+        </div>
+      ) : (
+        <FlagCard code={current.code} />
+      )}
 
-      <AnswerGrid
-        choices={choices}
-        onSelect={handleSelect}
-        feedback={feedback}
-        disabled={!!feedback}
-      />
+      {quizMode === 'reverse' ? (
+        <FlagChoiceGrid
+          choices={choices}
+          onSelect={handleSelect}
+          feedback={feedback}
+          disabled={!!feedback}
+        />
+      ) : (
+        <AnswerGrid
+          choices={choices}
+          onSelect={handleSelect}
+          feedback={feedback}
+          disabled={!!feedback}
+        />
+      )}
 
       {feedback
         ? <FeedbackOverlay feedback={feedback} />
-        : <p className="keyboard-hint">Press 1–4 to answer</p>
+        : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Click a flag to answer' : 'Press 1–4 to answer'}</p>
       }
     </div>
   );
