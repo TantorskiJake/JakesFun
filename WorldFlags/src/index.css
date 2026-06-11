@@ -421,12 +421,18 @@ img {
   padding: 16px;
 }
 
+.home-stat-icon {
+  font-size: 20px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
 .home-stat-number {
   font-size: 34px;
   font-weight: 800;
   color: var(--text);
   line-height: 1;
-  margin: 8px 0 4px;
+  margin: 4px 0 4px;
   letter-spacing: -0.8px;
 }
 

@@ -12,12 +12,12 @@ const REGION_ICONS = {
   oceania: '🏝️',
 };
 
-const MODE_LABELS = {
-  classic: 'Flag lesson',
-  reverse: 'Find the flag',
-  typing: 'Type it out',
-  capitals: 'Capital practice',
-};
+const MODES = [
+  { id: 'classic', label: 'Flag', desc: 'Flag → Name' },
+  { id: 'reverse', label: 'Match', desc: 'Name → Flag' },
+  { id: 'typing', label: 'Type', desc: 'Free response' },
+  { id: 'capitals', label: 'Capitals', desc: 'Flag → Capital' },
+];
 
 export default function HomeView({
   dueCount,
@@ -58,12 +58,13 @@ export default function HomeView({
       .map(id => REGIONS.find(region => region.id === id)?.label)
       .filter(Boolean)
       .join(', ');
-  const activeModeLabel = MODE_LABELS[quizMode] ?? 'Flag lesson';
 
   const { currentStreak, longestStreak, totalXP, level } = streak ?? {};
   const showStreak = totalXP > 0;
   const xpInLevel = totalXP % 200;
   const xpProgress = xpInLevel / 200;
+
+  const heroKicker = poolDue > 0 ? `${poolDue} flag${poolDue === 1 ? '' : 's'} due for review` : "Today's lesson";
 
   const regionTracks = REGIONS.map(region => {
     const regionPool = region.id === 'all'
@@ -89,16 +90,16 @@ export default function HomeView({
       <section className="study-dashboard">
         <div className="lesson-hero">
           <div className="lesson-hero-copy">
-            <span className="home-kicker">Today&apos;s lesson</span>
+            <span className="home-kicker">{heroKicker}</span>
             <h1>Build your world map</h1>
-            <p>{regionLabel} · {pool.length} flags · {activeModeLabel}</p>
+            <p>{regionLabel} · {pool.length} flags</p>
             <div className="lesson-hero-actions">
               <button className="btn-primary btn-continue" onClick={onStartQuiz} disabled={!canStart}>
                 {poolDue > 0 ? `Continue · ${poolDue} due` : 'Start lesson'}
               </button>
               {canStart && (
                 <button className="btn-secondary" onClick={onStartTrickyDrill}>
-                  Practice mistakes
+                  Tricky drill
                 </button>
               )}
             </div>
@@ -114,6 +115,22 @@ export default function HomeView({
                 <small>mastered</small>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="home-section-title">Lesson type</div>
+          <div className="quiz-mode-toggle">
+            {MODES.map(mode => (
+              <button
+                key={mode.id}
+                className={`quiz-mode-btn${quizMode === mode.id ? ' quiz-mode-btn--active' : ''}`}
+                onClick={() => onQuizModeChange(mode.id)}
+              >
+                {mode.label}
+                <span className="quiz-mode-desc">{mode.desc}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -149,19 +166,22 @@ export default function HomeView({
 
         <div className="home-stats-row">
           <div className="home-stat-card">
-            <div className="home-stat-label">Ready to review</div>
-            <div className="home-stat-number">{dueCount}</div>
-            <div className="home-stat-subtle">{poolDue} in selection</div>
+            <div className="home-stat-icon">📚</div>
+            <div className="home-stat-label">Due for review</div>
+            <div className="home-stat-number" style={dueCount > 0 ? { color: 'var(--warning)' } : undefined}>{dueCount}</div>
+            <div className="home-stat-subtle">{poolDue > 0 ? `${poolDue} in selection` : 'All caught up'}</div>
           </div>
           <div className="home-stat-card">
+            <div className="home-stat-icon">🏆</div>
             <div className="home-stat-label">Flags mastered</div>
             <div className="home-stat-number">{masteredCount}</div>
             <div className="home-stat-subtle">of {totalCount} flags</div>
           </div>
           <div className="home-stat-card">
+            <div className="home-stat-icon">🎯</div>
             <div className="home-stat-label">Recall rate</div>
             <div className="home-stat-number">{accuracy !== null ? `${accuracy}%` : '—'}</div>
-            <div className="home-stat-subtle">{totalAnswers} answers</div>
+            <div className="home-stat-subtle">{totalAnswers > 0 ? `${totalAnswers} answers` : 'No answers yet'}</div>
           </div>
         </div>
 
@@ -197,51 +217,17 @@ export default function HomeView({
 
         <div className="study-controls">
           <div className="study-control-section">
-            <div className="home-section-title">Lesson type</div>
-            <div className="quiz-mode-toggle">
-              <button
-                className={`quiz-mode-btn${quizMode === 'classic' ? ' quiz-mode-btn--active' : ''}`}
-                onClick={() => onQuizModeChange('classic')}
-              >
-                Flag
-                <span className="quiz-mode-desc">Flag → Name</span>
-              </button>
-              <button
-                className={`quiz-mode-btn${quizMode === 'reverse' ? ' quiz-mode-btn--active' : ''}`}
-                onClick={() => onQuizModeChange('reverse')}
-              >
-                Match
-                <span className="quiz-mode-desc">Name → Flag</span>
-              </button>
-              <button
-                className={`quiz-mode-btn${quizMode === 'typing' ? ' quiz-mode-btn--active' : ''}`}
-                onClick={() => onQuizModeChange('typing')}
-              >
-                Type
-                <span className="quiz-mode-desc">Free response</span>
-              </button>
-              <button
-                className={`quiz-mode-btn${quizMode === 'capitals' ? ' quiz-mode-btn--active' : ''}`}
-                onClick={() => onQuizModeChange('capitals')}
-              >
-                Capitals
-                <span className="quiz-mode-desc">Flag → Capital</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="study-control-section">
             <div className="home-section-title">Custom course mix</div>
             <RegionFilter selected={selectedRegions} onChange={onRegionsChange} />
           </div>
 
-          <div className="home-actions">
-            {seenCount > 0 && (
+          {seenCount > 0 && (
+            <div className="home-actions">
               <button className="btn-danger-ghost" onClick={handleReset}>
                 Reset progress
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
