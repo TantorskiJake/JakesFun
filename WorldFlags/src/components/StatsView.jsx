@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { countries, REGIONS, getFlagUrl } from '../data/countries.js';
 import { masteryLevel } from '../utils/sm2.js';
+import { BADGES } from '../data/badges.js';
 
 const MASTERY_LABELS = ['New', 'Learning', 'Familiar', 'Mastered'];
 const MASTERY_COLORS = ['var(--text-muted)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
 
-export default function StatsView({ progress }) {
+export default function StatsView({ progress, earnedBadges, streak }) {
   const [search, setSearch] = useState('');
 
   const totalAnswers = Object.values(progress).reduce((s, c) => s + c.totalAnswers, 0);
@@ -105,6 +106,22 @@ export default function StatsView({ progress }) {
                     style={{ width: `${learningPct}%` }}
                   />
                 </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="stats-section">
+        <h2>Badges</h2>
+        <div className="badges-grid">
+          {BADGES.map(b => {
+            const earned = earnedBadges.includes(b.id);
+            return (
+              <div key={b.id} className={`badge-item${earned ? ' badge-item--earned' : ''}`} title={b.desc}>
+                <span className="badge-item-icon" style={{ opacity: earned ? 1 : 0.25 }}>{b.icon}</span>
+                <span className="badge-item-label">{b.label}</span>
+                {earned && <span className="badge-item-check">✓</span>}
               </div>
             );
           })}

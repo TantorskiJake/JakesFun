@@ -4,58 +4,79 @@ import { getChoices } from '../hooks/useQuiz.js';
 import ProgressBar from './ProgressBar.jsx';
 import FlagCard from './FlagCard.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
+import FlagAnswerGrid from './FlagAnswerGrid.jsx';
 import FeedbackOverlay from './FeedbackOverlay.jsx';
 
 const ADVANCE_DELAY = 1400;
 
+// Prompt card for reverse mode (show country name, pick the flag)
+function CountryNameCard({ name, region }) {
+  return (
+    <div className="country-name-card">
+      <p className="flag-card-prompt">Which flag belongs to this country?</p>
+      <div className="country-name-display">
+        <span className="country-name-text">{name}</span>
+        <span className="country-name-region">{region}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function QuizView({
   session,
   sessionIndex,
-  sessionResults,
   progress,
   selectedRegions,
+  mode,
   onAnswer,
   onNext,
   onDone,
   onHome,
   onRestartQuiz,
 }) {
+  const isReverse = mode === 'reverse';
+  const isConfusables = mode === 'confusables';
+
   const isDone = sessionIndex >= session.length;
   const current = session[sessionIndex];
 
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  // Track results locally so we can pass them to onDone
+  const [results, setResults] = useState([]);
 
-  // Build new choices whenever the question changes
   useEffect(() => {
     if (current) {
-      setChoices(getChoices(current, countries, selectedRegions));
+      setChoices(getChoices(current, countries, selectedRegions, isConfusables));
       setFeedback(null);
     }
-  }, [current, selectedRegions]);
+  }, [current, selectedRegions, isConfusables]);
 
   const handleSelect = useCallback((selectedCode) => {
     if (feedback) return;
     const correct = selectedCode === current.code;
     const fb = { correct, correctCode: current.code, selectedCode };
+    const newResult = { code: current.code, correct };
+    const newResults = [...results, newResult];
+
     setFeedback(fb);
+    setResults(newResults);
     onAnswer(current.code, correct);
 
     setTimeout(() => {
       setFeedback(null);
       if (sessionIndex + 1 >= session.length) {
-        onDone();
+        onDone(newResults);
       } else {
         onNext();
       }
     }, ADVANCE_DELAY);
-  }, [feedback, current, sessionIndex, session.length, onAnswer, onNext, onDone]);
+  }, [feedback, current, sessionIndex, session.length, results, onAnswer, onNext, onDone]);
 
   // Keyboard shortcuts
   useEffect(() => {
     function onKey(e) {
-      if (isDone) return;
-      if (feedback) return;
+      if (isDone || feedback) return;
       if (e.key >= '1' && e.key <= '4') {
         const idx = parseInt(e.key, 10) - 1;
         if (choices[idx]) handleSelect(choices[idx].code);
@@ -65,9 +86,10 @@ export default function QuizView({
     return () => window.removeEventListener('keydown', onKey);
   }, [choices, feedback, isDone, handleSelect]);
 
+  // Session complete screen
   if (isDone) {
-    const correct = sessionResults.filter(r => r.correct).length;
-    const total = sessionResults.length;
+    const correct = results.filter(r => r.correct).length;
+    const total = results.length;
     const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
     const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '💪';
 
@@ -78,9 +100,8 @@ export default function QuizView({
           <h2>Session Complete!</h2>
           <div className="session-score">{pct}%</div>
           <p>{correct} of {total} correct</p>
-
           <div className="session-results-grid">
-            {sessionResults.map((r, i) => {
+            {results.map((r, i) => {
               const c = session[i];
               return (
                 <div
@@ -92,7 +113,6 @@ export default function QuizView({
               );
             })}
           </div>
-
           <div className="session-complete-actions">
             <button className="btn-ghost" onClick={onHome}>Home</button>
             <button className="btn-primary" onClick={onRestartQuiz}>Study Again</button>
@@ -112,14 +132,25 @@ export default function QuizView({
         <span className="quiz-counter">{sessionIndex + 1} / {session.length}</span>
       </div>
 
-      <FlagCard code={current.code} />
+      {isReverse
+        ? <CountryNameCard name={current.name} region={current.region} />
+        : <FlagCard code={current.code} />
+      }
 
-      <AnswerGrid
-        choices={choices}
-        onSelect={handleSelect}
-        feedback={feedback}
-        disabled={!!feedback}
-      />
+      {isReverse
+        ? <FlagAnswerGrid
+            choices={choices}
+            onSelect={handleSelect}
+            feedback={feedback}
+            disabled={!!feedback}
+          />
+        : <AnswerGrid
+            choices={choices}
+            onSelect={handleSelect}
+            feedback={feedback}
+            disabled={!!feedback}
+          />
+      }
 
       {feedback
         ? <FeedbackOverlay feedback={feedback} />

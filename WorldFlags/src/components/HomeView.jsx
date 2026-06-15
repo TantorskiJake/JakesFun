@@ -2,6 +2,14 @@ import { countries } from '../data/countries.js';
 import { isDue } from '../utils/sm2.js';
 import RegionFilter from './RegionFilter.jsx';
 
+const MODES = [
+  { id: 'normal',      label: 'Flag → Name',   desc: 'See a flag, pick the country' },
+  { id: 'reverse',     label: 'Name → Flag',   desc: 'See a name, pick the flag' },
+  { id: 'confusables', label: 'Confusables',   desc: 'Drill the flags that look alike' },
+];
+
+const SESSION_SIZES = [10, 20, 30];
+
 export default function HomeView({
   dueCount,
   masteredCount,
@@ -11,6 +19,11 @@ export default function HomeView({
   onStartQuiz,
   onResetProgress,
   progress,
+  mode,
+  onModeChange,
+  sessionSize,
+  onSessionSizeChange,
+  streak,
 }) {
   const pool = selectedRegions.includes('all')
     ? countries
@@ -50,10 +63,43 @@ export default function HomeView({
           <div className="home-stat-number">{accuracy !== null ? `${accuracy}%` : '—'}</div>
           <div className="home-stat-label">Accuracy</div>
         </div>
+        {streak > 0 && (
+          <div className="home-stat-card">
+            <div className="home-stat-number">🔥 {streak}</div>
+            <div className="home-stat-label">Day streak</div>
+          </div>
+        )}
       </div>
 
-      <div className="home-section-title">Study region</div>
+      <div className="home-section-title">Region</div>
       <RegionFilter selected={selectedRegions} onChange={onRegionsChange} />
+
+      <div className="home-section-title" style={{ marginTop: 24 }}>Quiz mode</div>
+      <div className="mode-selector">
+        {MODES.map(m => (
+          <button
+            key={m.id}
+            className={`mode-btn${mode === m.id ? ' mode-btn--active' : ''}`}
+            onClick={() => onModeChange(m.id)}
+            title={m.desc}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="home-section-title" style={{ marginTop: 24 }}>Questions per session</div>
+      <div className="size-selector">
+        {SESSION_SIZES.map(s => (
+          <button
+            key={s}
+            className={`size-btn${sessionSize === s ? ' size-btn--active' : ''}`}
+            onClick={() => onSessionSizeChange(s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
 
       <div className="home-actions">
         <button className="btn-primary" onClick={onStartQuiz} disabled={!canStart}>

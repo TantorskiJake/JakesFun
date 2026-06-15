@@ -1,4 +1,4 @@
-export default function Header({ view, onNavigate, darkMode, onToggleDark }) {
+export default function Header({ view, onNavigate, darkMode, onToggleDark, streak }) {
   return (
     <header className="header">
       <div className="header-brand">
@@ -19,6 +19,11 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark }) {
           Stats
         </button>
       </nav>
+      {streak > 0 && (
+        <div className="header-streak" title={`${streak}-day streak`}>
+          🔥 {streak}
+        </div>
+      )}
       <button
         className="dark-toggle"
         onClick={onToggleDark}
