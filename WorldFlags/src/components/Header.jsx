@@ -16,7 +16,7 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark, strea
           className={`nav-btn${view === 'stats' ? ' nav-btn--active' : ''}`}
           onClick={() => onNavigate('stats')}
         >
-          Stats
+          Progress
         </button>
         <button
           className={`nav-btn${view === 'map' ? ' nav-btn--active' : ''}`}
@@ -27,7 +27,7 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark, strea
       </nav>
       {streak > 0 && (
         <div className="header-streak" title={`${streak}-day streak`}>
-          🔥 {streak}
+          {streak} day
         </div>
       )}
       <button

@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { countries, REGIONS, getFlagUrl } from '../data/countries.js';
 import { masteryLevel } from '../utils/sm2.js';
 import { BADGES } from '../data/badges.js';
+import ProfilePanel from './ProfilePanel.jsx';
 
 const MASTERY_LABELS = ['New', 'Learning', 'Familiar', 'Mastered'];
 const MASTERY_COLORS = ['var(--text-muted)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
 
-export default function StatsView({ progress, earnedBadges, streak }) {
+export default function StatsView({ progress, earnedBadges, streak, profile }) {
   const [search, setSearch] = useState('');
 
   const totalAnswers = Object.values(progress).reduce((s, c) => s + c.totalAnswers, 0);
@@ -36,11 +37,25 @@ export default function StatsView({ progress, earnedBadges, streak }) {
         : null;
       return { ...c, card, level, acc };
     });
+  const earnedCount = BADGES.filter(b => earnedBadges.includes(b.id)).length;
+  const currentStreak = streak?.currentStreak ?? 0;
 
   return (
     <div className="stats-view">
+      <div className="progress-hero">
+        <div>
+          <span className="home-kicker">Progress</span>
+          <h1>Your world at a glance</h1>
+          <p>Track mastery, rewards, and the flags that need another pass.</p>
+        </div>
+        <div className="progress-hero-score">
+          <span>{masteryCounts[3]}</span>
+          <small>mastered</small>
+        </div>
+      </div>
+
       <div className="stats-section">
-        <h2>Your Progress</h2>
+        <h2>Overview</h2>
         <div className="stats-overview-grid">
           <div className="stat-card">
             <div className="stat-card-value">
@@ -59,6 +74,14 @@ export default function StatsView({ progress, earnedBadges, streak }) {
           <div className="stat-card">
             <div className="stat-card-value">{Object.keys(progress).length}</div>
             <div className="stat-card-label">Countries seen</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card-value">{currentStreak}</div>
+            <div className="stat-card-label">Day streak</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card-value">{earnedCount}</div>
+            <div className="stat-card-label">Badges earned</div>
           </div>
         </div>
       </div>
@@ -129,7 +152,7 @@ export default function StatsView({ progress, earnedBadges, streak }) {
       </div>
 
       <div className="stats-section">
-        <h2>All Countries</h2>
+        <h2>Country Details</h2>
         <input
           type="text"
           className="table-search"
@@ -180,6 +203,11 @@ export default function StatsView({ progress, earnedBadges, streak }) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="stats-section">
+        <h2>Account</h2>
+        <ProfilePanel profile={profile} />
       </div>
     </div>
   );

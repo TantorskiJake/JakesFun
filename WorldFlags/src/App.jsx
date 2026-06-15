@@ -93,16 +93,25 @@ export default function App() {
     }
   }, []);
 
-  const handleStartQuiz = useCallback(() => {
-    const isConfusables = quizMode === 'confusables';
-    const s = buildSession(selectedRegions, progress, sessionSize, isConfusables);
+  const startSession = useCallback((regions = selectedRegions, mode = quizMode, size = sessionSize) => {
+    const isConfusables = mode === 'confusables';
+    const s = buildSession(regions, progress, size, isConfusables);
     if (s.length === 0) return;
     setSession(s);
     setSessionIndex(0);
     setSessionResults([]);
     setShowConfetti(false);
     setView('quiz');
-  }, [selectedRegions, progress, sessionSize, quizMode]);
+  }, [selectedRegions, quizMode, sessionSize, progress]);
+
+  const handleStartQuiz = useCallback(() => {
+    startSession();
+  }, [startSession]);
+
+  const handleMapPractice = useCallback((regions) => {
+    setSelectedRegions(regions);
+    startSession(regions, quizMode, sessionSize);
+  }, [startSession, quizMode, sessionSize]);
 
   const handleStartTrickyDrill = useCallback(() => {
     const s = buildTrickySession(progress, selectedRegions);
@@ -157,6 +166,7 @@ export default function App() {
         onNavigate={handleNavigate}
         darkMode={darkMode}
         onToggleDark={handleToggleDark}
+        streak={streak.currentStreak}
       />
       <main className="main-content">
         {view === 'home' && (
@@ -171,7 +181,6 @@ export default function App() {
             onResetProgress={resetProgress}
             progress={progress}
             streak={streak}
-            profile={profile}
             quizMode={quizMode}
             onQuizModeChange={handleSetQuizMode}
             sessionSize={sessionSize}
@@ -199,10 +208,14 @@ export default function App() {
             progress={progress}
             earnedBadges={earnedBadges}
             streak={streak}
+            profile={profile}
           />
         )}
         {view === 'map' && (
-          <WorldMapView progress={progress} />
+          <WorldMapView
+            progress={progress}
+            onPracticeRegions={handleMapPractice}
+          />
         )}
       </main>
     </div>
