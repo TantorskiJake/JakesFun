@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { countries, REGIONS, getFlagUrl } from '../data/countries.js';
 import { masteryLevel } from '../utils/sm2.js';
 import { BADGES } from '../data/badges.js';
-import ProfilePanel from './ProfilePanel.jsx';
 
 const MASTERY_LABELS = ['New', 'Learning', 'Familiar', 'Mastered'];
 const MASTERY_COLORS = ['var(--text-muted)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
 
-export default function StatsView({ progress, earnedBadges, streak, profile }) {
+export default function StatsView({ progress, earnedBadges, streak }) {
   const [search, setSearch] = useState('');
 
   const totalAnswers = Object.values(progress).reduce((s, c) => s + c.totalAnswers, 0);
@@ -203,11 +202,6 @@ export default function StatsView({ progress, earnedBadges, streak, profile }) {
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div className="stats-section">
-        <h2>Account</h2>
-        <ProfilePanel profile={profile} />
       </div>
     </div>
   );

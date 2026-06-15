@@ -28,9 +28,9 @@ export default function ProfilePanel({ profile }) {
     return (
       <section className="profile-panel">
         <div>
-          <div className="profile-eyebrow">Profile sync</div>
-          <h2>Cloud profiles are not configured yet</h2>
-          <p>Add Supabase env vars to sync stats across your devices.</p>
+          <div className="profile-eyebrow">Account infrastructure</div>
+          <h2>Cloud accounts are not configured yet</h2>
+          <p>Add Supabase environment variables to enable account creation and cross-device sync.</p>
         </div>
       </section>
     );
@@ -40,7 +40,7 @@ export default function ProfilePanel({ profile }) {
     return (
       <section className="profile-panel profile-panel--signed-in">
         <div>
-          <div className="profile-eyebrow">Profile</div>
+          <div className="profile-eyebrow">Signed in</div>
           <h2>{profile.user.email}</h2>
           <p>{profile.status}</p>
           {profile.error && <p className="profile-error">{profile.error}</p>}
@@ -55,9 +55,9 @@ export default function ProfilePanel({ profile }) {
   return (
     <section className="profile-panel">
       <div className="profile-panel-copy">
-        <div className="profile-eyebrow">Profile sync</div>
-        <h2>Use your stats anywhere</h2>
-        <p>Sign in on Mac and mobile to keep progress, streaks, XP, and mastery in sync.</p>
+        <div className="profile-eyebrow">Account</div>
+        <h2>Create an account</h2>
+        <p>Sign in or create an account to sync progress, streaks, XP, mastery, and badges.</p>
       </div>
 
       <form className="profile-form" onSubmit={handleSubmit}>

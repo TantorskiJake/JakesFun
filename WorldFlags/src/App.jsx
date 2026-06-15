@@ -11,6 +11,7 @@ import HomeView from './components/HomeView.jsx';
 import QuizView from './components/QuizView.jsx';
 import StatsView from './components/StatsView.jsx';
 import WorldMapView from './components/WorldMapView.jsx';
+import SettingsView from './components/SettingsView.jsx';
 import Confetti from './components/Confetti.jsx';
 import BadgeUnlock from './components/BadgeUnlock.jsx';
 
@@ -208,13 +209,26 @@ export default function App() {
             progress={progress}
             earnedBadges={earnedBadges}
             streak={streak}
-            profile={profile}
           />
         )}
         {view === 'map' && (
           <WorldMapView
             progress={progress}
             onPracticeRegions={handleMapPractice}
+          />
+        )}
+        {view === 'settings' && (
+          <SettingsView
+            profile={profile}
+            darkMode={darkMode}
+            onToggleDark={handleToggleDark}
+            quizMode={quizMode}
+            onQuizModeChange={handleSetQuizMode}
+            sessionSize={sessionSize}
+            onSessionSizeChange={handleSetSessionSize}
+            selectedRegions={selectedRegions}
+            onRegionsChange={setSelectedRegions}
+            onResetProgress={resetProgress}
           />
         )}
       </main>
