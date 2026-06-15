@@ -1,6 +1,8 @@
 import { countries } from '../data/countries';
 import { isDue } from '../utils/sm2';
-import { confusableCodes, getConfusableGroup } from '../data/confusables';
+import { CONFUSABLE_GROUPS, confusableCodes, getConfusableGroup } from '../data/confusables';
+
+const SESSION_SIZE = 20;
 
 function shuffle(arr) {
   const a = [...arr];
@@ -11,7 +13,7 @@ function shuffle(arr) {
   return a;
 }
 
-export function buildSession(regions, progress, sessionSize = 20, confusablesMode = false) {
+export function buildSession(regions, progress, sessionSize = SESSION_SIZE, confusablesMode = false) {
   let pool = regions.includes('all')
     ? countries
     : countries.filter(c => regions.includes(c.region));
@@ -35,6 +37,35 @@ export function buildSession(regions, progress, sessionSize = 20, confusablesMod
   return session.slice(0, sessionSize);
 }
 
+export function buildTrickySession(progress, regions) {
+  const pool = regions.includes('all')
+    ? countries
+    : countries.filter(c => regions.includes(c.region));
+
+  const poolCodes = new Set(pool.map(c => c.code));
+
+  const confusableSet = new Set(
+    CONFUSABLE_GROUPS.flat().filter(code => poolCodes.has(code))
+  );
+  const confusables = shuffle(pool.filter(c => confusableSet.has(c.code)));
+
+  const strugglers = pool
+    .filter(c => {
+      const p = progress[c.code];
+      return p && p.totalAnswers >= 3 && p.correctAnswers / p.totalAnswers < 0.6;
+    })
+    .sort((a, b) => {
+      const accA = progress[a.code].correctAnswers / progress[a.code].totalAnswers;
+      const accB = progress[b.code].correctAnswers / progress[b.code].totalAnswers;
+      return accA - accB;
+    })
+    .filter(c => !confusableSet.has(c.code));
+
+  const combined = [...confusables, ...strugglers].slice(0, SESSION_SIZE);
+  if (combined.length < 5) return buildSession(regions, progress);
+  return combined;
+}
+
 export function getChoices(correct, allCountries, regions, confusablesMode = false) {
   const pool = regions.includes('all')
     ? allCountries
@@ -52,6 +83,15 @@ export function getChoices(correct, allCountries, regions, confusablesMode = fal
       return shuffle([correct, ...distractors.slice(0, 3)]);
     }
   }
+
+  const others = shuffle(pool.filter(c => c.code !== correct.code));
+  return shuffle([correct, ...others.slice(0, 3)]);
+}
+
+export function getCapitalChoices(correct, allCountries, regions) {
+  const pool = regions.includes('all')
+    ? allCountries
+    : allCountries.filter(c => regions.includes(c.region));
 
   const others = shuffle(pool.filter(c => c.code !== correct.code));
   return shuffle([correct, ...others.slice(0, 3)]);

@@ -18,6 +18,12 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark, strea
         >
           Stats
         </button>
+        <button
+          className={`nav-btn${view === 'map' ? ' nav-btn--active' : ''}`}
+          onClick={() => onNavigate('map')}
+        >
+          Map
+        </button>
       </nav>
       {streak > 0 && (
         <div className="header-streak" title={`${streak}-day streak`}>

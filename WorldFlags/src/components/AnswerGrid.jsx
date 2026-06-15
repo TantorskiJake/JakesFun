@@ -1,6 +1,6 @@
 const KEYS = ['1', '2', '3', '4'];
 
-export default function AnswerGrid({ choices, onSelect, feedback, disabled }) {
+export default function AnswerGrid({ choices, onSelect, feedback, disabled, labelKey = 'name' }) {
   return (
     <div className="answer-grid">
       {choices.map((country, i) => {
@@ -30,7 +30,7 @@ export default function AnswerGrid({ choices, onSelect, feedback, disabled }) {
             disabled={disabled}
           >
             <span className="answer-key">{KEYS[i]}</span>
-            <span>{country.name}</span>
+            <span>{country[labelKey]}</span>
             {icon && <span className="answer-result-icon">{icon}</span>}
           </button>
         );

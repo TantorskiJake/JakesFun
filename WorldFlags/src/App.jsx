@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProgress } from './hooks/useProgress.js';
 import { useStreak } from './hooks/useStreak.js';
-import { buildSession } from './hooks/useQuiz.js';
+import { useProfileSync } from './hooks/useProfileSync.js';
+import { buildSession, buildTrickySession } from './hooks/useQuiz.js';
 import { countries } from './data/countries.js';
 import { masteryLevel, isDue } from './utils/sm2.js';
 import { checkBadges } from './data/badges.js';
@@ -9,49 +10,77 @@ import Header from './components/Header.jsx';
 import HomeView from './components/HomeView.jsx';
 import QuizView from './components/QuizView.jsx';
 import StatsView from './components/StatsView.jsx';
+import WorldMapView from './components/WorldMapView.jsx';
 import Confetti from './components/Confetti.jsx';
 import BadgeUnlock from './components/BadgeUnlock.jsx';
 
 const DARK_KEY = 'world-flags-dark-mode';
+const QUIZ_MODE_KEY = 'world-flags-quiz-mode';
 const BADGES_KEY = 'world-flags-badges-v1';
 const SIZE_KEY = 'world-flags-session-size';
-const MODE_KEY = 'world-flags-mode';
 
-const load = (key, fallback) => {
-  try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback; }
-  catch { return fallback; }
-};
+function loadDark() {
+  const stored = localStorage.getItem(DARK_KEY);
+  if (stored !== null) return stored === 'true';
+  return true;
+}
+
+function loadQuizMode() {
+  const stored = localStorage.getItem(QUIZ_MODE_KEY);
+  return ['classic', 'reverse', 'typing', 'capitals', 'confusables'].includes(stored) ? stored : 'classic';
+}
+
+function loadEarned() {
+  try { return JSON.parse(localStorage.getItem(BADGES_KEY) || '[]'); } catch { return []; }
+}
+
+function loadSessionSize() {
+  return parseInt(localStorage.getItem(SIZE_KEY) || '20', 10);
+}
 
 export default function App() {
   const [view, setView] = useState('home');
-  const [darkMode, setDarkMode] = useState(() => load(DARK_KEY, true));
+  const [darkMode, setDarkMode] = useState(loadDark);
+  const [quizMode, setQuizMode] = useState(loadQuizMode);
+  const [sessionSize, setSessionSize] = useState(loadSessionSize);
   const [selectedRegions, setSelectedRegions] = useState(['all']);
-  const [mode, setMode] = useState(() => localStorage.getItem(MODE_KEY) || 'normal');
-  const [sessionSize, setSessionSize] = useState(() => load(SIZE_KEY, 20));
   const [session, setSession] = useState([]);
   const [sessionIndex, setSessionIndex] = useState(0);
+  const [sessionResults, setSessionResults] = useState([]);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [earnedBadges, setEarnedBadges] = useState(() => load(BADGES_KEY, []));
+  const [earnedBadges, setEarnedBadges] = useState(loadEarned);
   const [newBadges, setNewBadges] = useState([]);
 
-  const { progress, recordAnswer, resetProgress } = useProgress();
-  const { streak, recordStudy } = useStreak();
+  const { progress, recordAnswer, resetProgress, replaceProgress } = useProgress();
+  const streak = useStreak();
+  const profile = useProfileSync({
+    progress,
+    streakData: {
+      currentStreak: streak.currentStreak,
+      longestStreak: streak.longestStreak,
+      lastPracticeDate: streak.lastPracticeDate,
+      totalXP: streak.totalXP,
+      level: streak.level,
+    },
+    replaceProgress,
+    replaceStreak: streak.replaceStreak,
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-    localStorage.setItem(DARK_KEY, JSON.stringify(darkMode));
+    localStorage.setItem(DARK_KEY, String(darkMode));
   }, [darkMode]);
 
   const handleToggleDark = useCallback(() => setDarkMode(d => !d), []);
 
-  const handleSetMode = useCallback((m) => {
-    setMode(m);
-    localStorage.setItem(MODE_KEY, m);
+  const handleSetQuizMode = useCallback((mode) => {
+    setQuizMode(mode);
+    localStorage.setItem(QUIZ_MODE_KEY, mode);
   }, []);
 
   const handleSetSessionSize = useCallback((s) => {
     setSessionSize(s);
-    localStorage.setItem(SIZE_KEY, JSON.stringify(s));
+    localStorage.setItem(SIZE_KEY, String(s));
   }, []);
 
   const handleNavigate = useCallback((target) => {
@@ -59,38 +88,53 @@ export default function App() {
     if (target === 'home') {
       setSession([]);
       setSessionIndex(0);
+      setSessionResults([]);
       setShowConfetti(false);
     }
   }, []);
 
   const handleStartQuiz = useCallback(() => {
-    const s = buildSession(selectedRegions, progress, sessionSize, mode === 'confusables');
+    const isConfusables = quizMode === 'confusables';
+    const s = buildSession(selectedRegions, progress, sessionSize, isConfusables);
     if (s.length === 0) return;
     setSession(s);
     setSessionIndex(0);
+    setSessionResults([]);
     setShowConfetti(false);
     setView('quiz');
-  }, [selectedRegions, progress, sessionSize, mode]);
+  }, [selectedRegions, progress, sessionSize, quizMode]);
+
+  const handleStartTrickyDrill = useCallback(() => {
+    const s = buildTrickySession(progress, selectedRegions);
+    if (s.length === 0) return;
+    setSession(s);
+    setSessionIndex(0);
+    setSessionResults([]);
+    setShowConfetti(false);
+    setView('quiz');
+  }, [progress, selectedRegions]);
 
   const handleAnswer = useCallback((code, correct) => {
     recordAnswer(code, correct);
+    setSessionResults(prev => [...prev, { code, correct }]);
   }, [recordAnswer]);
 
   const handleNext = useCallback(() => setSessionIndex(i => i + 1), []);
 
-  // Called by QuizView with the final results array when session ends
-  const handleDone = useCallback((results) => {
-    setSessionIndex(s => s + 1); // triggers isDone in QuizView
-    recordStudy();
+  const handleDone = useCallback(() => {
+    setSessionIndex(s => s + 1);
+  }, []);
 
-    const correct = results.filter(r => r.correct).length;
-    const pct = results.length === 0 ? 0 : Math.round((correct / results.length) * 100);
+  const handleSessionComplete = useCallback((correct, total) => {
+    streak.recordSession(correct, total);
+
+    const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
     if (pct >= 80) setShowConfetti(true);
 
-    // Check for newly earned badges (progress state is current here via closure)
+    // Check for new badges using latest progress from state
     setEarnedBadges(prev => {
-      const newStreak = streak + (streak === 0 ? 1 : 1); // approximate; real value updates async
-      const newly = checkBadges(progress, newStreak, results, prev);
+      const results = Array.from({ length: total }, (_, i) => ({ correct: i < correct }));
+      const newly = checkBadges(progress, streak.currentStreak + 1, results, prev);
       if (newly.length > 0) {
         const updated = [...prev, ...newly.map(b => b.id)];
         localStorage.setItem(BADGES_KEY, JSON.stringify(updated));
@@ -99,7 +143,7 @@ export default function App() {
       }
       return prev;
     });
-  }, [recordStudy, streak, progress]);
+  }, [streak, progress]);
 
   const dueCount = countries.filter(c => isDue(progress[c.code])).length;
   const masteredCount = countries.filter(c => masteryLevel(progress[c.code]) === 3).length;
@@ -113,7 +157,6 @@ export default function App() {
         onNavigate={handleNavigate}
         darkMode={darkMode}
         onToggleDark={handleToggleDark}
-        streak={streak}
       />
       <main className="main-content">
         {view === 'home' && (
@@ -124,26 +167,29 @@ export default function App() {
             selectedRegions={selectedRegions}
             onRegionsChange={setSelectedRegions}
             onStartQuiz={handleStartQuiz}
+            onStartTrickyDrill={handleStartTrickyDrill}
             onResetProgress={resetProgress}
             progress={progress}
-            mode={mode}
-            onModeChange={handleSetMode}
+            streak={streak}
+            profile={profile}
+            quizMode={quizMode}
+            onQuizModeChange={handleSetQuizMode}
             sessionSize={sessionSize}
             onSessionSizeChange={handleSetSessionSize}
-            streak={streak}
           />
         )}
         {view === 'quiz' && (
           <QuizView
-            key={session.map(c => c.code).join(',')}
             session={session}
             sessionIndex={sessionIndex}
+            sessionResults={sessionResults}
             progress={progress}
             selectedRegions={selectedRegions}
-            mode={mode}
+            quizMode={quizMode}
             onAnswer={handleAnswer}
             onNext={handleNext}
             onDone={handleDone}
+            onSessionComplete={handleSessionComplete}
             onHome={() => handleNavigate('home')}
             onRestartQuiz={handleStartQuiz}
           />
@@ -154,6 +200,9 @@ export default function App() {
             earnedBadges={earnedBadges}
             streak={streak}
           />
+        )}
+        {view === 'map' && (
+          <WorldMapView progress={progress} />
         )}
       </main>
     </div>

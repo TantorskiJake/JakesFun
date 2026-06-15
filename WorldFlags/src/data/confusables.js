@@ -1,5 +1,4 @@
 // Groups of flags that are commonly confused with each other.
-// When confusables mode is active, distractors are drawn from the same group.
 export const confusableGroups = [
   ['ro', 'td'],              // Romania / Chad (almost identical, different shade of blue)
   ['id', 'mc', 'pl'],       // Indonesia / Monaco / Poland (red-white, flipped for Poland)
@@ -15,18 +14,17 @@ export const confusableGroups = [
   ['us', 'lr'],              // USA / Liberia (stars and stripes)
   ['ht', 'li'],              // Haiti / Liechtenstein (blue-red bicolor)
   ['gb', 'nz', 'au'],       // Union Jack family
-  ['by', 'hu'],              // Belarus / Hungary (similar bicolor feel)
-  ['bo', 'gh'],              // Bolivia / Ghana (similar color blocks)
-  ['ng', 'sa'],              // Nigeria-ish / Saudi Arabia-ish (green-white)
-  ['kw', 'jo', 'ps'],        // Kuwait / Jordan / Palestine (Pan-Arab colors)
+  ['kw', 'jo', 'ps'],        // Kuwait / Jordan / Palestine (Pan-Arab)
   ['sy', 'ye', 'eg'],        // Arab tricolors (red-white-black)
-  ['ug', 'ke', 'et'],        // East African flags (similar stripe patterns)
   ['ag', 'kn', 'vc', 'bb'], // Eastern Caribbean island flags
-  ['gy', 'vc'],              // Guyana / St Vincent (similar diagonal designs)
-  ['lt', 'ee'],              // Lithuania / Estonia (horizontal tricolors)
+  ['lt', 'ee'],              // Lithuania / Estonia
   ['lv', 'at'],              // Latvia / Austria (red-white-red)
-  ['ba', 'me'],              // Bosnia / Montenegro (similar blue backgrounds with stars)
+  ['mx', 'it'],              // Mexico / Italy (green-white-red)
+  ['nl', 'lu', 'hr'],        // Netherlands / Luxembourg / Croatia
 ];
+
+// Alias used by buildTrickySession
+export const CONFUSABLE_GROUPS = confusableGroups;
 
 const groupMap = new Map();
 confusableGroups.forEach(group => {
@@ -39,7 +37,6 @@ confusableGroups.forEach(group => {
 export function getConfusableGroup(code) {
   const groups = groupMap.get(code);
   if (!groups || groups.length === 0) return null;
-  // Return the largest group this code belongs to
   return groups.reduce((best, g) => g.length > best.length ? g : best, groups[0]);
 }
 

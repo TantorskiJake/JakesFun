@@ -1,14 +1,18 @@
 import { useState, useCallback } from 'react';
 import { getInitialCard, updateCard } from '../utils/sm2';
 
-const KEY = 'world-flags-progress-v1';
+export const PROGRESS_KEY = 'world-flags-progress-v1';
 
 function load() {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || '{}');
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}');
   } catch {
     return {};
   }
+}
+
+function save(progress) {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
 }
 
 export function useProgress() {
@@ -25,15 +29,21 @@ export function useProgress() {
         ...prev,
         [code]: updateCard(prev[code] || getInitialCard(), correct),
       };
-      localStorage.setItem(KEY, JSON.stringify(updated));
+      save(updated);
       return updated;
     });
   }, []);
 
   const resetProgress = useCallback(() => {
-    localStorage.removeItem(KEY);
+    localStorage.removeItem(PROGRESS_KEY);
     setProgress({});
   }, []);
 
-  return { progress, getCard, recordAnswer, resetProgress };
+  const replaceProgress = useCallback((next) => {
+    const safeNext = next && typeof next === 'object' ? next : {};
+    save(safeNext);
+    setProgress(safeNext);
+  }, []);
+
+  return { progress, getCard, recordAnswer, resetProgress, replaceProgress };
 }
