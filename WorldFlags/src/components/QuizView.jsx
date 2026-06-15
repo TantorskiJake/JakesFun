@@ -95,13 +95,11 @@ export default function QuizView({
     const correct = sessionResults.filter(r => r.correct).length;
     const total = sessionResults.length;
     const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
-    const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '💪';
     const xpEarned = correct * 10 + (correct === total && total > 0 ? 50 : 0);
 
     return (
       <div className="quiz-view">
         <div className="session-complete">
-          <div className="session-complete-emoji">{emoji}</div>
           <h2>Lesson complete</h2>
           <div className="session-score">{pct}%</div>
           <p>{correct} of {total} remembered</p>

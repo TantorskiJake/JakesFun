@@ -3,13 +3,13 @@ import { isDue, masteryLevel } from '../utils/sm2.js';
 import ProfilePanel from './ProfilePanel.jsx';
 import RegionFilter from './RegionFilter.jsx';
 
-const REGION_ICONS = {
-  all: '🌎',
-  europe: '🏰',
-  africa: '⛰️',
-  asia: '🏯',
-  americas: '🗽',
-  oceania: '🏝️',
+const REGION_CODES = {
+  all: 'ALL',
+  europe: 'EUR',
+  africa: 'AFR',
+  asia: 'ASI',
+  americas: 'AME',
+  oceania: 'OCE',
 };
 
 const MODES = [
@@ -82,7 +82,7 @@ export default function HomeView({
 
     return {
       ...region,
-      icon: REGION_ICONS[region.id] ?? '📍',
+      code: REGION_CODES[region.id] ?? region.label.slice(0, 3).toUpperCase(),
       learned,
       due,
       percent,
@@ -159,7 +159,7 @@ export default function HomeView({
         {showStreak && (
           <div className="streak-bar">
             <div className="streak-flame-block">
-              <span className="streak-flame">🔥</span>
+              <span className="streak-flame">ST</span>
               <div className="streak-flame-text">
                 <span className="streak-count">{currentStreak}</span>
                 <span className="streak-label">day streak</span>
@@ -188,19 +188,19 @@ export default function HomeView({
 
         <div className="home-stats-row">
           <div className="home-stat-card">
-            <div className="home-stat-icon">📚</div>
+            <div className="home-stat-icon">REV</div>
             <div className="home-stat-label">Due for review</div>
             <div className="home-stat-number" style={dueCount > 0 ? { color: 'var(--warning)' } : undefined}>{dueCount}</div>
             <div className="home-stat-subtle">{poolDue > 0 ? `${poolDue} in selection` : 'All caught up'}</div>
           </div>
           <div className="home-stat-card">
-            <div className="home-stat-icon">🏆</div>
+            <div className="home-stat-icon">MAS</div>
             <div className="home-stat-label">Flags mastered</div>
             <div className="home-stat-number">{masteredCount}</div>
             <div className="home-stat-subtle">of {totalCount} flags</div>
           </div>
           <div className="home-stat-card">
-            <div className="home-stat-icon">🎯</div>
+            <div className="home-stat-icon">ACC</div>
             <div className="home-stat-label">Recall rate</div>
             <div className="home-stat-number">{accuracy !== null ? `${accuracy}%` : '—'}</div>
             <div className="home-stat-subtle">{totalAnswers > 0 ? `${totalAnswers} answers` : 'No answers yet'}</div>
@@ -221,7 +221,7 @@ export default function HomeView({
                 className={`path-track-card${track.active ? ' path-track-card--active' : ''}`}
                 onClick={() => onRegionsChange([track.id])}
               >
-                <span className="path-track-icon">{track.icon}</span>
+                <span className="path-track-icon">{track.code}</span>
                 <span className="path-track-content">
                   <span className="path-track-name">{track.label}</span>
                   <span className="path-track-meta">

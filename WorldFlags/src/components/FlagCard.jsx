@@ -21,7 +21,7 @@ export default function FlagCard({ code }) {
         )}
         {error ? (
           <div className="flag-error">
-            <span className="flag-error-icon">🏳️</span>
+            <span className="flag-error-icon">N/A</span>
             <span>Flag not available</span>
           </div>
         ) : (

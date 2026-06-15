@@ -2,7 +2,7 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark, strea
   return (
     <header className="header">
       <div className="header-brand">
-        <span className="header-globe">🌍</span>
+        <span className="header-mark" aria-hidden="true">WF</span>
         <span className="header-title">World Flags</span>
       </div>
       <nav className="header-nav">
@@ -36,7 +36,7 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark, strea
         title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
         aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
       >
-        {darkMode ? '☀️' : '🌙'}
+        {darkMode ? 'Light' : 'Dark'}
       </button>
     </header>
   );

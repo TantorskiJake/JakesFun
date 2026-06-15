@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'World Flags',
         short_name: 'Flags',
         description: 'Learn the flags of the world',
-        theme_color: '#1a56db',
-        background_color: '#0f172a',
+        theme_color: '#0f766e',
+        background_color: '#101418',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
