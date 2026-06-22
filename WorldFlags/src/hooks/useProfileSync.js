@@ -150,7 +150,11 @@ export function useProfileSync({
     if (!supabase) return { error: new Error('Cloud sync is not configured') };
     setLoading(true);
     setError('');
-    const result = await supabase.auth.signUp({ email, password });
+    const result = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: 'https://jakes-fun.vercel.app' },
+    });
     if (result.error) setError(result.error.message);
     setLoading(false);
     return result;
