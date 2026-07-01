@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { countries } from '../data/countries.js';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { countries, getFlagUrl } from '../data/countries.js';
 import { getChoices, getCapitalChoices } from '../hooks/useQuiz.js';
 import ProgressBar from './ProgressBar.jsx';
 import FlagCard from './FlagCard.jsx';
@@ -8,7 +8,9 @@ import FlagChoiceGrid from './FlagChoiceGrid.jsx';
 import FeedbackOverlay from './FeedbackOverlay.jsx';
 import TypeAnswer from './TypeAnswer.jsx';
 
-const ADVANCE_DELAY = 1400;
+// Correct answers advance quickly; wrong ones linger so the fix sinks in.
+const CORRECT_DELAY = 900;
+const WRONG_DELAY = 2200;
 
 export default function QuizView({
   session,
@@ -23,24 +25,28 @@ export default function QuizView({
   onSessionComplete,
   onHome,
   onRestartQuiz,
+  onReviewMissed,
 }) {
   const isDone = sessionIndex >= session.length;
   const current = session[sessionIndex];
   const isCapitals = quizMode === 'capitals';
+  const isConfusables = quizMode === 'confusables';
 
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
   // Track whether we've already fired onSessionComplete for this session
   const [sessionRecorded, setSessionRecorded] = useState(false);
+  const advanceTimerRef = useRef(null);
 
   // Build new choices whenever the question changes
   useEffect(() => {
     if (current) {
-      const fn = isCapitals ? getCapitalChoices : getChoices;
-      setChoices(fn(current, countries, selectedRegions));
+      setChoices(isCapitals
+        ? getCapitalChoices(current, countries, selectedRegions)
+        : getChoices(current, countries, selectedRegions, isConfusables));
       setFeedback(null);
     }
-  }, [current, selectedRegions, isCapitals]);
+  }, [current, selectedRegions, isCapitals, isConfusables]);
 
   // Reset recorded flag when a new session starts
   useEffect(() => {
@@ -59,29 +65,43 @@ export default function QuizView({
     }
   }, [isDone, sessionRecorded, sessionResults, onSessionComplete]);
 
+  // Clear any pending advance timer on unmount
+  useEffect(() => () => {
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+  }, []);
+
+  const advance = useCallback(() => {
+    if (!advanceTimerRef.current) return;
+    clearTimeout(advanceTimerRef.current);
+    advanceTimerRef.current = null;
+    setFeedback(null);
+    if (sessionIndex + 1 >= session.length) {
+      onDone();
+    } else {
+      onNext();
+    }
+  }, [sessionIndex, session.length, onDone, onNext]);
+
   const handleSelect = useCallback((selectedCode) => {
     if (feedback) return;
     const correct = selectedCode === current.code;
-    const fb = { correct, correctCode: current.code, selectedCode };
-    setFeedback(fb);
+    setFeedback({ correct, correctCode: current.code, selectedCode });
     onAnswer(current.code, correct);
+    advanceTimerRef.current = setTimeout(advance, correct ? CORRECT_DELAY : WRONG_DELAY);
+  }, [feedback, current, onAnswer, advance]);
 
-    setTimeout(() => {
-      setFeedback(null);
-      if (sessionIndex + 1 >= session.length) {
-        onDone();
-      } else {
-        onNext();
-      }
-    }, ADVANCE_DELAY);
-  }, [feedback, current, sessionIndex, session.length, onAnswer, onNext, onDone]);
-
-  // Keyboard shortcuts (multiple-choice mode only)
+  // Keyboard shortcuts (multiple-choice modes)
   useEffect(() => {
     if (quizMode === 'typing') return;
     function onKey(e) {
       if (isDone) return;
-      if (feedback) return;
+      if (feedback) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          advance();
+        }
+        return;
+      }
       if (e.key >= '1' && e.key <= '4') {
         const idx = parseInt(e.key, 10) - 1;
         if (choices[idx]) handleSelect(choices[idx].code);
@@ -89,13 +109,14 @@ export default function QuizView({
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [choices, feedback, isDone, handleSelect, quizMode]);
+  }, [choices, feedback, isDone, handleSelect, advance, quizMode]);
 
   if (isDone) {
     const correct = sessionResults.filter(r => r.correct).length;
     const total = sessionResults.length;
     const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
     const xpEarned = correct * 10 + (correct === total && total > 0 ? 50 : 0);
+    const missedCodes = [...new Set(sessionResults.filter(r => !r.correct).map(r => r.code))];
 
     return (
       <div className="quiz-view">
@@ -113,6 +134,7 @@ export default function QuizView({
                   key={`${c.code}-${i}`}
                   className={`session-result-item session-result-item--${r.correct ? 'correct' : 'wrong'}`}
                 >
+                  <img src={getFlagUrl(c.code)} alt="" className="session-result-flag" />
                   {r.correct ? '✓' : '✗'} {c.name}
                 </div>
               );
@@ -121,6 +143,11 @@ export default function QuizView({
 
           <div className="session-complete-actions">
             <button className="btn-ghost" onClick={onHome}>Home</button>
+            {missedCodes.length > 0 && onReviewMissed && (
+              <button className="btn-secondary" onClick={() => onReviewMissed(missedCodes)}>
+                Review {missedCodes.length} missed
+              </button>
+            )}
             <button className="btn-primary" onClick={onRestartQuiz}>Practice again</button>
           </div>
         </div>
@@ -129,7 +156,7 @@ export default function QuizView({
   }
 
   return (
-    <div className="quiz-view">
+    <div className="quiz-view" onClick={feedback ? advance : undefined}>
       <div className="quiz-header">
         <button className="quiz-back-btn" onClick={onHome}>← Home</button>
         <div className="quiz-progress-wrap">
@@ -166,20 +193,13 @@ export default function QuizView({
           feedback={feedback}
           disabled={!!feedback}
         />
-      ) : isCapitals ? (
-        <AnswerGrid
-          choices={choices}
-          onSelect={handleSelect}
-          feedback={feedback}
-          disabled={!!feedback}
-          labelKey="capital"
-        />
       ) : (
         <AnswerGrid
           choices={choices}
           onSelect={handleSelect}
           feedback={feedback}
           disabled={!!feedback}
+          labelKey={isCapitals ? 'capital' : 'name'}
         />
       )}
 

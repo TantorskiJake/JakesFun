@@ -66,26 +66,30 @@ export function buildTrickySession(progress, regions) {
   return combined;
 }
 
+export function buildReviewSession(codes) {
+  const codeSet = new Set(codes);
+  return shuffle(countries.filter(c => codeSet.has(c.code)));
+}
+
 export function getChoices(correct, allCountries, regions, confusablesMode = false) {
   const pool = regions.includes('all')
     ? allCountries
     : allCountries.filter(c => regions.includes(c.region));
 
-  if (confusablesMode) {
-    const group = getConfusableGroup(correct.code);
-    if (group && group.length > 1) {
-      const groupCountries = allCountries.filter(c => group.includes(c.code) && c.code !== correct.code);
-      const distractors = shuffle(groupCountries).slice(0, 3);
-      if (distractors.length < 3) {
-        const extras = shuffle(pool.filter(c => c.code !== correct.code && !group.includes(c.code)));
-        distractors.push(...extras.slice(0, 3 - distractors.length));
-      }
-      return shuffle([correct, ...distractors.slice(0, 3)]);
-    }
-  }
+  // In confusables mode fill with as many look-alikes as possible;
+  // otherwise include at most one so the choices stay varied but tricky.
+  const group = getConfusableGroup(correct.code);
+  const lookalikes = group
+    ? shuffle(allCountries.filter(c => group.includes(c.code) && c.code !== correct.code))
+    : [];
+  const distractors = lookalikes.slice(0, confusablesMode ? 3 : 1);
 
-  const others = shuffle(pool.filter(c => c.code !== correct.code));
-  return shuffle([correct, ...others.slice(0, 3)]);
+  const used = new Set([correct.code, ...distractors.map(c => c.code)]);
+  const sameRegion = shuffle(pool.filter(c => !used.has(c.code) && c.region === correct.region));
+  const elsewhere = shuffle(pool.filter(c => !used.has(c.code) && c.region !== correct.region));
+  distractors.push(...[...sameRegion, ...elsewhere].slice(0, 3 - distractors.length));
+
+  return shuffle([correct, ...distractors]);
 }
 
 export function getCapitalChoices(correct, allCountries, regions) {
@@ -93,6 +97,10 @@ export function getCapitalChoices(correct, allCountries, regions) {
     ? allCountries
     : allCountries.filter(c => regions.includes(c.region));
 
-  const others = shuffle(pool.filter(c => c.code !== correct.code));
-  return shuffle([correct, ...others.slice(0, 3)]);
+  // Same-region capitals are far more confusable, so prefer them as distractors.
+  const sameRegion = shuffle(pool.filter(c => c.code !== correct.code && c.region === correct.region));
+  const elsewhere = shuffle(pool.filter(c => c.code !== correct.code && c.region !== correct.region));
+  const distractors = [...sameRegion, ...elsewhere].slice(0, 3);
+
+  return shuffle([correct, ...distractors]);
 }

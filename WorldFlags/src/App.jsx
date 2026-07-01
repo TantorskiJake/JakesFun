@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useProgress } from './hooks/useProgress.js';
 import { useStreak } from './hooks/useStreak.js';
 import { useProfileSync } from './hooks/useProfileSync.js';
-import { buildSession, buildTrickySession } from './hooks/useQuiz.js';
+import { buildSession, buildTrickySession, buildReviewSession } from './hooks/useQuiz.js';
 import { countries } from './data/countries.js';
 import { masteryLevel, isDue } from './utils/sm2.js';
 import { checkBadges } from './data/badges.js';
@@ -124,6 +124,16 @@ export default function App() {
     setView('quiz');
   }, [progress, selectedRegions]);
 
+  const handleReviewMissed = useCallback((codes) => {
+    const s = buildReviewSession(codes);
+    if (s.length === 0) return;
+    setSession(s);
+    setSessionIndex(0);
+    setSessionResults([]);
+    setShowConfetti(false);
+    setView('quiz');
+  }, []);
+
   const handleAnswer = useCallback((code, correct) => {
     recordAnswer(code, correct);
     setSessionResults(prev => [...prev, { code, correct }]);
@@ -202,6 +212,7 @@ export default function App() {
             onSessionComplete={handleSessionComplete}
             onHome={() => handleNavigate('home')}
             onRestartQuiz={handleStartQuiz}
+            onReviewMissed={handleReviewMissed}
           />
         )}
         {view === 'stats' && (

@@ -61,6 +61,10 @@ export function isCorrectAnswer(input, country) {
 
 // --- Component ---
 
+// Correct answers advance quickly; wrong ones linger so the fix sinks in.
+const CORRECT_DELAY = 900;
+const WRONG_DELAY = 2200;
+
 export default function TypeAnswer({
   correct,
   onAnswer,
@@ -71,6 +75,7 @@ export default function TypeAnswer({
   const [value, setValue] = useState('');
   const [feedback, setFeedback] = useState(null); // null | 'correct' | 'wrong'
   const inputRef = useRef(null);
+  const advanceTimerRef = useRef(null);
 
   // Auto-focus and reset whenever the question changes (new `correct` prop)
   useEffect(() => {
@@ -78,24 +83,47 @@ export default function TypeAnswer({
     setFeedback(null);
     // Small defer so the DOM is ready after re-render
     const t = setTimeout(() => inputRef.current?.focus(), 50);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = null;
+      }
+    };
   }, [correct]);
+
+  function advance() {
+    if (!advanceTimerRef.current) return;
+    clearTimeout(advanceTimerRef.current);
+    advanceTimerRef.current = null;
+    setFeedback(null);
+    if (isLast) {
+      onDone();
+    } else {
+      onNext();
+    }
+  }
 
   function submit() {
     if (feedback) return; // already submitted, waiting for advance
     const result = isCorrectAnswer(value, correct);
     setFeedback(result ? 'correct' : 'wrong');
     onAnswer(correct.code, result);
-
-    setTimeout(() => {
-      setFeedback(null);
-      if (isLast) {
-        onDone();
-      } else {
-        onNext();
-      }
-    }, 1400);
+    advanceTimerRef.current = setTimeout(advance, result ? CORRECT_DELAY : WRONG_DELAY);
   }
+
+  // Enter/Space (or a tap on the feedback banner) skips the advance delay
+  useEffect(() => {
+    if (!feedback) return;
+    function onKey(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        advance();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') submit();
@@ -130,13 +158,13 @@ export default function TypeAnswer({
       </div>
 
       {feedback === 'correct' && (
-        <div className="type-answer-feedback type-answer-feedback--correct">
+        <div className="type-answer-feedback type-answer-feedback--correct" onClick={advance}>
           <span className="type-answer-feedback-icon">✓</span>
-          Nice.
+          Nice. That&rsquo;s {correct.name}
         </div>
       )}
       {feedback === 'wrong' && (
-        <div className="type-answer-feedback type-answer-feedback--wrong">
+        <div className="type-answer-feedback type-answer-feedback--wrong" onClick={advance}>
           <span className="type-answer-feedback-icon">✗</span>
           Almost. This one is <strong>{correct.name}</strong>
         </div>
