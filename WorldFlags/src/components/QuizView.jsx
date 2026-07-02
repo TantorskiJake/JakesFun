@@ -16,7 +16,6 @@ export default function QuizView({
   session,
   sessionIndex,
   sessionResults,
-  progress,
   selectedRegions,
   quizMode,
   sessionType = 'normal',

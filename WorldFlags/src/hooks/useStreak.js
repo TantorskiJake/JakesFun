@@ -41,7 +41,7 @@ export function useStreak() {
     const today = todayStr();
     const yesterday = yesterdayStr();
 
-    let newStreak = prev.currentStreak;
+    let newStreak;
 
     if (prev.lastPracticeDate === today) {
       // Already practiced today — streak unchanged
