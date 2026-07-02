@@ -34,6 +34,24 @@ export function useProgress() {
     });
   }, []);
 
+  // Review sessions update accuracy stats only — they must not advance the
+  // SM-2 schedule, since re-reviewing within the same day isn't real recall.
+  const recordReviewAnswer = useCallback((code, correct) => {
+    setProgress((prev) => {
+      const card = prev[code] || getInitialCard();
+      const updated = {
+        ...prev,
+        [code]: {
+          ...card,
+          totalAnswers: card.totalAnswers + 1,
+          correctAnswers: card.correctAnswers + (correct ? 1 : 0),
+        },
+      };
+      save(updated);
+      return updated;
+    });
+  }, []);
+
   const resetProgress = useCallback(() => {
     localStorage.removeItem(PROGRESS_KEY);
     setProgress({});
@@ -45,5 +63,5 @@ export function useProgress() {
     setProgress(safeNext);
   }, []);
 
-  return { progress, getCard, recordAnswer, resetProgress, replaceProgress };
+  return { progress, getCard, recordAnswer, recordReviewAnswer, resetProgress, replaceProgress };
 }

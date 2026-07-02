@@ -19,6 +19,7 @@ export default function QuizView({
   progress,
   selectedRegions,
   quizMode,
+  sessionType = 'normal',
   onAnswer,
   onNext,
   onDone,
@@ -60,7 +61,7 @@ export default function QuizView({
     if (isDone && !sessionRecorded && sessionResults.length > 0) {
       const correct = sessionResults.filter(r => r.correct).length;
       const total = sessionResults.length;
-      onSessionComplete?.(correct, total);
+      onSessionComplete?.(correct, total, sessionResults);
       setSessionRecorded(true);
     }
   }, [isDone, sessionRecorded, sessionResults, onSessionComplete]);
@@ -115,7 +116,8 @@ export default function QuizView({
     const correct = sessionResults.filter(r => r.correct).length;
     const total = sessionResults.length;
     const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
-    const xpEarned = correct * 10 + (correct === total && total > 0 ? 50 : 0);
+    const isReview = sessionType === 'review';
+    const xpEarned = isReview ? 0 : correct * 10 + (correct === total && total > 0 ? 50 : 0);
     const missedCodes = [...new Set(sessionResults.filter(r => !r.correct).map(r => r.code))];
 
     return (
@@ -124,7 +126,7 @@ export default function QuizView({
           <h2>Lesson complete</h2>
           <div className="session-score">{pct}%</div>
           <p>{correct} of {total} remembered</p>
-          <div className="session-xp-earned">+{xpEarned} XP</div>
+          {!isReview && <div className="session-xp-earned">+{xpEarned} XP</div>}
 
           <div className="session-results-grid">
             {sessionResults.map((r, i) => {
