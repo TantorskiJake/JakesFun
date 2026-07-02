@@ -117,7 +117,6 @@ export default function App() {
     if (s.length === 0) return;
     setSessionType('normal');
     setSession(s);
-    setSessionType('normal');
     setSessionIndex(0);
     setSessionResults([]);
     setShowConfetti(false);
@@ -138,7 +137,6 @@ export default function App() {
     if (s.length === 0) return;
     setSessionType('normal');
     setSession(s);
-    setSessionType('normal');
     setSessionIndex(0);
     setSessionResults([]);
     setShowConfetti(false);
@@ -150,7 +148,6 @@ export default function App() {
     if (s.length === 0) return;
     setSessionType('review');
     setSession(s);
-    setSessionType('review');
     setSessionIndex(0);
     setSessionResults([]);
     setShowConfetti(false);

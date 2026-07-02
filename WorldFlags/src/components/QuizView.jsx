@@ -19,6 +19,7 @@ export default function QuizView({
   session,
   sessionIndex,
   sessionResults,
+  progress,
   selectedRegions,
   quizMode,
   sessionType = 'normal',
@@ -47,7 +48,9 @@ export default function QuizView({
   // Snapshot progress via a ref so the study list is computed once per
   // session instead of re-running as answers update progress mid-quiz.
   const progressRef = useRef(progress);
-  progressRef.current = progress;
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
 
   // Decide the study phase when a new session arrives (skip for reviews)
   useEffect(() => {
