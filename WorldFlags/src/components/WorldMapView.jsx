@@ -3,6 +3,7 @@ import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simp
 import worldData from 'world-atlas/countries-110m.json';
 import { countries, REGIONS, getFlagUrl } from '../data/countries.js';
 import { masteryLevel } from '../utils/sm2.js';
+import CountryDetail from './CountryDetail.jsx';
 
 // ISO 3166-1 numeric (zero-padded to 3 chars) → alpha-2
 const NUM_TO_A2 = {
@@ -99,6 +100,7 @@ const FILTERS = [
 export default function WorldMapView({ progress, onPracticeRegions }) {
   const [tooltip, setTooltip] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [detailCode, setDetailCode] = useState(null);
   const [filter, setFilter] = useState('all');
   const [position, setPosition] = useState({ coordinates: [0, 0], zoom: 1 });
 
@@ -139,6 +141,8 @@ export default function WorldMapView({ progress, onPracticeRegions }) {
       acc,
       answers: card?.totalAnswers ?? 0,
     });
+    setDetailCode(alpha2);
+    setTooltip(null);
   }
 
   const handleEnter = useCallback((evt, geo) => {
@@ -276,6 +280,9 @@ export default function WorldMapView({ progress, onPracticeRegions }) {
                 <div><strong>{selected.acc ?? '—'}</strong><span>accuracy</span></div>
                 <div><strong>{selected.answers}</strong><span>answers</span></div>
               </div>
+              <button className="btn-secondary" onClick={() => setDetailCode(selected.code)}>
+                View details
+              </button>
               <button className="btn-primary" onClick={() => onPracticeRegions?.([selected.region])}>
                 Practice {REGIONS.find(r => r.id === selected.region)?.label ?? 'region'}
               </button>
@@ -313,6 +320,15 @@ export default function WorldMapView({ progress, onPracticeRegions }) {
             </div>
           )}
         </div>
+      )}
+
+      {detailCode && (
+        <CountryDetail
+          code={detailCode}
+          progress={progress}
+          onClose={() => setDetailCode(null)}
+          onSelect={setDetailCode}
+        />
       )}
     </div>
   );

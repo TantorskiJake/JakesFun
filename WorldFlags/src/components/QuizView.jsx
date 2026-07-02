@@ -5,12 +5,15 @@ import ProgressBar from './ProgressBar.jsx';
 import FlagCard from './FlagCard.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
 import FlagChoiceGrid from './FlagChoiceGrid.jsx';
-import FeedbackOverlay from './FeedbackOverlay.jsx';
+import FeedbackOverlay, { showsComparison } from './FeedbackOverlay.jsx';
 import TypeAnswer from './TypeAnswer.jsx';
+import StudyCards from './StudyCards.jsx';
 
 // Correct answers advance quickly; wrong ones linger so the fix sinks in.
 const CORRECT_DELAY = 900;
 const WRONG_DELAY = 2200;
+// Confusable misses show a side-by-side flag comparison, so give it longer.
+const COMPARE_DELAY = 3500;
 
 export default function QuizView({
   session,
@@ -19,6 +22,7 @@ export default function QuizView({
   progress,
   selectedRegions,
   quizMode,
+  sessionType = 'normal',
   onAnswer,
   onNext,
   onDone,
@@ -34,9 +38,27 @@ export default function QuizView({
 
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  // Countries in this session the user has never been quizzed on;
+  // shown as study cards before question 1 (null once dismissed).
+  const [studyList, setStudyList] = useState(null);
   // Track whether we've already fired onSessionComplete for this session
   const [sessionRecorded, setSessionRecorded] = useState(false);
   const advanceTimerRef = useRef(null);
+
+  // Snapshot progress via a ref so the study list is computed once per
+  // session instead of re-running as answers update progress mid-quiz.
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
+
+  // Decide the study phase when a new session arrives (skip for reviews)
+  useEffect(() => {
+    if (sessionType === 'review') {
+      setStudyList(null);
+      return;
+    }
+    const unseen = session.filter(c => !progressRef.current[c.code]);
+    setStudyList(unseen.length > 0 ? unseen : null);
+  }, [session, sessionType]);
 
   // Build new choices whenever the question changes
   useEffect(() => {
@@ -87,14 +109,17 @@ export default function QuizView({
     const correct = selectedCode === current.code;
     setFeedback({ correct, correctCode: current.code, selectedCode });
     onAnswer(current.code, correct);
-    advanceTimerRef.current = setTimeout(advance, correct ? CORRECT_DELAY : WRONG_DELAY);
-  }, [feedback, current, onAnswer, advance]);
+    const wrongDelay = showsComparison(current.code, selectedCode, isCapitals ? 'capital' : 'name')
+      ? COMPARE_DELAY
+      : WRONG_DELAY;
+    advanceTimerRef.current = setTimeout(advance, correct ? CORRECT_DELAY : wrongDelay);
+  }, [feedback, current, onAnswer, advance, isCapitals]);
 
   // Keyboard shortcuts (multiple-choice modes)
   useEffect(() => {
     if (quizMode === 'typing') return;
     function onKey(e) {
-      if (isDone) return;
+      if (isDone || studyList) return;
       if (feedback) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -109,7 +134,7 @@ export default function QuizView({
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [choices, feedback, isDone, handleSelect, advance, quizMode]);
+  }, [choices, feedback, isDone, studyList, handleSelect, advance, quizMode]);
 
   if (isDone) {
     const correct = sessionResults.filter(r => r.correct).length;
@@ -151,6 +176,18 @@ export default function QuizView({
             <button className="btn-primary" onClick={onRestartQuiz}>Practice again</button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Study phase: introduce unseen flags before the first question
+  if (studyList) {
+    return (
+      <div className="quiz-view">
+        <div className="quiz-header">
+          <button className="quiz-back-btn" onClick={onHome}>← Home</button>
+        </div>
+        <StudyCards countries={studyList} onStart={() => setStudyList(null)} />
       </div>
     );
   }

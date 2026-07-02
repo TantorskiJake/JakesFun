@@ -46,6 +46,7 @@ export default function App() {
   const [sessionSize, setSessionSize] = useState(loadSessionSize);
   const [selectedRegions, setSelectedRegions] = useState(['all']);
   const [session, setSession] = useState([]);
+  const [sessionType, setSessionType] = useState('normal');
   const [sessionIndex, setSessionIndex] = useState(0);
   const [sessionResults, setSessionResults] = useState([]);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -99,6 +100,7 @@ export default function App() {
     const s = buildSession(regions, progress, size, isConfusables);
     if (s.length === 0) return;
     setSession(s);
+    setSessionType('normal');
     setSessionIndex(0);
     setSessionResults([]);
     setShowConfetti(false);
@@ -118,6 +120,7 @@ export default function App() {
     const s = buildTrickySession(progress, selectedRegions);
     if (s.length === 0) return;
     setSession(s);
+    setSessionType('normal');
     setSessionIndex(0);
     setSessionResults([]);
     setShowConfetti(false);
@@ -128,6 +131,7 @@ export default function App() {
     const s = buildReviewSession(codes);
     if (s.length === 0) return;
     setSession(s);
+    setSessionType('review');
     setSessionIndex(0);
     setSessionResults([]);
     setShowConfetti(false);
@@ -206,6 +210,7 @@ export default function App() {
             progress={progress}
             selectedRegions={selectedRegions}
             quizMode={quizMode}
+            sessionType={sessionType}
             onAnswer={handleAnswer}
             onNext={handleNext}
             onDone={handleDone}
