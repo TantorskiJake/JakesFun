@@ -2,6 +2,29 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient.js';
 import { mergeProgress, mergeStreak } from '../utils/profileMerge.js';
 
+function buildProfilePayload(user, progress, streakData) {
+  return {
+    id: user.id,
+    display_name: user.email,
+    progress,
+    streak: streakData,
+    weekly_xp: streakData?.weeklyXP ?? 0,
+    week_start: streakData?.weekStart ?? null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+// Upsert the profile; if the leaderboard columns (supabase/leaderboard.sql)
+// haven't been added yet, retry without them so base sync keeps working.
+async function upsertProfile(payload) {
+  let { error } = await supabase.from('profiles').upsert(payload);
+  if (error && /weekly_xp|week_start/i.test(error.message || '')) {
+    const { weekly_xp, week_start, ...base } = payload; // eslint-disable-line no-unused-vars
+    ({ error } = await supabase.from('profiles').upsert(base));
+  }
+  return { error };
+}
+
 export function useProfileSync({
   progress,
   streakData,
@@ -77,15 +100,9 @@ export function useProfileSync({
       replaceProgress(mergedProgress);
       replaceStreak(mergedStreak);
 
-      const { error: saveError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          display_name: user.email,
-          progress: mergedProgress,
-          streak: mergedStreak,
-          updated_at: new Date().toISOString(),
-        });
+      const { error: saveError } = await upsertProfile(
+        buildProfilePayload(user, mergedProgress, mergedStreak)
+      );
 
       if (!active) return;
 
@@ -114,27 +131,46 @@ export function useProfileSync({
 
     window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(async () => {
-      const { error: saveError } = await supabase
+      // Merge with the current server row first so two devices don't
+      // clobber each other with last-write-wins upserts.
+      const { data, error: loadError } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          display_name: user.email,
-          progress,
-          streak: streakData,
-          updated_at: new Date().toISOString(),
-        });
+        .select('progress, streak')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (loadError) {
+        setError(loadError.message);
+        setStatus('Sync failed');
+        return;
+      }
+
+      const mergedProgress = mergeProgress(progress, data?.progress || {});
+      const mergedStreak = mergeStreak(streakData, data?.streak || {});
+
+      const { error: saveError } = await upsertProfile(
+        buildProfilePayload(user, mergedProgress, mergedStreak)
+      );
 
       if (saveError) {
         setError(saveError.message);
         setStatus('Sync failed');
       } else {
+        // Pull merged cloud data into local state — but only when it
+        // actually differs, so we don't loop through this effect forever.
+        if (JSON.stringify(mergedProgress) !== JSON.stringify(progress)) {
+          replaceProgress(mergedProgress);
+        }
+        if (JSON.stringify(mergedStreak) !== JSON.stringify(streakData)) {
+          replaceStreak(mergedStreak);
+        }
         setError('');
         setStatus('Synced');
       }
     }, 700);
 
     return () => window.clearTimeout(saveTimerRef.current);
-  }, [progress, streakData, user, hasLoadedProfile]);
+  }, [progress, streakData, user, hasLoadedProfile, replaceProgress, replaceStreak]);
 
   const signIn = useCallback(async (email, password) => {
     if (!supabase) return { error: new Error('Cloud sync is not configured') };
@@ -153,7 +189,9 @@ export function useProfileSync({
     const result = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: 'https://jakes-fun.vercel.app' },
+      options: {
+        emailRedirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
+      },
     });
     if (result.error) setError(result.error.message);
     setLoading(false);

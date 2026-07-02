@@ -127,3 +127,6 @@ pnpm-debug.log*
 # ------------------------------
 *.tsbuildinfo
 .vercel
+
+# Claude Code temporary agent worktrees
+.claude/worktrees/

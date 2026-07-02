@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { countries } from '../data/countries';
 
 // --- Matching utilities ---
 
@@ -50,13 +51,35 @@ export function isCorrectAnswer(input, country) {
   // Exact match (after normalization or abbreviation expansion)
   if (normInput === normTarget || expanded === normTarget) return true;
 
-  // Levenshtein for longer answers (handles minor typos)
+  // Levenshtein for longer answers (handles minor typos). Confusable
+  // country names (Niger/Nigeria, Austria/Australia) sit within typo
+  // distance of each other, so a fuzzy match only counts when the input
+  // is strictly closer to the target than to every other country name.
   if (normTarget.length > 5) {
     const dist = levenshtein(expanded, normTarget);
-    if (dist <= 2) return true;
+    if (dist <= 2 && dist < distanceToNearestOtherCountry(expanded, normTarget)) {
+      return true;
+    }
   }
 
   return false;
+}
+
+let normalizedCountryNames = null;
+
+function distanceToNearestOtherCountry(input, normTarget) {
+  if (!normalizedCountryNames) {
+    normalizedCountryNames = countries.map(c => normalize(c.name));
+  }
+  let nearest = Infinity;
+  for (const name of normalizedCountryNames) {
+    if (name === normTarget) continue;
+    // Cheap lower bound: distance is at least the length difference.
+    if (Math.abs(name.length - input.length) >= nearest) continue;
+    const d = levenshtein(input, name);
+    if (d < nearest) nearest = d;
+  }
+  return nearest;
 }
 
 // --- Component ---

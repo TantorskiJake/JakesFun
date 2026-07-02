@@ -23,8 +23,28 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === 'https://flagcdn.com',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'flag-images',
+              expiration: {
+                maxEntries: 400,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
     }),
   ],
   base: '/',
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.js'],
+  },
 });

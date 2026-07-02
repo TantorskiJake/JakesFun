@@ -22,7 +22,11 @@ export function buildSession(regions, progress, sessionSize = SESSION_SIZE, conf
     pool = pool.filter(c => confusableCodes.has(c.code));
   }
 
-  const due = pool.filter(c => isDue(progress[c.code]));
+  // Three disjoint buckets: previously-seen cards that are due for review,
+  // never-seen cards, and seen-but-not-due cards. (isDue treats missing
+  // cards as due, so unseen must be excluded from the due bucket or they
+  // would be added twice.)
+  const due = pool.filter(c => progress[c.code] && isDue(progress[c.code]));
   const unseen = pool.filter(c => !progress[c.code]);
   const seen = pool.filter(c => progress[c.code] && !isDue(progress[c.code]));
 

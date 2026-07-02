@@ -5,12 +5,16 @@ import ProgressBar from './ProgressBar.jsx';
 import FlagCard from './FlagCard.jsx';
 import AnswerGrid from './AnswerGrid.jsx';
 import FlagChoiceGrid from './FlagChoiceGrid.jsx';
-import FeedbackOverlay from './FeedbackOverlay.jsx';
+import FeedbackOverlay, { showsComparison } from './FeedbackOverlay.jsx';
 import TypeAnswer from './TypeAnswer.jsx';
+import StudyCards from './StudyCards.jsx';
+import MapAnswer from './MapAnswer.jsx';
 
 // Correct answers advance quickly; wrong ones linger so the fix sinks in.
 const CORRECT_DELAY = 900;
 const WRONG_DELAY = 2200;
+// Confusable misses show a side-by-side flag comparison, so give it longer.
+const COMPARE_DELAY = 3500;
 
 export default function QuizView({
   session,
@@ -19,6 +23,7 @@ export default function QuizView({
   progress,
   selectedRegions,
   quizMode,
+  sessionType = 'normal',
   onAnswer,
   onNext,
   onDone,
@@ -31,22 +36,45 @@ export default function QuizView({
   const current = session[sessionIndex];
   const isCapitals = quizMode === 'capitals';
   const isConfusables = quizMode === 'confusables';
+  const isMap = quizMode === 'map';
 
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
+  // Countries in this session the user has never been quizzed on;
+  // shown as study cards before question 1 (null once dismissed).
+  const [studyList, setStudyList] = useState(null);
   // Track whether we've already fired onSessionComplete for this session
   const [sessionRecorded, setSessionRecorded] = useState(false);
   const advanceTimerRef = useRef(null);
 
+  // Snapshot progress via a ref so the study list is computed once per
+  // session instead of re-running as answers update progress mid-quiz.
+  const progressRef = useRef(progress);
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  // Decide the study phase when a new session arrives (skip for reviews)
+  useEffect(() => {
+    if (sessionType === 'review') {
+      setStudyList(null);
+      return;
+    }
+    const unseen = session.filter(c => !progressRef.current[c.code]);
+    setStudyList(unseen.length > 0 ? unseen : null);
+  }, [session, sessionType]);
+
   // Build new choices whenever the question changes
   useEffect(() => {
     if (current) {
-      setChoices(isCapitals
-        ? getCapitalChoices(current, countries, selectedRegions)
-        : getChoices(current, countries, selectedRegions, isConfusables));
+      setChoices(isMap
+        ? []
+        : isCapitals
+          ? getCapitalChoices(current, countries, selectedRegions)
+          : getChoices(current, countries, selectedRegions, isConfusables));
       setFeedback(null);
     }
-  }, [current, selectedRegions, isCapitals, isConfusables]);
+  }, [current, selectedRegions, isCapitals, isConfusables, isMap]);
 
   // Reset recorded flag when a new session starts
   useEffect(() => {
@@ -60,7 +88,7 @@ export default function QuizView({
     if (isDone && !sessionRecorded && sessionResults.length > 0) {
       const correct = sessionResults.filter(r => r.correct).length;
       const total = sessionResults.length;
-      onSessionComplete?.(correct, total);
+      onSessionComplete?.(correct, total, sessionResults);
       setSessionRecorded(true);
     }
   }, [isDone, sessionRecorded, sessionResults, onSessionComplete]);
@@ -87,14 +115,17 @@ export default function QuizView({
     const correct = selectedCode === current.code;
     setFeedback({ correct, correctCode: current.code, selectedCode });
     onAnswer(current.code, correct);
-    advanceTimerRef.current = setTimeout(advance, correct ? CORRECT_DELAY : WRONG_DELAY);
-  }, [feedback, current, onAnswer, advance]);
+    const wrongDelay = showsComparison(current.code, selectedCode, isCapitals ? 'capital' : 'name')
+      ? COMPARE_DELAY
+      : WRONG_DELAY;
+    advanceTimerRef.current = setTimeout(advance, correct ? CORRECT_DELAY : wrongDelay);
+  }, [feedback, current, onAnswer, advance, isCapitals]);
 
   // Keyboard shortcuts (multiple-choice modes)
   useEffect(() => {
     if (quizMode === 'typing') return;
     function onKey(e) {
-      if (isDone) return;
+      if (isDone || studyList) return;
       if (feedback) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -109,13 +140,14 @@ export default function QuizView({
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [choices, feedback, isDone, handleSelect, advance, quizMode]);
+  }, [choices, feedback, isDone, studyList, handleSelect, advance, quizMode]);
 
   if (isDone) {
     const correct = sessionResults.filter(r => r.correct).length;
     const total = sessionResults.length;
     const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
-    const xpEarned = correct * 10 + (correct === total && total > 0 ? 50 : 0);
+    const isReview = sessionType === 'review';
+    const xpEarned = isReview ? 0 : correct * 10 + (correct === total && total > 0 ? 50 : 0);
     const missedCodes = [...new Set(sessionResults.filter(r => !r.correct).map(r => r.code))];
 
     return (
@@ -124,7 +156,7 @@ export default function QuizView({
           <h2>Lesson complete</h2>
           <div className="session-score">{pct}%</div>
           <p>{correct} of {total} remembered</p>
-          <div className="session-xp-earned">+{xpEarned} XP</div>
+          {!isReview && <div className="session-xp-earned">+{xpEarned} XP</div>}
 
           <div className="session-results-grid">
             {sessionResults.map((r, i) => {
@@ -151,6 +183,18 @@ export default function QuizView({
             <button className="btn-primary" onClick={onRestartQuiz}>Practice again</button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Study phase: introduce unseen flags before the first question
+  if (studyList) {
+    return (
+      <div className="quiz-view">
+        <div className="quiz-header">
+          <button className="quiz-back-btn" onClick={onHome}>← Home</button>
+        </div>
+        <StudyCards countries={studyList} onStart={() => setStudyList(null)} />
       </div>
     );
   }
@@ -193,6 +237,12 @@ export default function QuizView({
           feedback={feedback}
           disabled={!!feedback}
         />
+      ) : quizMode === 'map' ? (
+        <MapAnswer
+          target={current}
+          onSelect={handleSelect}
+          feedback={feedback}
+        />
       ) : (
         <AnswerGrid
           choices={choices}
@@ -206,7 +256,7 @@ export default function QuizView({
       {quizMode !== 'typing' && (
         feedback
           ? <FeedbackOverlay feedback={feedback} labelKey={isCapitals ? 'capital' : 'name'} />
-          : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Choose a flag to continue' : 'Press 1–4 to continue'}</p>
+          : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Choose a flag to continue' : quizMode === 'map' ? 'Find this country on the map' : 'Press 1–4 to continue'}</p>
       )}
     </div>
   );

@@ -1,5 +1,7 @@
+import { localDateStr } from './dates.js';
+
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  return localDateStr();
 }
 
 export function getInitialCard() {
@@ -40,7 +42,7 @@ export function updateCard(card, correct) {
     repetitions,
     interval,
     easeFactor,
-    dueDate: due.toISOString().split('T')[0],
+    dueDate: localDateStr(due),
     totalAnswers: card.totalAnswers + 1,
     correctAnswers: card.correctAnswers + (correct ? 1 : 0),
   };

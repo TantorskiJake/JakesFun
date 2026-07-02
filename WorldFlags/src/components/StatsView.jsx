@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { countries, REGIONS, getFlagUrl } from '../data/countries.js';
 import { masteryLevel } from '../utils/sm2.js';
 import { BADGES } from '../data/badges.js';
+import CountryDetail from './CountryDetail.jsx';
+import Leaderboard from './Leaderboard.jsx';
 
 const MASTERY_LABELS = ['New', 'Learning', 'Familiar', 'Mastered'];
 const MASTERY_COLORS = ['var(--text-muted)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
 
-export default function StatsView({ progress, earnedBadges, streak }) {
+export default function StatsView({ progress, earnedBadges, streak, profile }) {
   const [search, setSearch] = useState('');
+  const [detailCode, setDetailCode] = useState(null);
 
   const totalAnswers = Object.values(progress).reduce((s, c) => s + c.totalAnswers, 0);
   const totalCorrect = Object.values(progress).reduce((s, c) => s + c.correctAnswers, 0);
@@ -150,6 +153,8 @@ export default function StatsView({ progress, earnedBadges, streak }) {
         </div>
       </div>
 
+      <Leaderboard user={profile?.user} />
+
       <div className="stats-section">
         <h2>Country Details</h2>
         <input
@@ -172,7 +177,18 @@ export default function StatsView({ progress, earnedBadges, streak }) {
             </thead>
             <tbody>
               {filtered.map(c => (
-                <tr key={c.code}>
+                <tr
+                  key={c.code}
+                  className="countries-table-row"
+                  tabIndex={0}
+                  onClick={() => setDetailCode(c.code)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDetailCode(c.code);
+                    }
+                  }}
+                >
                   <td>
                     <div className="country-name-cell">
                       <img
@@ -203,6 +219,15 @@ export default function StatsView({ progress, earnedBadges, streak }) {
           </table>
         </div>
       </div>
+
+      {detailCode && (
+        <CountryDetail
+          code={detailCode}
+          progress={progress}
+          onClose={() => setDetailCode(null)}
+          onSelect={setDetailCode}
+        />
+      )}
     </div>
   );
 }
