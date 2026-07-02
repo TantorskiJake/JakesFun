@@ -1,4 +1,4 @@
-export default function Header({ view, onNavigate, darkMode, onToggleDark, streak }) {
+export default function Header({ view, onNavigate, darkMode, onToggleDark, streak, freezes = 0 }) {
   return (
     <header className="header">
       <div className="header-brand">
@@ -34,6 +34,14 @@ export default function Header({ view, onNavigate, darkMode, onToggleDark, strea
       {streak > 0 && (
         <div className="header-streak" title={`${streak}-day streak`}>
           {streak} day
+          {freezes > 0 && (
+            <span
+              className="header-freeze"
+              title={`${freezes} streak freeze${freezes === 1 ? '' : 's'} — covers a missed day`}
+            >
+              ❄️{freezes}
+            </span>
+          )}
         </div>
       )}
       <button

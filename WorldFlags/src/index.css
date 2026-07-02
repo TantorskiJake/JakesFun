@@ -21,6 +21,8 @@
   --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.22);
   --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.3);
   --flag-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  --map-quiz-land: #3b4a55;
+  --map-quiz-stroke: #10161b;
 }
 
 :root[data-theme="light"] {
@@ -43,6 +45,8 @@
   --shadow-md: 0 12px 30px rgba(23, 32, 39, 0.1);
   --shadow-lg: 0 22px 54px rgba(23, 32, 39, 0.14);
   --flag-shadow: 0 16px 34px rgba(23, 32, 39, 0.14);
+  --map-quiz-land: #c3cfd8;
+  --map-quiz-stroke: #f4f6f7;
 }
 
 /* =========================================================
@@ -178,6 +182,26 @@ img {
 
 .dark-toggle:hover {
   background: var(--surface2);
+}
+
+.header-streak {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--warning);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.header-freeze {
+  color: var(--blue);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 /* =========================================================
@@ -3464,4 +3488,154 @@ body {
   .feedback-banner-continue::after {
     content: 'Tap to continue';
   }
+}
+
+/* =========================================================
+   Streak Freeze
+   ========================================================= */
+.freeze-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  animation: freeze-toast-in 0.25s ease;
+}
+
+.freeze-toast-icon {
+  font-size: 22px;
+}
+
+.freeze-toast strong {
+  display: block;
+  font-size: 14px;
+}
+
+.freeze-toast p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.freeze-toast-close {
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.freeze-toast-close:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+@keyframes freeze-toast-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* =========================================================
+   Map Quiz Mode
+   ========================================================= */
+.map-answer {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.map-answer-wrap {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.map-answer-wrap svg {
+  display: block;
+}
+
+.map-geo-flash {
+  animation: map-geo-pulse 0.5s ease;
+}
+
+@keyframes map-geo-pulse {
+  0%   { opacity: 0.25; }
+  50%  { opacity: 1; }
+  75%  { opacity: 0.55; }
+  100% { opacity: 1; }
+}
+
+/* =========================================================
+   Weekly Leaderboard
+   ========================================================= */
+.leaderboard-note {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.leaderboard-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.leaderboard-row--me {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+}
+
+.leaderboard-rank {
+  width: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-row:first-child .leaderboard-rank {
+  color: var(--warning);
+}
+
+.leaderboard-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.leaderboard-you {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.leaderboard-xp {
+  color: var(--primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

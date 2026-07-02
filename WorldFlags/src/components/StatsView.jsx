@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { countries, REGIONS, getFlagUrl } from '../data/countries.js';
 import { masteryLevel } from '../utils/sm2.js';
 import { BADGES } from '../data/badges.js';
+import Leaderboard from './Leaderboard.jsx';
 
 const MASTERY_LABELS = ['New', 'Learning', 'Familiar', 'Mastered'];
 const MASTERY_COLORS = ['var(--text-muted)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
 
-export default function StatsView({ progress, earnedBadges, streak }) {
+export default function StatsView({ progress, earnedBadges, streak, profile }) {
   const [search, setSearch] = useState('');
 
   const totalAnswers = Object.values(progress).reduce((s, c) => s + c.totalAnswers, 0);
@@ -149,6 +150,8 @@ export default function StatsView({ progress, earnedBadges, streak }) {
           })}
         </div>
       </div>
+
+      <Leaderboard user={profile?.user} />
 
       <div className="stats-section">
         <h2>Country Details</h2>

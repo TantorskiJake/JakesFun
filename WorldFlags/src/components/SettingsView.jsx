@@ -7,6 +7,7 @@ const MODES = [
   { id: 'typing', label: 'Type', desc: 'Free response' },
   { id: 'capitals', label: 'Capitals', desc: 'Flag to capital' },
   { id: 'confusables', label: 'Confusables', desc: 'Look-alike flags' },
+  { id: 'map', label: 'Map', desc: 'Flag to world map' },
 ];
 
 const SESSION_SIZES = [10, 20, 30];
