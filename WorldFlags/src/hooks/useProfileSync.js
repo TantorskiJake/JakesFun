@@ -2,6 +2,29 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient.js';
 import { mergeProgress, mergeStreak } from '../utils/profileMerge.js';
 
+function buildProfilePayload(user, progress, streakData) {
+  return {
+    id: user.id,
+    display_name: user.email,
+    progress,
+    streak: streakData,
+    weekly_xp: streakData?.weeklyXP ?? 0,
+    week_start: streakData?.weekStart ?? null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+// Upsert the profile; if the leaderboard columns (supabase/leaderboard.sql)
+// haven't been added yet, retry without them so base sync keeps working.
+async function upsertProfile(payload) {
+  let { error } = await supabase.from('profiles').upsert(payload);
+  if (error && /weekly_xp|week_start/i.test(error.message || '')) {
+    const { weekly_xp, week_start, ...base } = payload; // eslint-disable-line no-unused-vars
+    ({ error } = await supabase.from('profiles').upsert(base));
+  }
+  return { error };
+}
+
 export function useProfileSync({
   progress,
   streakData,
@@ -77,15 +100,9 @@ export function useProfileSync({
       replaceProgress(mergedProgress);
       replaceStreak(mergedStreak);
 
-      const { error: saveError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          display_name: user.email,
-          progress: mergedProgress,
-          streak: mergedStreak,
-          updated_at: new Date().toISOString(),
-        });
+      const { error: saveError } = await upsertProfile(
+        buildProfilePayload(user, mergedProgress, mergedStreak)
+      );
 
       if (!active) return;
 
@@ -131,15 +148,9 @@ export function useProfileSync({
       const mergedProgress = mergeProgress(progress, data?.progress || {});
       const mergedStreak = mergeStreak(streakData, data?.streak || {});
 
-      const { error: saveError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          display_name: user.email,
-          progress: mergedProgress,
-          streak: mergedStreak,
-          updated_at: new Date().toISOString(),
-        });
+      const { error: saveError } = await upsertProfile(
+        buildProfilePayload(user, mergedProgress, mergedStreak)
+      );
 
       if (saveError) {
         setError(saveError.message);

@@ -8,6 +8,7 @@ import FlagChoiceGrid from './FlagChoiceGrid.jsx';
 import FeedbackOverlay, { showsComparison } from './FeedbackOverlay.jsx';
 import TypeAnswer from './TypeAnswer.jsx';
 import StudyCards from './StudyCards.jsx';
+import MapAnswer from './MapAnswer.jsx';
 
 // Correct answers advance quickly; wrong ones linger so the fix sinks in.
 const CORRECT_DELAY = 900;
@@ -35,6 +36,7 @@ export default function QuizView({
   const current = session[sessionIndex];
   const isCapitals = quizMode === 'capitals';
   const isConfusables = quizMode === 'confusables';
+  const isMap = quizMode === 'map';
 
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState(null);
@@ -65,12 +67,14 @@ export default function QuizView({
   // Build new choices whenever the question changes
   useEffect(() => {
     if (current) {
-      setChoices(isCapitals
-        ? getCapitalChoices(current, countries, selectedRegions)
-        : getChoices(current, countries, selectedRegions, isConfusables));
+      setChoices(isMap
+        ? []
+        : isCapitals
+          ? getCapitalChoices(current, countries, selectedRegions)
+          : getChoices(current, countries, selectedRegions, isConfusables));
       setFeedback(null);
     }
-  }, [current, selectedRegions, isCapitals, isConfusables]);
+  }, [current, selectedRegions, isCapitals, isConfusables, isMap]);
 
   // Reset recorded flag when a new session starts
   useEffect(() => {
@@ -233,6 +237,12 @@ export default function QuizView({
           feedback={feedback}
           disabled={!!feedback}
         />
+      ) : quizMode === 'map' ? (
+        <MapAnswer
+          target={current}
+          onSelect={handleSelect}
+          feedback={feedback}
+        />
       ) : (
         <AnswerGrid
           choices={choices}
@@ -246,7 +256,7 @@ export default function QuizView({
       {quizMode !== 'typing' && (
         feedback
           ? <FeedbackOverlay feedback={feedback} labelKey={isCapitals ? 'capital' : 'name'} />
-          : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Choose a flag to continue' : 'Press 1–4 to continue'}</p>
+          : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Choose a flag to continue' : quizMode === 'map' ? 'Find this country on the map' : 'Press 1–4 to continue'}</p>
       )}
     </div>
   );

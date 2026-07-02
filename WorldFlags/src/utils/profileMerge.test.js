@@ -57,6 +57,10 @@ describe('mergeStreak', () => {
       lastPracticeDate: null,
       totalXP: 0,
       level: 1,
+      freezes: 0,
+      freezesEarned: 0,
+      weeklyXP: 0,
+      weekStart: null,
     });
     expect(mergeStreak(null, null).level).toBe(1);
   });
