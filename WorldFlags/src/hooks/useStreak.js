@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { localDateStr } from '../utils/dates.js';
+import { xpForSession } from '../utils/sessionScoring.js';
 
 export const STREAK_KEY = 'world-flags-streak-v1';
 
@@ -94,7 +95,7 @@ export function useStreak() {
       freezes = Math.min(freezes + 1, MAX_FREEZES);
     }
 
-    const xpEarned = correct * 10 + (correct === total ? 50 : 0);
+    const xpEarned = xpForSession(correct, total);
     const newTotalXP = prev.totalXP + xpEarned;
     const newLevel = Math.floor(newTotalXP / 200) + 1;
     const newLongest = Math.max(prev.longestStreak, newStreak);

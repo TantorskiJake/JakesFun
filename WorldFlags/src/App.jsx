@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import { useProgress } from './hooks/useProgress.js';
 import { useStreak } from './hooks/useStreak.js';
 import { useProfileSync } from './hooks/useProfileSync.js';
@@ -12,10 +12,11 @@ import TabBar from './components/TabBar.jsx';
 import HomeView from './components/HomeView.jsx';
 import QuizView from './components/QuizView.jsx';
 import StatsView from './components/StatsView.jsx';
-import WorldMapView from './components/WorldMapView.jsx';
 import SettingsView from './components/SettingsView.jsx';
 import Confetti from './components/Confetti.jsx';
 import BadgeUnlock from './components/BadgeUnlock.jsx';
+
+const WorldMapView = lazy(() => import('./components/WorldMapView.jsx'));
 
 const DARK_KEY = 'world-flags-dark-mode';
 const QUIZ_MODE_KEY = 'world-flags-quiz-mode';
@@ -72,6 +73,7 @@ export default function App() {
   const [earnedBadges, setEarnedBadges] = useState(loadEarned);
   const [newBadges, setNewBadges] = useState([]);
   const [freezeNotice, setFreezeNotice] = useState(false);
+  const [updateReady, setUpdateReady] = useState(false);
 
   const { progress, recordAnswer, recordReviewAnswer, resetProgress, replaceProgress } = useProgress();
   const streak = useStreak();
@@ -91,11 +93,20 @@ export default function App() {
     replaceProgress,
     replaceStreak: streak.replaceStreak,
   });
+  const { user: profileUser, submitSessionResult } = profile;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem(DARK_KEY, String(darkMode));
   }, [darkMode]);
+
+  useEffect(() => {
+    function handleUpdateReady() {
+      setUpdateReady(true);
+    }
+    window.addEventListener('world-flags-update-ready', handleUpdateReady);
+    return () => window.removeEventListener('world-flags-update-ready', handleUpdateReady);
+  }, []);
 
   const handleToggleDark = useCallback(() => setDarkMode(d => !d), []);
 
@@ -167,14 +178,14 @@ export default function App() {
     setView('quiz');
   }, []);
 
-  const handleAnswer = useCallback((code, correct) => {
+  const handleAnswer = useCallback((code, correct, details = {}) => {
     if (sessionType === 'review') {
       // Review sessions track accuracy but don't advance the SM-2 schedule
       recordReviewAnswer(code, correct);
     } else {
       recordAnswer(code, correct);
     }
-    setSessionResults(prev => [...prev, { code, correct }]);
+    setSessionResults(prev => [...prev, { code, correct, ...details }]);
   }, [recordAnswer, recordReviewAnswer, sessionType]);
 
   const handleNext = useCallback(() => setSessionIndex(i => i + 1), []);
@@ -195,6 +206,11 @@ export default function App() {
     if (sessionType === 'review') return;
 
     const newStreakData = streak.recordSession(correct, total);
+    if (profileUser) {
+      submitSessionResult({ results }).then(({ data }) => {
+        if (data) streak.replaceStreak(data);
+      });
+    }
     if (newStreakData?.freezeConsumed) setFreezeNotice(true);
 
     const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
@@ -211,7 +227,7 @@ export default function App() {
       }
       return prev;
     });
-  }, [streak, progress, sessionType]);
+  }, [streak, progress, sessionType, profileUser, submitSessionResult]);
 
   const dueCount = countries.filter(c => isDue(progress[c.code])).length;
   const masteredCount = countries.filter(c => masteryLevel(progress[c.code]) === 3).length;
@@ -230,6 +246,24 @@ export default function App() {
           <button
             className="freeze-toast-close"
             onClick={() => setFreezeNotice(false)}
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {updateReady && (
+        <div className="app-update-toast" role="status">
+          <div>
+            <strong>Update ready</strong>
+            <p>Refresh to use the newest version.</p>
+          </div>
+          <button className="btn-secondary" onClick={() => window.location.reload()}>
+            Refresh
+          </button>
+          <button
+            className="freeze-toast-close"
+            onClick={() => setUpdateReady(false)}
             aria-label="Dismiss"
           >
             ✕
@@ -290,10 +324,12 @@ export default function App() {
           />
         )}
         {view === 'map' && (
-          <WorldMapView
-            progress={progress}
-            onPracticeRegions={handleMapPractice}
-          />
+          <Suspense fallback={<div className="view-loading">Loading map...</div>}>
+            <WorldMapView
+              progress={progress}
+              onPracticeRegions={handleMapPractice}
+            />
+          </Suspense>
         )}
         {view === 'settings' && (
           <SettingsView

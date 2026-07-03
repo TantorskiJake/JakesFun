@@ -24,6 +24,23 @@ export default function ProfilePanel({ profile }) {
       : 'Signed in.');
   }
 
+  async function handleResetPassword() {
+    setMessage('');
+    const result = await profile.resetPassword(email);
+    setMessage(result?.error ? result.error.message : 'Password reset email sent.');
+  }
+
+  function handleExport() {
+    const data = profile.exportProfileData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'world-flags-profile-export.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (!profile.configured) {
     return (
       <section className="profile-panel">
@@ -45,9 +62,14 @@ export default function ProfilePanel({ profile }) {
           <p>{profile.status}</p>
           {profile.error && <p className="profile-error">{profile.error}</p>}
         </div>
-        <button className="btn-secondary profile-sign-out" onClick={profile.signOut}>
-          Sign out
-        </button>
+        <div className="profile-actions">
+          <button className="btn-secondary" onClick={handleExport}>
+            Export data
+          </button>
+          <button className="btn-secondary profile-sign-out" onClick={profile.signOut}>
+            Sign out
+          </button>
+        </div>
       </section>
     );
   }
@@ -101,6 +123,26 @@ export default function ProfilePanel({ profile }) {
         <button className="btn-primary profile-submit" type="submit" disabled={profile.loading}>
           {profile.loading ? 'Working...' : mode === 'sign-up' ? 'Create profile' : 'Sign in'}
         </button>
+
+        {mode === 'sign-in' && (
+          <button
+            className="profile-link-button"
+            type="button"
+            onClick={handleResetPassword}
+            disabled={profile.loading}
+          >
+            Send password reset
+          </button>
+        )}
+
+        <div className="profile-oauth-actions">
+          <button type="button" className="btn-secondary" onClick={() => profile.signInWithOAuth('google')}>
+            Continue with Google
+          </button>
+          <button type="button" className="btn-secondary" onClick={() => profile.signInWithOAuth('apple')}>
+            Continue with Apple
+          </button>
+        </div>
 
         {(message || profile.error) && (
           <p className={profile.error ? 'profile-error' : 'profile-message'}>

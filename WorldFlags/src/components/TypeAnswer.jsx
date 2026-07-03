@@ -131,7 +131,7 @@ export default function TypeAnswer({
     if (feedback) return; // already submitted, waiting for advance
     const result = isCorrectAnswer(value, correct);
     setFeedback(result ? 'correct' : 'wrong');
-    onAnswer(correct.code, result);
+    onAnswer(correct.code, result, { answerText: value.trim(), mode: 'typing' });
     advanceTimerRef.current = setTimeout(advance, result ? CORRECT_DELAY : WRONG_DELAY);
   }
 

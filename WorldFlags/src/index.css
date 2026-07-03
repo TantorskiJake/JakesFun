@@ -1768,6 +1768,29 @@ img {
   flex-shrink: 0;
 }
 
+.profile-actions,
+.profile-oauth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-oauth-actions {
+  grid-column: 1 / -1;
+}
+
+.profile-link-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 0;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.profile-link-button:hover {
+  color: var(--primary-hover);
+}
+
 /* =========================================================
    Learning App Refresh
    ========================================================= */
@@ -3862,6 +3885,44 @@ body {
   box-shadow: var(--shadow-lg);
   z-index: 300;
   animation: freeze-toast-in 0.25s ease;
+}
+
+.app-update-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(460px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  z-index: 310;
+  animation: freeze-toast-in 0.25s ease;
+}
+
+.app-update-toast strong {
+  display: block;
+  font-size: 14px;
+}
+
+.app-update-toast p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.view-loading {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 .freeze-toast-icon {

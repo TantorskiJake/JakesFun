@@ -1,27 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient.js';
 import { mergeProgress, mergeStreak } from '../utils/profileMerge.js';
+import { validateSessionResults } from '../utils/sessionScoring.js';
 
-function buildProfilePayload(user, progress, streakData) {
+function hasServerStreak(streak) {
+  return streak && typeof streak === 'object' && Object.keys(streak).length > 0;
+}
+
+export function buildProfilePayload(user, progress) {
   return {
     id: user.id,
     display_name: user.email,
     progress,
-    streak: streakData,
-    weekly_xp: streakData?.weeklyXP ?? 0,
-    week_start: streakData?.weekStart ?? null,
     updated_at: new Date().toISOString(),
   };
 }
 
-// Upsert the profile; if the leaderboard columns (supabase/leaderboard.sql)
-// haven't been added yet, retry without them so base sync keeps working.
 async function upsertProfile(payload) {
-  let { error } = await supabase.from('profiles').upsert(payload);
-  if (error && /weekly_xp|week_start/i.test(error.message || '')) {
-    const { weekly_xp, week_start, ...base } = payload; // eslint-disable-line no-unused-vars
-    ({ error } = await supabase.from('profiles').upsert(base));
-  }
+  const { error } = await supabase.from('profiles').upsert(payload);
   return { error };
 }
 
@@ -95,13 +91,15 @@ export function useProfileSync({
       }
 
       const mergedProgress = mergeProgress(progress, data?.progress || {});
-      const mergedStreak = mergeStreak(streakData, data?.streak || {});
+      const mergedStreak = hasServerStreak(data?.streak)
+        ? mergeStreak({}, data.streak)
+        : mergeStreak(streakData, {});
 
       replaceProgress(mergedProgress);
       replaceStreak(mergedStreak);
 
       const { error: saveError } = await upsertProfile(
-        buildProfilePayload(user, mergedProgress, mergedStreak)
+        buildProfilePayload(user, mergedProgress)
       );
 
       if (!active) return;
@@ -146,10 +144,12 @@ export function useProfileSync({
       }
 
       const mergedProgress = mergeProgress(progress, data?.progress || {});
-      const mergedStreak = mergeStreak(streakData, data?.streak || {});
+      const mergedStreak = hasServerStreak(data?.streak)
+        ? mergeStreak({}, data.streak)
+        : mergeStreak(streakData, {});
 
       const { error: saveError } = await upsertProfile(
-        buildProfilePayload(user, mergedProgress, mergedStreak)
+        buildProfilePayload(user, mergedProgress)
       );
 
       if (saveError) {
@@ -198,6 +198,29 @@ export function useProfileSync({
     return result;
   }, []);
 
+  const resetPassword = useCallback(async (email) => {
+    if (!supabase) return { error: new Error('Cloud sync is not configured') };
+    const trimmed = email.trim();
+    if (!trimmed) return { error: new Error('Enter your email address first.') };
+    const result = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
+    });
+    if (result.error) setError(result.error.message);
+    return result;
+  }, []);
+
+  const signInWithOAuth = useCallback(async (provider) => {
+    if (!supabase) return { error: new Error('Cloud sync is not configured') };
+    const result = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: import.meta.env.VITE_AUTH_REDIRECT_URL || window.location.origin,
+      },
+    });
+    if (result.error) setError(result.error.message);
+    return result;
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
@@ -208,6 +231,38 @@ export function useProfileSync({
     setLoading(false);
   }, []);
 
+  const exportProfileData = useCallback(() => ({
+    exportedAt: new Date().toISOString(),
+    user: user ? { id: user.id, email: user.email } : null,
+    progress,
+    streak: streakData,
+  }), [progress, streakData, user]);
+
+  const submitSessionResult = useCallback(async ({ results }) => {
+    if (!supabase || !user) {
+      return { error: new Error('Cloud sync is not configured') };
+    }
+
+    const result = validateSessionResults(results);
+    if (!result.valid) {
+      return { error: new Error(result.error) };
+    }
+
+    const { data, error: rpcError } = await supabase.rpc('submit_quiz_session', {
+      p_answers: result.answers,
+    });
+
+    if (rpcError) {
+      setError(rpcError.message);
+      setStatus('Sync failed');
+      return { error: rpcError };
+    }
+
+    setError('');
+    setStatus('Synced');
+    return { data };
+  }, [user]);
+
   return {
     configured: isSupabaseConfigured,
     user,
@@ -216,6 +271,10 @@ export function useProfileSync({
     error,
     signIn,
     signUp,
+    resetPassword,
+    signInWithOAuth,
     signOut,
+    exportProfileData,
+    submitSessionResult,
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
 import { countries, getFlagUrl } from '../data/countries.js';
 import { getChoices, getCapitalChoices } from '../hooks/useQuiz.js';
 import ProgressBar from './ProgressBar.jsx';
@@ -8,7 +8,8 @@ import FlagChoiceGrid from './FlagChoiceGrid.jsx';
 import FeedbackOverlay, { showsComparison } from './FeedbackOverlay.jsx';
 import TypeAnswer from './TypeAnswer.jsx';
 import StudyCards from './StudyCards.jsx';
-import MapAnswer from './MapAnswer.jsx';
+
+const MapAnswer = lazy(() => import('./MapAnswer.jsx'));
 
 // Correct answers advance quickly; wrong ones linger so the fix sinks in.
 const CORRECT_DELAY = 900;
@@ -114,12 +115,12 @@ export default function QuizView({
     if (feedback) return;
     const correct = selectedCode === current.code;
     setFeedback({ correct, correctCode: current.code, selectedCode });
-    onAnswer(current.code, correct);
+    onAnswer(current.code, correct, { selectedCode, mode: quizMode });
     const wrongDelay = showsComparison(current.code, selectedCode, isCapitals ? 'capital' : 'name')
       ? COMPARE_DELAY
       : WRONG_DELAY;
     advanceTimerRef.current = setTimeout(advance, correct ? CORRECT_DELAY : wrongDelay);
-  }, [feedback, current, onAnswer, advance, isCapitals]);
+  }, [feedback, current, onAnswer, advance, isCapitals, quizMode]);
 
   // Keyboard shortcuts (multiple-choice modes)
   useEffect(() => {
@@ -238,11 +239,13 @@ export default function QuizView({
           disabled={!!feedback}
         />
       ) : quizMode === 'map' ? (
-        <MapAnswer
-          target={current}
-          onSelect={handleSelect}
-          feedback={feedback}
-        />
+        <Suspense fallback={<div className="view-loading">Loading map...</div>}>
+          <MapAnswer
+            target={current}
+            onSelect={handleSelect}
+            feedback={feedback}
+          />
+        </Suspense>
       ) : (
         <AnswerGrid
           choices={choices}
