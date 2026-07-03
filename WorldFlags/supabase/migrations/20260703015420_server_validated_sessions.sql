@@ -8,6 +8,7 @@ create or replace function public.world_flags_week_start(p_day date default curr
 returns date
 language sql
 stable
+set search_path = ''
 as $$
   select p_day - ((extract(dow from p_day)::integer + 6) % 7);
 $$;
@@ -16,6 +17,7 @@ create or replace function public.world_flags_session_xp(p_correct integer, p_to
 returns integer
 language sql
 immutable
+set search_path = ''
 as $$
   select case
     when p_correct = p_total then (p_correct * 10) + 50
@@ -27,6 +29,7 @@ create or replace function public.world_flags_normalize_answer(p_value text)
 returns text
 language sql
 immutable
+set search_path = ''
 as $$
   select regexp_replace(
     regexp_replace(lower(trim(coalesce(p_value, ''))), '^the\s+', ''),
@@ -39,6 +42,7 @@ create or replace function public.world_flags_expand_answer(p_value text)
 returns text
 language sql
 immutable
+set search_path = ''
 as $$
   select case public.world_flags_normalize_answer(p_value)
     when 'usa' then 'united states'
@@ -59,6 +63,7 @@ create or replace function public.world_flags_protected_streak_fields(p_streak j
 returns jsonb
 language sql
 immutable
+set search_path = ''
 as $$
   select jsonb_build_object(
     'currentStreak', coalesce((p_streak->>'currentStreak')::integer, 0),
@@ -76,6 +81,7 @@ $$;
 create or replace function public.world_flags_guard_server_fields()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   if current_setting('app.world_flags_session_rpc', true) = 'on' then
@@ -192,8 +198,6 @@ begin
     from answer_rows a
     join public.world_flags_countries c on c.code = a.code;
 
-  perform set_config('app.world_flags_session_rpc', 'on', true);
-
   insert into public.profiles (id, display_name)
   values (v_user_id, coalesce(auth.jwt()->>'email', 'Player'))
   on conflict (id) do nothing;
@@ -258,12 +262,16 @@ begin
     'weekStart', v_week_start::text
   );
 
+  perform set_config('app.world_flags_session_rpc', 'on', true);
+
   update public.profiles
     set streak = v_streak,
         weekly_xp = v_weekly_xp,
         week_start = v_week_start,
         updated_at = now()
     where id = v_user_id;
+
+  perform set_config('app.world_flags_session_rpc', 'off', true);
 
   return v_streak;
 end;

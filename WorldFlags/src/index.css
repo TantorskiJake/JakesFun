@@ -2225,73 +2225,121 @@ body {
 }
 
 .header {
-  height: 60px;
-  padding: 0 22px;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(14px);
+  gap: 14px;
+  height: 62px;
+  padding: 0 24px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--border) 72%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
 }
 
 .header-brand {
   gap: 10px;
+  min-width: 150px;
 }
 
 .header-mark {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface2);
+  border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--border));
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 17%, transparent), transparent 58%),
+    var(--surface);
   color: var(--primary);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 11%, transparent), var(--shadow-sm);
+}
+
+.header-mark-grid {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 0 / 2px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) 0 50% / 100% 2px no-repeat;
+  opacity: 0.95;
 }
 
 .header-title {
-  font-size: 16px;
-  font-weight: 760;
+  font-size: 15px;
+  font-weight: 780;
+  letter-spacing: 0;
 }
 
 .header-nav {
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface2);
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface2) 78%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
 }
 
 .nav-btn {
-  min-height: 32px;
-  padding: 6px 14px;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 9px;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.nav-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  opacity: 0.8;
+}
+
+.nav-btn:hover {
+  background: color-mix(in srgb, var(--surface) 68%, transparent);
 }
 
 .nav-btn--active,
 .nav-btn--active:hover {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--shadow-sm);
+  background: color-mix(in srgb, var(--primary) 13%, var(--surface));
+  color: var(--primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.nav-btn--active svg {
+  opacity: 1;
 }
 
 .dark-toggle {
-  width: auto;
-  min-width: 54px;
-  height: 34px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: transparent;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface2) 64%, transparent);
   color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
+}
+
+.dark-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .dark-toggle:hover {
+  background: color-mix(in srgb, var(--surface2) 92%, transparent);
   color: var(--text);
+}
+
+.header-streak {
+  border-color: color-mix(in srgb, var(--warning) 28%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent);
 }
 
 .home-view,
@@ -3342,8 +3390,8 @@ body {
   .header {
     padding: 0 14px;
     padding-top: env(safe-area-inset-top);
-    height: calc(48px + env(safe-area-inset-top));
-    gap: 8px;
+    height: calc(52px + env(safe-area-inset-top));
+    gap: 10px;
   }
 
   .header-brand {
@@ -3425,8 +3473,14 @@ body {
 
 @media (max-width: 430px) {
   .header-mark {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+
+  .header-mark-grid {
+    width: 16px;
+    height: 16px;
   }
 
   .header-title {
@@ -3434,9 +3488,9 @@ body {
   }
 
   .dark-toggle {
-    min-width: 48px;
-    padding: 0 9px;
-    font-size: 11px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
   }
 
   .lesson-hero h1,
@@ -4064,11 +4118,13 @@ body {
   .tab-bar {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 4px;
+    gap: 6px;
     flex-shrink: 0;
-    padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    padding: 7px 10px calc(7px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--surface) 90%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+    box-shadow: 0 -1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+    backdrop-filter: blur(18px) saturate(1.15);
     z-index: 100;
   }
 
@@ -4077,22 +4133,30 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 3px;
-    padding: 5px 4px 3px;
-    border-radius: 10px;
+    min-height: 50px;
+    padding: 6px 4px 5px;
+    border-radius: 12px;
     font-size: 10px;
     font-weight: 650;
-    letter-spacing: 0.2px;
+    letter-spacing: 0;
     color: var(--text-muted);
-    transition: color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .tab-btn svg {
-    width: 22px;
-    height: 22px;
+    width: 21px;
+    height: 21px;
+    opacity: 0.82;
   }
 
   .tab-btn--active {
+    background: color-mix(in srgb, var(--primary) 12%, var(--surface));
     color: var(--primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+
+  .tab-btn--active svg {
+    opacity: 1;
   }
 
   /* --- Quiz: everything fits between header and tab bar --- */
