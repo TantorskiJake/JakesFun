@@ -3438,7 +3438,6 @@ body {
     font-size: 28px;
   }
 
-  .badges-grid,
   .map-summary-grid,
   .map-detail-stats {
     grid-template-columns: 1fr;
@@ -4349,7 +4348,42 @@ body {
   }
 
   .country-list-row {
-    padding: 10px 12px;
+    padding: 8px 12px;
     gap: 10px;
+  }
+
+  /* Badges as a dense 3-across grid instead of one tall column */
+  .badges-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .badge-item {
+    padding: 10px 6px;
+    gap: 4px;
+  }
+
+  .badge-item-icon {
+    font-size: 22px;
+  }
+
+  .badge-item-label {
+    font-size: 10.5px;
+  }
+
+  .region-row {
+    padding: 10px 14px;
+  }
+
+  .region-row-header {
+    margin-bottom: 6px;
+  }
+
+  .region-breakdown {
+    gap: 8px;
+  }
+
+  .stats-section-note {
+    font-size: 13px;
   }
 }

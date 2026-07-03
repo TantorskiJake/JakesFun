@@ -10,7 +10,7 @@ const MASTERY_COLORS = ['var(--text-muted)', 'var(--warning)', 'var(--primary)',
 const MASTERY_BAR_COLORS = ['var(--surface2)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
 
 // How many rows of the full country list to show before "Show all"
-const LIST_PREVIEW = 30;
+const LIST_PREVIEW = 10;
 
 export default function StatsView({ progress, earnedBadges, streak, profile }) {
   const [search, setSearch] = useState('');
