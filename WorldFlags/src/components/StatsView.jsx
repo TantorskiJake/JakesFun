@@ -1,46 +1,72 @@
 import { useState } from 'react';
 import { countries, REGIONS, getFlagUrl } from '../data/countries.js';
-import { masteryLevel } from '../utils/sm2.js';
+import { masteryLevel, isDue } from '../utils/sm2.js';
 import { BADGES } from '../data/badges.js';
 import CountryDetail from './CountryDetail.jsx';
 import Leaderboard from './Leaderboard.jsx';
 
 const MASTERY_LABELS = ['New', 'Learning', 'Familiar', 'Mastered'];
 const MASTERY_COLORS = ['var(--text-muted)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
+const MASTERY_BAR_COLORS = ['var(--surface2)', 'var(--warning)', 'var(--primary)', 'var(--success)'];
+
+// How many rows of the full country list to show before "Show all"
+const LIST_PREVIEW = 30;
 
 export default function StatsView({ progress, earnedBadges, streak, profile }) {
   const [search, setSearch] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const [detailCode, setDetailCode] = useState(null);
 
   const totalAnswers = Object.values(progress).reduce((s, c) => s + c.totalAnswers, 0);
   const totalCorrect = Object.values(progress).reduce((s, c) => s + c.correctAnswers, 0);
   const overallAccuracy = totalAnswers === 0 ? null : Math.round((totalCorrect / totalAnswers) * 100);
+  const seenCount = Object.keys(progress).length;
 
   const masteryCounts = [0, 1, 2, 3].map(level =>
     countries.filter(c => masteryLevel(progress[c.code]) === level).length
   );
+
+  const withStats = countries.map(c => {
+    const card = progress[c.code];
+    const level = masteryLevel(card);
+    const acc = card && card.totalAnswers > 0
+      ? Math.round((card.correctAnswers / card.totalAnswers) * 100)
+      : null;
+    return { ...c, card, level, acc };
+  });
+
+  // Most actionable info on the page: flags that keep slipping away.
+  // Answered at least twice and either weak accuracy or lapsed back to level 0.
+  const trouble = withStats
+    .filter(c => c.card && c.card.totalAnswers >= 2 && (c.acc < 75 || c.level === 0))
+    .sort((a, b) => a.acc - b.acc)
+    .slice(0, 8);
+
+  const dueSeen = withStats.filter(c => c.card && isDue(c.card)).length;
 
   const regionStats = REGIONS.filter(r => r.id !== 'all').map(r => {
     const pool = countries.filter(c => c.region === r.id);
     const counts = [0, 1, 2, 3].map(level =>
       pool.filter(c => masteryLevel(progress[c.code]) === level).length
     );
-    const mastered = counts[3];
-    return { ...r, pool, counts, mastered, total: pool.length };
+    return { ...r, counts, total: pool.length };
   });
 
-  const filtered = countries
-    .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-    .map(c => {
-      const card = progress[c.code];
-      const level = masteryLevel(card);
-      const acc = card && card.totalAnswers > 0
-        ? Math.round((card.correctAnswers / card.totalAnswers) * 100)
-        : null;
-      return { ...c, card, level, acc };
-    });
+  // Weakest-first reference list: answered countries by accuracy ascending,
+  // then the unseen rest alphabetically.
+  const sorted = [...withStats].sort((a, b) => {
+    if (a.acc === null && b.acc === null) return a.name.localeCompare(b.name);
+    if (a.acc === null) return 1;
+    if (b.acc === null) return -1;
+    return a.acc - b.acc;
+  });
+  const filtered = sorted.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+  const visible = search || showAll ? filtered : filtered.slice(0, LIST_PREVIEW);
+
   const earnedCount = BADGES.filter(b => earnedBadges.includes(b.id)).length;
   const currentStreak = streak?.currentStreak ?? 0;
+  const level = streak?.level ?? 1;
+  const totalXP = streak?.totalXP ?? 0;
 
   return (
     <div className="stats-view">
@@ -48,7 +74,7 @@ export default function StatsView({ progress, earnedBadges, streak, profile }) {
         <div>
           <span className="home-kicker">Progress</span>
           <h1>Your world at a glance</h1>
-          <p>Track mastery, rewards, and the flags that need another pass.</p>
+          <p>{seenCount} of {countries.length} flags seen · {totalAnswers} answers so far</p>
         </div>
         <div className="progress-hero-score">
           <span>{masteryCounts[3]}</span>
@@ -56,54 +82,76 @@ export default function StatsView({ progress, earnedBadges, streak, profile }) {
         </div>
       </div>
 
-      <div className="stats-section">
-        <h2>Overview</h2>
-        <div className="stats-overview-grid">
-          <div className="stat-card">
-            <div className="stat-card-value">
-              {overallAccuracy !== null ? `${overallAccuracy}%` : '—'}
-            </div>
-            <div className="stat-card-label">Overall accuracy</div>
+      <div className="stats-overview-grid">
+        <div className="stat-card">
+          <div className="stat-card-value">{currentStreak}</div>
+          <div className="stat-card-label">Day streak</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">
+            {overallAccuracy !== null ? `${overallAccuracy}%` : '—'}
           </div>
-          <div className="stat-card">
-            <div className="stat-card-value">{totalAnswers}</div>
-            <div className="stat-card-label">Total answers</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-value">{masteryCounts[3]}</div>
-            <div className="stat-card-label">Mastered</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-value">{Object.keys(progress).length}</div>
-            <div className="stat-card-label">Countries seen</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-value">{currentStreak}</div>
-            <div className="stat-card-label">Day streak</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-value">{earnedCount}</div>
-            <div className="stat-card-label">Badges earned</div>
-          </div>
+          <div className="stat-card-label">Overall accuracy</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">{level}</div>
+          <div className="stat-card-label">Level · {totalXP} XP</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-value">{earnedCount}</div>
+          <div className="stat-card-label">Badges earned</div>
         </div>
       </div>
 
       <div className="stats-section">
-        <h2>Mastery Breakdown</h2>
-        <div className="mastery-grid">
-          {MASTERY_LABELS.map((label, i) => (
-            <div className="mastery-card" key={label}>
-              <div className="mastery-card-count" style={{ color: MASTERY_COLORS[i] }}>
-                {masteryCounts[i]}
-              </div>
-              <div className="mastery-card-label">{label}</div>
-            </div>
+        <h2>Needs attention</h2>
+        {dueSeen > 0 && (
+          <p className="stats-section-note">
+            {dueSeen} flag{dueSeen === 1 ? '' : 's'} due for review — head to Study to clear them.
+          </p>
+        )}
+        {trouble.length > 0 ? (
+          <div className="trouble-grid">
+            {trouble.map(c => (
+              <button key={c.code} className="trouble-chip" onClick={() => setDetailCode(c.code)}>
+                <img src={getFlagUrl(c.code)} alt="" />
+                <span className="trouble-chip-name">{c.name}</span>
+                <span className="trouble-chip-acc">{c.acc}%</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="stats-section-note">
+            {totalAnswers === 0
+              ? 'Finish a session and your weak spots will show up here.'
+              : 'No trouble flags right now — nice recall.'}
+          </p>
+        )}
+      </div>
+
+      <div className="stats-section">
+        <h2>Mastery</h2>
+        <div className="mastery-bar" role="img" aria-label={
+          MASTERY_LABELS.map((label, i) => `${masteryCounts[i]} ${label.toLowerCase()}`).join(', ')
+        }>
+          {[3, 2, 1, 0].map(i => (
+            <span
+              key={i}
+              style={{
+                width: `${(masteryCounts[i] / countries.length) * 100}%`,
+                background: MASTERY_BAR_COLORS[i],
+              }}
+            />
           ))}
         </div>
-      </div>
-
-      <div className="stats-section">
-        <h2>By Region</h2>
+        <div className="mastery-legend">
+          {[3, 2, 1, 0].map(i => (
+            <span className="mastery-legend-item" key={i}>
+              <span className="mastery-legend-dot" style={{ background: MASTERY_BAR_COLORS[i] }} />
+              {masteryCounts[i]} {MASTERY_LABELS[i]}
+            </span>
+          ))}
+        </div>
         <div className="region-breakdown">
           {regionStats.map(r => {
             const masteredPct = (r.counts[3] / r.total) * 100;
@@ -137,6 +185,8 @@ export default function StatsView({ progress, earnedBadges, streak, profile }) {
         </div>
       </div>
 
+      <Leaderboard user={profile?.user} />
+
       <div className="stats-section">
         <h2>Badges</h2>
         <div className="badges-grid">
@@ -153,10 +203,9 @@ export default function StatsView({ progress, earnedBadges, streak, profile }) {
         </div>
       </div>
 
-      <Leaderboard user={profile?.user} />
-
       <div className="stats-section">
-        <h2>Country Details</h2>
+        <h2>All countries</h2>
+        <p className="stats-section-note">Weakest first — tap any country for details.</p>
         <input
           type="text"
           className="table-search"
@@ -164,60 +213,32 @@ export default function StatsView({ progress, earnedBadges, streak, profile }) {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <div className="countries-table-wrap" style={{ marginTop: 16 }}>
-          <table className="countries-table">
-            <thead>
-              <tr>
-                <th>Country</th>
-                <th>Region</th>
-                <th>Mastery</th>
-                <th>Accuracy</th>
-                <th>Answers</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr
-                  key={c.code}
-                  className="countries-table-row"
-                  tabIndex={0}
-                  onClick={() => setDetailCode(c.code)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setDetailCode(c.code);
-                    }
-                  }}
-                >
-                  <td>
-                    <div className="country-name-cell">
-                      <img
-                        src={getFlagUrl(c.code)}
-                        alt=""
-                        className="country-flag-thumb"
-                      />
-                      {c.name}
-                    </div>
-                  </td>
-                  <td style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                    {c.region}
-                  </td>
-                  <td>
-                    <span className={`mastery-badge mastery-badge-${c.level}`}>
-                      {MASTERY_LABELS[c.level]}
-                    </span>
-                  </td>
-                  <td className="accuracy-cell" style={{ color: MASTERY_COLORS[c.level] }}>
-                    {c.acc !== null ? `${c.acc}%` : '—'}
-                  </td>
-                  <td style={{ color: 'var(--text-muted)' }}>
-                    {c.card ? c.card.totalAnswers : 0}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="country-list">
+          {visible.map(c => (
+            <button key={c.code} className="country-list-row" onClick={() => setDetailCode(c.code)}>
+              <img src={getFlagUrl(c.code)} alt="" className="country-flag-thumb" />
+              <span className="country-list-name">
+                {c.name}
+                <small>
+                  <span className="country-list-region">{c.region}</span>
+                  {' · '}
+                  {c.card ? `${c.card.totalAnswers} answers` : 'not seen yet'}
+                </small>
+              </span>
+              <span className={`mastery-badge mastery-badge-${c.level}`}>
+                {MASTERY_LABELS[c.level]}
+              </span>
+              <span className="country-list-acc" style={{ color: MASTERY_COLORS[c.level] }}>
+                {c.acc !== null ? `${c.acc}%` : '—'}
+              </span>
+            </button>
+          ))}
         </div>
+        {!search && !showAll && filtered.length > LIST_PREVIEW && (
+          <button className="btn-secondary country-list-more" onClick={() => setShowAll(true)}>
+            Show all {filtered.length} countries
+          </button>
+        )}
       </div>
 
       {detailCode && (
