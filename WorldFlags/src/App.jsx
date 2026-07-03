@@ -8,6 +8,7 @@ import { MAP_CODES } from './data/mapCodes.js';
 import { masteryLevel, isDue } from './utils/sm2.js';
 import { checkBadges } from './data/badges.js';
 import Header from './components/Header.jsx';
+import TabBar from './components/TabBar.jsx';
 import HomeView from './components/HomeView.jsx';
 import QuizView from './components/QuizView.jsx';
 import StatsView from './components/StatsView.jsx';
@@ -309,6 +310,7 @@ export default function App() {
           />
         )}
       </main>
+      <TabBar view={view} onNavigate={handleNavigate} />
     </div>
   );
 }

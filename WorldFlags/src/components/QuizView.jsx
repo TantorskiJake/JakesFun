@@ -200,7 +200,7 @@ export default function QuizView({
   }
 
   return (
-    <div className="quiz-view" onClick={feedback ? advance : undefined}>
+    <div className={`quiz-view quiz-view--${quizMode}`} onClick={feedback ? advance : undefined}>
       <div className="quiz-header">
         <button className="quiz-back-btn" onClick={onHome}>← Home</button>
         <div className="quiz-progress-wrap">
@@ -254,9 +254,11 @@ export default function QuizView({
       )}
 
       {quizMode !== 'typing' && (
-        feedback
-          ? <FeedbackOverlay feedback={feedback} labelKey={isCapitals ? 'capital' : 'name'} />
-          : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Choose a flag to continue' : quizMode === 'map' ? 'Find this country on the map' : 'Press 1–4 to continue'}</p>
+        <div className="quiz-feedback-slot">
+          {feedback
+            ? <FeedbackOverlay feedback={feedback} labelKey={isCapitals ? 'capital' : 'name'} />
+            : <p className="keyboard-hint">{quizMode === 'reverse' ? 'Choose a flag to continue' : quizMode === 'map' ? 'Find this country on the map' : 'Press 1–4 to continue'}</p>}
+        </div>
       )}
     </div>
   );
