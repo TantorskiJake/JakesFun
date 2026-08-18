@@ -4512,3 +4512,114 @@ body {
     font-size: 13px;
   }
 }
+
+/* =========================================================
+   Home dashboard: recall-rate empty state + region snapshot
+   ========================================================= */
+.home-stat-number.home-stat-number--empty {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+.region-snapshot {
+  min-width: 0;
+}
+
+.region-snapshot-track {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  margin: -2px -2px 0;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.region-chip {
+  position: relative;
+  flex: 0 0 132px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 14px 12px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.region-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--blue);
+}
+
+.region-chip--active {
+  border-color: var(--primary);
+  background: var(--success-bg);
+}
+
+.region-chip-due {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--warning);
+  color: #1a1500;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.region-chip-code {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.region-chip-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.region-chip-progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface2);
+}
+
+.region-chip-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.region-chip-percent {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+@media (max-width: 600px) {
+  .region-chip {
+    flex: 0 0 118px;
+    padding: 12px 12px 10px;
+  }
+}
