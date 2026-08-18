@@ -142,7 +142,9 @@ export default function HomeView({
           <div className="home-stat-card">
             <div className="home-stat-icon">ACC</div>
             <div className="home-stat-label">Recall rate</div>
-            <div className="home-stat-number">{accuracy !== null ? `${accuracy}%` : '—'}</div>
+            <div className={`home-stat-number${accuracy === null ? ' home-stat-number--empty' : ''}`}>
+              {accuracy !== null ? `${accuracy}%` : 'No data'}
+            </div>
             <div className="home-stat-subtle">{totalAnswers > 0 ? `${totalAnswers} answers` : 'No answers yet'}</div>
           </div>
           <div className="home-stat-card">
@@ -150,6 +152,29 @@ export default function HomeView({
             <div className="home-stat-label">Current streak</div>
             <div className="home-stat-number">{currentStreak ?? 0}</div>
             <div className="home-stat-subtle">{showStreak ? `Best ${longestStreak} · Lv. ${level}` : 'Start today'}</div>
+          </div>
+        </div>
+
+        <div className="region-snapshot">
+          <div className="home-section-title">Your regions</div>
+          <div className="region-snapshot-track">
+            {regionTracks
+              .filter(track => track.id !== 'all')
+              .map(track => (
+                <button
+                  key={track.id}
+                  className={`region-chip${track.active ? ' region-chip--active' : ''}`}
+                  onClick={() => onRegionsChange([track.id])}
+                >
+                  {track.due > 0 && <span className="region-chip-due">{track.due}</span>}
+                  <span className="region-chip-code">{track.code}</span>
+                  <span className="region-chip-name">{track.label}</span>
+                  <span className="region-chip-progress">
+                    <span style={{ width: `${track.percent}%` }} />
+                  </span>
+                  <span className="region-chip-percent">{track.percent}% learned</span>
+                </button>
+              ))}
           </div>
         </div>
 
