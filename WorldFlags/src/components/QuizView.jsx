@@ -8,6 +8,7 @@ import FlagChoiceGrid from './FlagChoiceGrid.jsx';
 import FeedbackOverlay, { showsComparison } from './FeedbackOverlay.jsx';
 import TypeAnswer from './TypeAnswer.jsx';
 import StudyCards from './StudyCards.jsx';
+import { preloadFlags } from '../utils/preloadFlags.js';
 
 const MapAnswer = lazy(() => import('./MapAnswer.jsx'));
 
@@ -46,7 +47,20 @@ export default function QuizView({
   const [studyList, setStudyList] = useState(null);
   // Track whether we've already fired onSessionComplete for this session
   const [sessionRecorded, setSessionRecorded] = useState(false);
+  // Gate the session until every flag it uses is cached, so flags never
+  // buffer mid-study.
+  const [flagsReady, setFlagsReady] = useState(false);
   const advanceTimerRef = useRef(null);
+
+  // Preload all of this session's flags before showing study cards / questions
+  useEffect(() => {
+    setFlagsReady(false);
+    let cancelled = false;
+    preloadFlags(session.map(c => c.code)).then(() => {
+      if (!cancelled) setFlagsReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [session]);
 
   // Snapshot progress via a ref so the study list is computed once per
   // session instead of re-running as answers update progress mid-quiz.
@@ -126,7 +140,7 @@ export default function QuizView({
   useEffect(() => {
     if (quizMode === 'typing') return;
     function onKey(e) {
-      if (isDone || studyList) return;
+      if (isDone || studyList || !flagsReady) return;
       if (feedback) {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -141,7 +155,7 @@ export default function QuizView({
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [choices, feedback, isDone, studyList, handleSelect, advance, quizMode]);
+  }, [choices, feedback, isDone, studyList, flagsReady, handleSelect, advance, quizMode]);
 
   if (isDone) {
     const correct = sessionResults.filter(r => r.correct).length;
@@ -183,6 +197,21 @@ export default function QuizView({
             )}
             <button className="btn-primary" onClick={onRestartQuiz}>Practice again</button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Hold the session until every flag is cached, so nothing buffers mid-study
+  if (!flagsReady) {
+    return (
+      <div className="quiz-view">
+        <div className="quiz-header">
+          <button className="quiz-back-btn" onClick={onHome}>← Home</button>
+        </div>
+        <div className="flag-preload" role="status">
+          <div className="spinner" />
+          <p>Loading flags…</p>
         </div>
       </div>
     );

@@ -6,6 +6,7 @@ import { buildSession, buildTrickySession, buildReviewSession } from './hooks/us
 import { countries } from './data/countries.js';
 import { MAP_CODES } from './data/mapCodes.js';
 import { masteryLevel, isDue } from './utils/sm2.js';
+import { preloadAllFlags } from './utils/preloadFlags.js';
 import { checkBadges } from './data/badges.js';
 import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
@@ -106,6 +107,17 @@ export default function App() {
     }
     window.addEventListener('world-flags-update-ready', handleUpdateReady);
     return () => window.removeEventListener('world-flags-update-ready', handleUpdateReady);
+  }, []);
+
+  // Warm the flag cache in the background once the app is idle, so flags are
+  // already downloaded by the time a study session starts.
+  useEffect(() => {
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(() => preloadAllFlags());
+      return () => cancelIdleCallback(id);
+    }
+    const timer = setTimeout(() => preloadAllFlags(), 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleToggleDark = useCallback(() => setDarkMode(d => !d), []);
