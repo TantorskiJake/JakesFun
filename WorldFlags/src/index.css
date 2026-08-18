@@ -3979,6 +3979,17 @@ body {
   font-size: 14px;
 }
 
+.flag-preload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 260px;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
 .freeze-toast-icon {
   font-size: 22px;
 }
